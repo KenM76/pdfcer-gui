@@ -617,6 +617,8 @@ pub mod print_dismissal;
 
 pub mod print_layout;
 
+pub mod print_preview_fit;
+
 pub mod print_paper;
 
 pub mod print_remembered;

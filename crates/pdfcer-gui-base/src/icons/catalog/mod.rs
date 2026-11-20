@@ -1188,6 +1188,9 @@ pub enum Icon {
     /// Save a picture of the 3D view: a camera.
     Camera,
 
+    /// Draw at actual size: a page bearing 1:1, always beside its label.
+    ActualSize,
+
     /// Read the ink at a point — `tools.ink_picker`.
     InkPicker,
 

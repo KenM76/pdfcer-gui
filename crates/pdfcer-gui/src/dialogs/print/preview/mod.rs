@@ -20,6 +20,7 @@ use crate::dialogs::print::ink;
 use crate::dialogs::print::position;
 use crate::dialogs::print::spooler::Job;
 use crate::text::print as t;
+use pdfcer_gui_base::icons::{self, Icon};
 
 pub(super) use pdfcer_gui_base::printpreviewkey::{Overhang, PreviewKey};
 
@@ -65,6 +66,9 @@ const CANVAS_MAX_HEIGHT_PTS: f32 = 1400.0;
 
 /// The Pop-out button's region, for the driven harness.
 pub(super) const REGION_POP_OUT: &str = "print.preview.popout";
+/// The strip's Fit width and Fit height buttons, published for driven checks.
+pub(super) const REGION_FIT_WIDTH: &str = "print.preview.fit-width";
+pub(super) const REGION_FIT_HEIGHT: &str = "print.preview.fit-height";
 
 /// The placed page's own rectangle inside the preview canvas.
 pub(super) const REGION_PAGE: &str = "print.preview.page";
@@ -716,7 +720,14 @@ fn strip(
     // The cost is that the row becomes two rows on a narrow column. That is
     // paid for in `STRIP_HEIGHT_PTS`, which reserves the space for it.
     let probe = ui.horizontal_wrapped(|ui| {
-        if ui.button(t::preview_previous()).clicked() {
+        if tool(
+            ui,
+            Icon::ChevronLeft,
+            t::preview_previous(),
+            t::preview_previous_tooltip(),
+        )
+        .clicked()
+        {
             dialog.preview_page = shown.saturating_sub(1);
             // A different sheet is a different picture, so the zoom and pan
             // the operator chose for the last one no longer mean anything —
@@ -725,34 +736,86 @@ fn strip(
             reset_view(dialog);
         }
         ui.label(t::preview_position(shown + 1, sheets));
-        if ui.button(t::preview_next()).clicked() && shown + 1 < sheets {
+        if tool(
+            ui,
+            Icon::ChevronRight,
+            t::preview_next(),
+            t::preview_next_tooltip(),
+        )
+        .clicked()
+            && shown + 1 < sheets
+        {
             dialog.preview_page = shown + 1;
             reset_view(dialog);
         }
         ui.separator();
-        if ui
-            .button(t::preview_zoom_fit())
-            .on_hover_text(t::preview_zoom_fit_tooltip())
-            .clicked()
+        if tool(
+            ui,
+            Icon::FitPage,
+            t::preview_zoom_fit(),
+            t::preview_zoom_fit_tooltip(),
+        )
+        .clicked()
         {
             reset_view(dialog);
+        }
+        let sheet = inputs.job.device.physical_pt;
+        let sheet = Vec2::new(sheet.0 as f32, sheet.1 as f32);
+        let fit = tool(
+            ui,
+            Icon::FitWidth,
+            t::preview_fit_width(),
+            t::preview_fit_width_tooltip(),
+        );
+        crate::diag::ui_rect_visible(REGION_FIT_WIDTH, fit.rect, ui.clip_rect());
+        if fit.clicked() {
+            fit_axis(dialog, rect, sheet, Axis::Width);
+        }
+        let fit = tool(
+            ui,
+            Icon::FitHeight,
+            t::preview_fit_height(),
+            t::preview_fit_height_tooltip(),
+        );
+        crate::diag::ui_rect_visible(REGION_FIT_HEIGHT, fit.rect, ui.clip_rect());
+        if fit.clicked() {
+            fit_axis(dialog, rect, sheet, Axis::Height);
         }
         // Buttons as well as the wheel gesture, and kept even though
         // Ctrl+wheel exists: the commonest reason to zoom a print preview is
         // checking that fine print clears the margin, which is a deliberate
         // look at a known amount of magnification, not a scrub. A gesture is
         // faster and a button is findable.
-        if ui.button(t::preview_zoom_out()).clicked() {
+        if tool(
+            ui,
+            Icon::ZoomOut,
+            t::preview_zoom_out(),
+            t::preview_zoom_out_tooltip(),
+        )
+        .clicked()
+        {
             zoom_by(dialog, 1.0 / ZOOM_STEP, rect.center(), rect.center());
         }
-        if ui.button(t::preview_zoom_in()).clicked() {
+        if tool(
+            ui,
+            Icon::ZoomIn,
+            t::preview_zoom_in(),
+            t::preview_zoom_in_tooltip(),
+        )
+        .clicked()
+        {
             zoom_by(dialog, ZOOM_STEP, rect.center(), rect.center());
         }
         // Actual size means one PDF point drawn as one egui point, so the
         // multiplier that gets there is `1 / scale` — the number the
         // percentage readout will then show as 100%.
         if ui
-            .button(t::preview_zoom_actual())
+            .add(icons::labelled(
+                ui,
+                Icon::ActualSize,
+                t::preview_zoom_actual(),
+                false,
+            ))
             .on_hover_text(t::preview_zoom_actual_tooltip())
             .clicked()
             && scale > 0.0
@@ -778,9 +841,12 @@ fn strip(
         // [`Placement`]: there is nothing there for it to do, and R9's own
         // distinction is that greying is for *temporarily* unavailable.
         if placement == Placement::InDialog {
-            let popout = ui
-                .button(t::preview_pop_out())
-                .on_hover_text(t::preview_pop_out_tooltip());
+            let popout = tool(
+                ui,
+                Icon::FloatingPanels,
+                t::preview_pop_out(),
+                t::preview_pop_out_tooltip(),
+            );
             // Visibility-gated, because a driven check clicks this. An ungated
             // rect publishes the control's *content* position, which inside a
             // scroll area can be hundreds of points outside the window — the
@@ -851,6 +917,52 @@ fn strip(
 pub(super) fn reset_view(dialog: &mut PrintDialog) {
     dialog.preview_zoom = 1.0;
     dialog.preview_pan = Vec2::ZERO;
+}
+
+/// A strip control: `icon` alone, with `label` and `tip` on hover. Glyphs
+/// without words keep the strip to the two rows `STRIP_HEIGHT_PTS` reserves.
+fn tool(ui: &mut Ui, icon: Icon, label: &str, tip: &str) -> egui::Response {
+    ui.add(icons::glyph(ui, icon))
+        .on_hover_text(label)
+        .on_hover_text(tip)
+}
+
+/// Which edge of the sheet [`fit_axis`] fills the preview with.
+#[derive(Clone, Copy)]
+enum Axis {
+    Width,
+    Height,
+}
+
+/// Zoom so the sheet's width or height fills `rect` as Fit fills it. Fit
+/// width puts the sheet's top edge in view; Fit height centres it.
+fn fit_axis(dialog: &mut PrintDialog, rect: Rect, sheet: Vec2, axis: Axis) {
+    let (zoom, pan) = axis_view(rect.size(), sheet, axis);
+    dialog.preview_zoom = zoom;
+    dialog.preview_pan = pan;
+}
+
+/// The zoom and pan [`fit_axis`] sets, for a preview of `view` points and a
+/// sheet of `sheet` PDF points.
+fn axis_view(view: Vec2, sheet: Vec2, axis: Axis) -> (f32, Vec2) {
+    if sheet.x <= 0.0 || sheet.y <= 0.0 || view.x <= 0.0 || view.y <= 0.0 {
+        return (1.0, Vec2::ZERO);
+    }
+    let fit = (view.x / sheet.x).min(view.y / sheet.y);
+    let scale = match axis {
+        Axis::Width => view.x / sheet.x,
+        Axis::Height => view.y / sheet.y,
+    };
+    let zoom = scale / fit;
+    let pan = match axis {
+        Axis::Width => {
+            let tall = sheet.y * scale * FIT_MARGIN;
+            let margin = view.x * (1.0 - FIT_MARGIN) / 2.0;
+            Vec2::new(0.0, ((tall - view.y) / 2.0 + margin).max(0.0))
+        }
+        Axis::Height => Vec2::ZERO,
+    };
+    (zoom, pan)
 }
 
 /// Multiply the preview zoom by `step`, keeping the point `at` still.

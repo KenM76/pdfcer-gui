@@ -199,6 +199,7 @@ impl Icon {
         Icon::Overprint,
         Icon::PageBoxes,
         Icon::Camera,
+        Icon::ActualSize,
         Icon::InkPicker,
         Icon::Compare,
         Icon::AlignBefore,
@@ -342,6 +343,7 @@ impl Icon {
             Icon::Overprint => assets::OVERPRINT,
             Icon::PageBoxes => assets::PAGE_BOXES,
             Icon::Camera => assets::CAMERA,
+            Icon::ActualSize => assets::ACTUAL_SIZE,
             Icon::InkPicker => assets::INK_PICKER,
             Icon::Compare => assets::COMPARE,
             Icon::Markup => assets::MARKUP,
@@ -573,6 +575,8 @@ impl Icon {
             Icon::PageBoxes => "page-boxes",
             // ui-text-exempt: icon key, never displayed
             Icon::Camera => "camera",
+            // ui-text-exempt: icon key, never displayed
+            Icon::ActualSize => "actual-size",
             // ui-text-exempt: icon key, never displayed
             Icon::InkPicker => "ink-picker",
             // ui-text-exempt: icon key, never displayed

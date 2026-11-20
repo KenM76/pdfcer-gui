@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A page bearing "1:1": drawn at its own size. Always shown beside its
+       "100%" or "Actual size" label, never alone, so the figure is read in
+       words as well as in the picture. -->
+  <path d="M12 6h17l9 9v27H12z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M29 6v9h9" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M17 23l3-2v13M31 21v13" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M25 24.6v0.8M25 30.6v0.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

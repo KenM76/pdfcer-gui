@@ -436,3 +436,34 @@ fn the_preview_upload_reads_pixels_as_premultiplied() {
     let px = image.pixels[0];
     assert_eq!((px.r(), px.g(), px.b(), px.a()), (128, 0, 0, 128));
 }
+
+#[test]
+fn fit_width_fills_the_width_from_the_top_edge() {
+    // A portrait letter sheet in a wide preview: Fit shows the whole height.
+    let (view, sheet) = (Vec2::new(800.0, 400.0), Vec2::new(612.0, 792.0));
+    let (zoom, pan) = axis_view(view, sheet, Axis::Width);
+    let scale = (view.x / sheet.x).min(view.y / sheet.y) * FIT_MARGIN * zoom;
+    assert!((sheet.x * scale - view.x * FIT_MARGIN).abs() < 0.01);
+    let top = view.y / 2.0 - sheet.y * scale / 2.0 + pan.y;
+    assert!(
+        (top - view.x * (1.0 - FIT_MARGIN) / 2.0).abs() < 0.01,
+        "top edge {top}"
+    );
+}
+
+#[test]
+fn fit_height_fills_the_height_centred() {
+    let (view, sheet) = (Vec2::new(300.0, 900.0), Vec2::new(792.0, 612.0));
+    let (zoom, pan) = axis_view(view, sheet, Axis::Height);
+    let scale = (view.x / sheet.x).min(view.y / sheet.y) * FIT_MARGIN * zoom;
+    assert!((sheet.y * scale - view.y * FIT_MARGIN).abs() < 0.01);
+    assert_eq!(pan, Vec2::ZERO);
+}
+
+#[test]
+fn fitting_a_degenerate_sheet_resets_the_view() {
+    assert_eq!(
+        axis_view(Vec2::new(300.0, 300.0), Vec2::ZERO, Axis::Width),
+        (1.0, Vec2::ZERO)
+    );
+}

@@ -16,6 +16,7 @@ use egui::Vec2;
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::text::status as t;
+use pdfcer_gui_base::icons::{self, Icon};
 
 use super::{ROW_HEIGHT_PTS, ZOOM_READOUT_WIDTH_PTS};
 
@@ -43,7 +44,7 @@ pub(super) fn group(
             // Right-to-left: added first is drawn rightmost, so the screen
             // reads `− ⟨percent⟩ +`.
             if ui
-                .button(t::zoom_in())
+                .add(icons::glyph(ui, Icon::ZoomIn))
                 .on_hover_text(t::zoom_in_tooltip())
                 .clicked()
             {
@@ -68,7 +69,7 @@ pub(super) fn group(
                 .close_behavior(egui::PopupCloseBehavior::CloseOnClick)
                 .show(|ui| super::maxzoom::popup(ui, max_zoom_percent));
             if ui
-                .button(t::zoom_out())
+                .add(icons::glyph(ui, Icon::ZoomOut))
                 .on_hover_text(t::zoom_out_tooltip())
                 .clicked()
             {

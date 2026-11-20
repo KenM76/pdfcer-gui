@@ -278,6 +278,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // usable. The gap between those halves is where four defects shipped —
         // see `print_layout`'s header.
         Box::new(print_layout::PrintDialogBodyDoesNotDeadlockItsScrollbars),
+        Box::new(print_preview_fit::PrintPreviewFitsWidthAndHeight),
         // Immediately after it, and the ORDER is load-bearing rather than
         // tidy. This check's every skip message defers to `print_dialog` for
         // the diagnosis — "the dialog never opened", "the spooler refused",

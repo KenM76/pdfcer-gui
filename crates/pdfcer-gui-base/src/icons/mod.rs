@@ -78,6 +78,18 @@ pub fn selected_image(ui: &egui::Ui, icon: Icon) -> egui::Image<'static> {
     image_tinted(ui, icon, IconWeight::Bold, tint)
 }
 
+/// A button showing `icon` with `label` beside it, drawn selected when
+/// `selected`.
+pub fn labelled(ui: &egui::Ui, icon: Icon, label: &str, selected: bool) -> egui::Button<'static> {
+    egui::Button::image_and_text(toggle_image(ui, icon, selected), label.to_owned())
+        .selected(selected)
+}
+
+/// A button showing `icon` alone; its words go in the tooltip.
+pub fn glyph(ui: &egui::Ui, icon: Icon) -> egui::Button<'static> {
+    egui::Button::image(image(ui, icon))
+}
+
 /// The right image for a toggle in either state — the two-line helper that
 /// keeps every call site from re-deriving the same `if selected`.
 pub fn toggle_image(ui: &egui::Ui, icon: Icon, selected: bool) -> egui::Image<'static> {

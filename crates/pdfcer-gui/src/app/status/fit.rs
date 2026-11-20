@@ -15,6 +15,7 @@ use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::text::status as t;
 use crate::viewer::FitMode;
+use pdfcer_gui_base::icons::{self, Icon};
 
 use super::REGION_FIT;
 
@@ -26,7 +27,12 @@ pub(super) fn group(ui: &mut egui::Ui, doc: &OpenDoc, actions: &mut Vec<Action>)
             // Right-to-left: added first is drawn rightmost, so the screen
             // reads `Actual size · Fit width · Fit height · Fit page`.
             if ui
-                .selectable_label(fit == FitMode::Page, t::fit_page())
+                .add(icons::labelled(
+                    ui,
+                    Icon::FitPage,
+                    t::fit_page(),
+                    fit == FitMode::Page,
+                ))
                 .on_hover_text(t::fit_page_tooltip())
                 .clicked()
             {
@@ -38,14 +44,24 @@ pub(super) fn group(ui: &mut egui::Ui, doc: &OpenDoc, actions: &mut Vec<Action>)
             // two single-axis fits sit beside each other rather than with
             // Fit page wedged between them.
             if ui
-                .selectable_label(fit == FitMode::Height, t::fit_height())
+                .add(icons::labelled(
+                    ui,
+                    Icon::FitHeight,
+                    t::fit_height(),
+                    fit == FitMode::Height,
+                ))
                 .on_hover_text(t::fit_height_tooltip())
                 .clicked()
             {
                 actions.push(Action::Fit(FitMode::Height));
             }
             if ui
-                .selectable_label(fit == FitMode::Width, t::fit_width())
+                .add(icons::labelled(
+                    ui,
+                    Icon::FitWidth,
+                    t::fit_width(),
+                    fit == FitMode::Width,
+                ))
                 .on_hover_text(t::fit_width_tooltip())
                 .clicked()
             {
@@ -55,7 +71,12 @@ pub(super) fn group(ui: &mut egui::Ui, doc: &OpenDoc, actions: &mut Vec<Action>)
             // including its defect. See the module docs: the fix is a new
             // action variant, not a divergent mirror.
             if ui
-                .button(t::fit_actual_size())
+                .add(icons::labelled(
+                    ui,
+                    Icon::ActualSize,
+                    t::fit_actual_size(),
+                    false,
+                ))
                 .on_hover_text(t::fit_actual_size_tooltip())
                 .clicked()
             {

@@ -19,6 +19,7 @@ use crate::app::actions::Action;
 use crate::app::prefs::WheelPaging;
 use crate::app::state::OpenDoc;
 use crate::text::status as t;
+use pdfcer_gui_base::icons::{self, Icon};
 
 /// How wide the editable page box is.
 const PAGE_BOX_WIDTH_PTS: f32 = 44.0;
@@ -81,7 +82,7 @@ pub(super) fn group(
             // `super::show`), so the widget added first is drawn rightmost.
             // The screen reads `[note] ⏴ ⟨n⟩ / ⟨N⟩ ⏵`.
             if ui
-                .button(t::next_page())
+                .add(icons::glyph(ui, Icon::ChevronRight))
                 .on_hover_text(t::next_page_tooltip())
                 .clicked()
             {
@@ -95,7 +96,7 @@ pub(super) fn group(
             });
             field(ui, &mut state, current, labels, page_count, actions);
             if ui
-                .button(t::prev_page())
+                .add(icons::glyph(ui, Icon::ChevronLeft))
                 .on_hover_text(t::prev_page_tooltip())
                 .clicked()
             {

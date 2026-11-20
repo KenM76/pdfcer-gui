@@ -868,6 +868,9 @@ pub(super) const PAGE_BOXES: &str = include_str!("assets/page-boxes.svg");
 /// `camera.svg` — the art for [`super::Icon::Camera`].
 pub(super) const CAMERA: &str = include_str!("assets/camera.svg");
 
+/// `actual-size.svg` — the art for [`super::Icon::ActualSize`].
+pub(super) const ACTUAL_SIZE: &str = include_str!("assets/actual-size.svg");
+
 /// `ink-picker.svg` — the art for [`super::Icon::InkPicker`].
 pub(super) const INK_PICKER: &str = include_str!("assets/ink-picker.svg");
 

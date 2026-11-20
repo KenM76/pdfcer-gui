@@ -222,25 +222,10 @@ pub fn redo_declined_empty() -> &'static str {
 // Zoom
 // ---------------------------------------------------------------------------
 
-/// The zoom-out button's label — `−` (U+2212 MINUS SIGN).
-///
-/// Not the ASCII hyphen. A hyphen next to a `+` reads as a dash rather than
-/// as an operator, and the two controls are meant to be seen as a pair.
-#[must_use]
-pub fn zoom_out() -> &'static str {
-    "−"
-}
-
 /// Hover text for zoom out.
 #[must_use]
 pub fn zoom_out_tooltip() -> &'static str {
     "Zoom out one step (Ctrl+Minus)."
-}
-
-/// The zoom-in button's label.
-#[must_use]
-pub fn zoom_in() -> &'static str {
-    "+"
 }
 
 /// Hover text for zoom in.
@@ -338,22 +323,10 @@ pub fn wheel_flip_pages_tooltip() -> &'static str {
     "Turn the mouse wheel into a page turn: one notch, one sheet. Switch it off and the wheel scrolls within the page instead. Ctrl+wheel always zooms, and a continuous page display always scrolls."
 }
 
-/// The previous-page button's label — `⏴` (U+23F4).
-#[must_use]
-pub fn prev_page() -> &'static str {
-    "⏴"
-}
-
 /// Hover text for the previous-page button.
 #[must_use]
 pub fn prev_page_tooltip() -> &'static str {
     "Previous page (Page Up)."
-}
-
-/// The next-page button's label — `⏵` (U+23F5). See [`prev_page`].
-#[must_use]
-pub fn next_page() -> &'static str {
-    "⏵"
 }
 
 /// Hover text for the next-page button.
