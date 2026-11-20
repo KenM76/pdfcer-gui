@@ -219,7 +219,7 @@ impl Selecting<'_> {
             near(&boxed.line, "area", BOX_SIDE_AREA) && boxed.line.get("source") == Some("grown");
         (!right).then(|| {
             format!(
-                "★★★ a face pick on the box traced `{}`; it must be the grown flat patch,                  source=grown, of area {BOX_SIDE_AREA}.",
+                "★★★ a face pick on the box traced `{}`; it must be the grown flat patch, source=grown, of area {BOX_SIDE_AREA}.",
                 boxed.line.raw
             )
         })

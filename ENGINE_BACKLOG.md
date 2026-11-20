@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **68 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `wanted` — a real gap — **69 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,6 +66,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Straightened or enlarged scans keep their source codec; the replaced original is deleted** — the module `pdfcer_core::edit::resample_encode` (`DeskewEncoding`), `EditSession::deskew_image_with`, `ImageDeskew::replaced_dropped`, `ImageUpscale::replaced_dropped` | **wanted — the codec choice.** The default half already reaches him: *Straighten scans* calls `deskew_image`, which keeps the source family and drops the replaced picture in the same undo entry, and the engine's lossy-JPEG note arrives on the results line through the edit funnel. Missing: a *Keep the scan's kind / Lossless / JPEG* choice in the Straighten scans dialog passed as `DeskewEncoding` to `deskew_image_with`. |
 | **Set Crop, Bleed, Trim or Art box, each with its own rect, in one undo step** … | **consumed — O405 §4.** The crop window uses `EditSession::set_page_boxes` (module `pdfcer_core::edit::page_boxes`, `PageBoxEdit`, `CommandKind::SetPageBoxes`) so each page in scope gets its own rect, one undo step; the refusals `EditError::PageBoxEmpty` and `EditError::PageBoxRepeated` reach the status line verbatim. **Bleed, Trim and Art consumed — O421 §4:** the window's *Box* choice sends the chosen `PageBox`; `CropBoxEdit::Reset` on those removes the entry (*Remove*). |
 | **Crop odd or even pages only** — `set-crop-box --odd` / `--even` … | **consumed — O405 §4: the crop window's page choice offers This page, All, Odd, Even and a range, with the page count shown.** |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
@@ -167,10 +168,10 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Banded page replay** — `DisplayList::replay_rows`, `DisplayList::band_exact`, `BAND_ROW_LATTICE`, `BandBlocker` (`BandBlocker::Image`, `BandBlocker::Gradient`, `BandBlocker::LayerMask`), `RenderError::BandNotAligned` | **wanted.** The page renderer replays each page on one thread; banding a dense CAD sheet across worker threads is the engine's measured 2.6x to 3.0x. Needs a measurement here first (the canvas renders tiles off the frame loop already), per `BENCHMARK.md`. |
+| **Banded page replay** — `DisplayList::replay_rows`, `DisplayList::band_exact`, `BAND_ROW_LATTICE`, `BandBlocker` (`BandBlocker::Image`, `BandBlocker::Gradient`, `BandBlocker::LayerMask`, `BandBlocker::Shading`), `RenderError::BandNotAligned` | **wanted.** The page renderer replays each page on one thread; banding a dense CAD sheet across worker threads is the engine's measured 2.6x to 3.0x. Needs a measurement here first (the canvas renders tiles off the frame loop already), per `BENCHMARK.md`. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **glTF occlusion maps and textured alpha cut-outs** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
-| **Measure one face of a 3D model (area, perimeter, plane or cylinder fit)** — the module `pdfcer_3d::surface_measure::face` (`face_figures`, `FaceFigures`, `FaceShape`) | **consumed — O443: the Measure tab's *Face, edge, corner* measure.** A face pick reads area, perimeter and plane or cylinder fit (`select::figures_of`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). A part the file gives as one face measures whole and is said to; filed as G312 with the disclosure reported as a workaround. |
+| **Measure one face of a 3D model (area, perimeter, plane or cylinder fit)** — the module `pdfcer_3d::surface_measure::face` (`face_figures`, `FaceSource::WholeMesh`, the whole-part disclosure, `FaceFigures`, `FaceShape`) | **consumed — O443: the Measure tab's *Face, edge, corner* measure.** A face pick reads area, perimeter and plane or cylinder fit (`select::figures_of`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). A part the file gives as one face measures whole and is said to; filed as G312 with the disclosure reported as a workaround. |
 | **Measure one edge or vertex of a 3D model (length, line or circle fit, XYZ)** — the module `pdfcer_3d::surface_measure::edge` (`edge_at`, `vertex_at`, `EdgeFigures`, `EdgeShape`), `SurfaceMeasureError::NoEdge`, `DEFAULT_CORNER_DEGREES` | **consumed — O443, the same measure.** An edge pick reads length, chord and line or circle fit; a corner pick reads X, Y, Z (`select::figures_of`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). <!--namesake:vertex_at--> (`canvas::dimdrag::vertex_at` is the 2D dimension drag's) |
 | **3D measure: minimum, maximum and centre distance between two picked entities (vertex, edge, face)** — the module `pdfcer_3d::surface_measure::distance` (`entity_distance`, `EntityDistance`, `MeasureEntity`, `Selection`, `Span`) | **consumed — O443, the same measure.** A second pick reads the smallest distance with dX, dY, dZ, the largest, and centre to centre when both have one (`Selected::pick`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). |
 | **3D measure: project a measured distance onto a plane or the screen** — `Span::projected`, `Span::along`, `SurfaceMeasureError::BadDirection` | **wanted; the measure window.** A *Projected on* choice: none, the screen, or a picked plane. |
@@ -183,7 +184,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `blocked` — waiting on something named — **2 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -201,7 +202,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -212,7 +213,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `declined` — deliberately no surface — **21 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -259,7 +260,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **523 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **523 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -719,7 +720,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **EMF: patch a soft-masked layer only where its mask shows (opt-in)** — `EmfOptions::tight_mask_patches`, `EmfOptions::with_tight_mask_patches` | **shipped — *Smaller picture areas*, shown only while *Transparency as vector graphics* is on.** Its tooltip carries the engine's caveat that the driver does not smooth text freed from a patch. |
 | **EMF vector export of axial and radial shadings under transparency** — with `vector_transparency` and `vector_shadings` both set | **shipped with the two switches above** — nothing separate to wire. |
 | **Print disclosure of unusable colour profiles** — `Diagnostics::icc_profiles_unmodelled`, `pdfcer_emf::print_export_with` | **shipped — X074.** `plain_sheet` keeps the `EmfOutcome` (and, on the image route, the render's `Diagnostics`); the note after the job counts the pages on which a profile fell back to its alternate. |
-| **Page fills, strokes, clips, glyph outlines, images, blend modes and transparency groups drawn on the graphics card, byte for byte** — the module `pdfcer_render::gpu` (`DisplayList::gpu_scene` <!--namesake:gpu_scene--> (the 3D viewer's `gpu_scene` is its own method on the model, not this one), `GpuScene`, `GpuRefusal`, `GLSL_ES_300_VERTEX`, `GLSL_ES_300_FRAGMENT`), behind the non-default `gpu` feature | **shipped (O451).** Called in `rendercard::pack_page` (pdfcer-gui-base) and drawn by `render::card` (pdfcer-gui) behind Settings ▸ Display ▸ *Draw pages on the graphics card*, off by default. Design as built: the canvas packs each page with `gpu_scene` on the worker and draw it on the card, the same bytes; a page the scene refuses (shadings, soft masks, some blend modes, curves left after fitting, pages past its texture) is drawn on the processor and the reason said in the status bar. Measured with `tools/render-profile` and a switch-on/switch-off pixel comparison before it is offered. |
+| **Page fills, strokes, clips, glyph outlines, images, blend modes and transparency groups drawn on the graphics card, byte for byte** — the module `pdfcer_render::gpu` (`Op::Shading` and `pdfcer_render::display_list::shading_op`, the shading the card now draws; `DisplayList::gpu_scene` <!--namesake:gpu_scene--> (the 3D viewer's `gpu_scene` is its own method on the model, not this one), `GpuScene`, `GpuRefusal`, `GLSL_ES_300_VERTEX`, `GLSL_ES_300_FRAGMENT`), behind the non-default `gpu` feature | **shipped (O451).** Called in `rendercard::pack_page` (pdfcer-gui-base) and drawn by `render::card` (pdfcer-gui) behind Settings ▸ Display ▸ *Draw pages on the graphics card*, off by default. Design as built: the canvas packs each page with `gpu_scene` on the worker and draw it on the card, the same bytes; a page the scene refuses (shadings, soft masks, some blend modes, curves left after fitting, pages past its texture) is drawn on the processor and the reason said in the status bar. Measured with `tools/render-profile` and a switch-on/switch-off pixel comparison before it is offered. |
 
 ### Shell & UX
 

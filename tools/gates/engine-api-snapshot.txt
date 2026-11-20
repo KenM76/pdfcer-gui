@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: bce0c21e81c09bd0162c4e7e5c0745dd355a92c8
+# baseline: 46ce16c9bb5ecd17ccc6a5695d1f691f8d830ea1
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12646
+# items: 12662
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -263,6 +263,7 @@ pdfcer-3d enum pdfcer_3d::shadow::ShadowLight
 pdfcer-3d enum pdfcer_3d::surface_measure::distance::MeasureEntity
 pdfcer-3d enum pdfcer_3d::surface_measure::edge::EdgeShape
 pdfcer-3d enum pdfcer_3d::surface_measure::face::FaceShape
+pdfcer-3d enum pdfcer_3d::surface_measure::face::FaceSource
 pdfcer-3d enum pdfcer_3d::surface_measure::types::SurfaceMeasureError
 pdfcer-3d enum pdfcer_3d::surface_measure::types::SurfaceRelation
 pdfcer-3d enum pdfcer_3d::texture::TextureFunction
@@ -457,6 +458,7 @@ pdfcer-3d field pdfcer_3d::surface_measure::face::FaceFigures::face
 pdfcer-3d field pdfcer_3d::surface_measure::face::FaceFigures::mesh
 pdfcer-3d field pdfcer_3d::surface_measure::face::FaceFigures::perimeter
 pdfcer-3d field pdfcer_3d::surface_measure::face::FaceFigures::shape
+pdfcer-3d field pdfcer_3d::surface_measure::face::FaceFigures::source
 pdfcer-3d field pdfcer_3d::surface_measure::face::FaceFigures::triangles
 pdfcer-3d field pdfcer_3d::surface_measure::projected::ProjectedArea::away
 pdfcer-3d field pdfcer_3d::surface_measure::projected::ProjectedArea::toward
@@ -748,6 +750,9 @@ pdfcer-3d variant pdfcer_3d::surface_measure::edge::EdgeShape::Line
 pdfcer-3d variant pdfcer_3d::surface_measure::face::FaceShape::Cylinder
 pdfcer-3d variant pdfcer_3d::surface_measure::face::FaceShape::Plane
 pdfcer-3d variant pdfcer_3d::surface_measure::face::FaceShape::Unfitted
+pdfcer-3d variant pdfcer_3d::surface_measure::face::FaceSource::File
+pdfcer-3d variant pdfcer_3d::surface_measure::face::FaceSource::Grown
+pdfcer-3d variant pdfcer_3d::surface_measure::face::FaceSource::WholeMesh
 pdfcer-3d variant pdfcer_3d::surface_measure::types::SurfaceMeasureError::BadDirection
 pdfcer-3d variant pdfcer_3d::surface_measure::types::SurfaceMeasureError::BadPoint
 pdfcer-3d variant pdfcer_3d::surface_measure::types::SurfaceMeasureError::BadTolerance
@@ -1240,6 +1245,7 @@ pdfcer-core enum pdfcer_core::edit::info_entries::XmpSync
 pdfcer-core enum pdfcer_core::edit::link::LinkTarget
 pdfcer-core enum pdfcer_core::edit::page_boxes::PageBox
 pdfcer-core enum pdfcer_core::edit::print_ready::PrintReadyError
+pdfcer-core enum pdfcer_core::edit::resample_encode::DeskewEncoding
 pdfcer-core enum pdfcer_core::edit::xfa_materialize::XfaSignatures
 pdfcer-core enum pdfcer_core::editable::EditableError
 pdfcer-core enum pdfcer_core::editable::ExportBase
@@ -2676,6 +2682,7 @@ pdfcer-core field pdfcer_core::edit::deskew::ImageDeskew::new_stream_bytes
 pdfcer-core field pdfcer_core::edit::deskew::ImageDeskew::notes
 pdfcer-core field pdfcer_core::edit::deskew::ImageDeskew::old_stream_bytes
 pdfcer-core field pdfcer_core::edit::deskew::ImageDeskew::replaced
+pdfcer-core field pdfcer_core::edit::deskew::ImageDeskew::replaced_dropped
 pdfcer-core field pdfcer_core::edit::deskew::ImageDeskew::resource_name
 pdfcer-core field pdfcer_core::edit::emf::PlacedEmf::annot_id
 pdfcer-core field pdfcer_core::edit::emf::PlacedEmf::content_id
@@ -2800,6 +2807,7 @@ pdfcer-core field pdfcer_core::edit::upscale_image::ImageUpscale::notes
 pdfcer-core field pdfcer_core::edit::upscale_image::ImageUpscale::old_size
 pdfcer-core field pdfcer_core::edit::upscale_image::ImageUpscale::old_stream_bytes
 pdfcer-core field pdfcer_core::edit::upscale_image::ImageUpscale::replaced
+pdfcer-core field pdfcer_core::edit::upscale_image::ImageUpscale::replaced_dropped
 pdfcer-core field pdfcer_core::edit::upscale_image::ImageUpscale::resource_name
 pdfcer-core field pdfcer_core::edit::widget_angle::WidgetTurn::changed
 pdfcer-core field pdfcer_core::edit::widget_angle::WidgetTurn::disclosures
@@ -6243,6 +6251,7 @@ pdfcer-core method pdfcer_core::edit::checkpoint::EditSession::checkpoint
 pdfcer-core method pdfcer_core::edit::checkpoint::EditSession::rollback
 pdfcer-core method pdfcer_core::edit::content_mark::EditSession::hand_signatures
 pdfcer-core method pdfcer_core::edit::deskew::EditSession::deskew_image
+pdfcer-core method pdfcer_core::edit::deskew::EditSession::deskew_image_with
 pdfcer-core method pdfcer_core::edit::deskew::EditSession::detect_image_skew
 pdfcer-core method pdfcer_core::edit::deskew::EditSession::page_scan_image
 pdfcer-core method pdfcer_core::edit::dimension_unit::EditSession::dimension_display
@@ -8905,6 +8914,9 @@ pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::Edit
 pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::LowQualityPrintingOnly
 pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::PrintingForbidden
 pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::Write
+pdfcer-core variant pdfcer_core::edit::resample_encode::DeskewEncoding::Dct
+pdfcer-core variant pdfcer_core::edit::resample_encode::DeskewEncoding::Flate
+pdfcer-core variant pdfcer_core::edit::resample_encode::DeskewEncoding::SameFamily
 pdfcer-core variant pdfcer_core::edit::xfa_materialize::XfaSignatures::Refuse
 pdfcer-core variant pdfcer_core::edit::xfa_materialize::XfaSignatures::Remove
 pdfcer-core variant pdfcer_core::editable::EditableError::Encrypted
@@ -12508,6 +12520,8 @@ pdfcer-render struct pdfcer_render::display_list::ExportTally
 pdfcer-render struct pdfcer_render::display_list::MaskBuilder
 pdfcer-render struct pdfcer_render::display_list::TextGlyph
 pdfcer-render struct pdfcer_render::display_list::TextRunInfo
+pdfcer-render struct pdfcer_render::display_list::shading_op::ShadingArea
+pdfcer-render struct pdfcer_render::display_list::shading_op::ShadingOp
 pdfcer-render struct pdfcer_render::edit_preview::PreviewOutlines
 pdfcer-render struct pdfcer_render::export::JpegOptions
 pdfcer-render struct pdfcer_render::export::Rgb
@@ -12648,8 +12662,10 @@ pdfcer-render variant pdfcer_render::coverage_warning::CoverageWarning::TotalAre
 pdfcer-render variant pdfcer_render::display_list::BandBlocker::Gradient
 pdfcer-render variant pdfcer_render::display_list::BandBlocker::Image
 pdfcer-render variant pdfcer_render::display_list::BandBlocker::LayerMask
+pdfcer-render variant pdfcer_render::display_list::BandBlocker::Shading
 pdfcer-render variant pdfcer_render::display_list::Op::Fill
 pdfcer-render variant pdfcer_render::display_list::Op::Layer
+pdfcer-render variant pdfcer_render::display_list::Op::Shading
 pdfcer-render variant pdfcer_render::display_list::Op::Stroke
 pdfcer-render variant pdfcer_render::display_list::Op::Text
 pdfcer-render variant pdfcer_render::display_list::PoisonReason::ColorantBuffer

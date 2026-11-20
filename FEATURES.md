@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.165.0, a git dependency on the local engine repository, pinned at **`bce0c21e`**, the v0.165.0 tag (new since v0.164.0: page fills, strokes, clips, glyph outlines, images, blend modes and transparency groups drawn on the graphics card byte for byte; the 3D bounce build, light-meter map, light-meter volume and readings built on the graphics card, under an exposure and with glowing meshes; each GPU tile's lamps listed).
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.166.0, a git dependency on the local engine repository, pinned at **`46ce16c9`**, the v0.166.0 tag (new since v0.165.0: shadings drawn on the graphics card byte for byte; a deskewed or enlarged picture keeps its source's codec family; skew detection without the pull towards level; a 3D face pick reports where its figures came from).
 
 **What is new in this build** (engine v0.158.0). **A dynamic form opens as its own pages:** Form preview's *Use these pages* replaces the "Please wait" stand-in page with the pages the form lays out, as one undo step, saying on the status line which fonts were drawn in a standard face; the values arrive as drawing, not fillable fields. **The 3D light meter counts glowing parts,** with a switch to leave them out. **Continue path and Open path here refuse a node that is not an end at once,** with the reason, instead of after the run is clicked out.
 
