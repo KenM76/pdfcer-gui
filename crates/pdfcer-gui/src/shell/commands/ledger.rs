@@ -443,9 +443,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 261 → 263: `markup.add_text` and `markup.paragraphs`, Markup ▸ Content.
     // 263 → 267: Group and Ungroup, on Edit ▸ Arrange and Markup ▸ Arrange.
     // 267 → 269: Continue path and Open path here, Format ▸ Nodes.
+    // 269 → 270: `edit.cut_as_vector`, Edit ▸ Clipboard (O435).
     assert_eq!(
         registry().len(),
-        269 + 2 * usize::from(cfg!(feature = "signing"))
+        270 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -898,9 +899,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 229 → 230: `view.page_boxes`, with its own icon.
     // 230 → 232: `markup.add_text` and `markup.paragraphs` share `add-text`
     // and `paragraphs`.
+    // 232 → 233: `edit.cut_as_vector` shares `cut`.
     assert_eq!(
         named,
-        232 + 2 * usize::from(cfg!(feature = "signing"))
+        233 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

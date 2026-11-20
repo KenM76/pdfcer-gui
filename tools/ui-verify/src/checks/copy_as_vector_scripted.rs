@@ -22,11 +22,12 @@ const CAPTURED: &str = "clipboard-captured"; // ui-text-exempt: a trace event na
 
 /// The formats in placement order, as `ClipFormat::name` spells them, each
 /// with the file stem the capture gives it.
-const EXPECTED: [(&str, &str); 4] = [
+const EXPECTED: [(&str, &str); 5] = [
     ("image/svg+xml", "1-image_svg_xml.bin"), // ui-text-exempt: a clipboard format name and file name
     ("CF_ENHMETAFILE", "2-CF_ENHMETAFILE.bin"), // ui-text-exempt: a clipboard format name and file name
     ("PNG", "3-PNG.bin"), // ui-text-exempt: a clipboard format name and file name
     ("CF_DIBV5", "4-CF_DIBV5.bin"), // ui-text-exempt: a clipboard format name and file name
+    ("application/pdf", "5-application_pdf.bin"), // ui-text-exempt: a clipboard format name and file name
 ];
 
 /// See the module documentation.
@@ -38,7 +39,7 @@ impl Check for CopyAsVectorWithoutTheMouse {
     }
 
     fn defect(&self) -> &'static str {
-        "Copy as vector places the formats out of order, places fewer than four, or places \
+        "Copy as vector places the formats out of order, places fewer than five, or places \
          bytes that are not the format they are named as"
     }
 
@@ -146,9 +147,9 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             placed.raw
         )));
     }
-    if trace.last(CAPTURED).and_then(|l| l.get("formats")) != Some("4") {
+    if trace.last(CAPTURED).and_then(|l| l.get("formats")) != Some("5") {
         return Ok(Some(format!(
-            "the copy did not go to the capture folder (no `{CAPTURED} formats=4`), so it \
+            "the copy did not go to the capture folder (no `{CAPTURED} formats=5`), so it \
              may have replaced the operator's clipboard. Trace: {}.",
             session.trace_path().display()
         )));
@@ -156,7 +157,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     judge(report, &dir)
 }
 
-/// The folder holds exactly the four files, each well formed for its name.
+/// The folder holds exactly the five files, each well formed for its name.
 fn judge(report: &mut CheckReport, dir: &std::path::Path) -> Result<Option<String>> {
     let mut found: Vec<String> = std::fs::read_dir(dir)
         .map_err(|e| Error::new(format!("cannot read {}: {e}", dir.display())))?
@@ -199,6 +200,7 @@ fn malformed(name: &str, bytes: &[u8]) -> Option<&'static str> {
         "PNG" => (!bytes.starts_with(b"\x89PNG\r\n\x1a\n")).then_some("has no PNG signature"),
         // BITMAPV5HEADER's bV5Size.
         "CF_DIBV5" => (u32_at(0) != Some(124)).then_some("does not open with a BITMAPV5HEADER"),
+        "application/pdf" => (!bytes.starts_with(b"%PDF-")).then_some("has no `%PDF-` header"),
         _ => Some("is a format this check does not know"),
     }
 }
@@ -219,6 +221,9 @@ mod tests {
         assert_eq!(malformed("CF_ENHMETAFILE", &emf), None);
         assert_eq!(malformed("PNG", &png), None);
         assert_eq!(malformed("CF_DIBV5", &dib), None);
+        assert_eq!(malformed("application/pdf", b"%PDF-1.7
+"), None);
+        assert!(malformed("application/pdf", &png).is_some());
         assert!(malformed("CF_ENHMETAFILE", &png).is_some());
         assert!(malformed("PNG", &emf).is_some());
         assert!(malformed("CF_DIBV5", &png).is_some());

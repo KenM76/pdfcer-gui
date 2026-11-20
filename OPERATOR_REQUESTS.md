@@ -8059,11 +8059,13 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 **Engine side is on its main branch, not yet in a release.** Group and ungroup inside an existing group for page content, and merging markup groups so that ungroup gives the earlier groups back one level at a time. To be built with O433 once the release that carries them is pinned.
 
-## O435 — **OPEN** — a copy as vector pastes into pdfcer as a vector, and there is a cut as vector
+## O435 — **BUILT, awaiting Ken** — a copy as vector pastes into pdfcer as a vector, and there is a cut as vector
 
 *"If I use the copy as vector commands (I assume if I use cut instead it has the same issue and if there isn't a cut yet to do this there should be) and paste into pdfcer instead of Inkscape the paste is done as a bitmap instead of a vector."* Said to the engine session.
 
 **Not built.** Paste reads PDF, then pictures, then text; it never reads SVG or a metafile, and copy as vector places no PDF. To do: place the PDF (and pdfcer's own object form) on copy as vector; on paste take PDF, then SVG, then metafile, then a picture; add *Cut as vector* as one undo step.
+
+Built. Copy as vector now also places a one-page PDF, and for a selection pdfcer's own object clip, so a paste back into pdfcer brings the objects themselves. Paste takes, from another program, a PDF first, then an SVG, then a metafile (Word, Visio, CAD), then a picture: an SVG or metafile lands as line-work at its own size, centred on the pointer, as one undo step. *Cut as vector* is on Clipboard ▸ Copy for other programs in Edit mode: the same copy of the selected objects, then they are removed, and one Ctrl+Z brings them back. It is greyed until objects are selected. New from clipboard and Insert pages from clipboard still take a PDF or a picture only, as they make pages. Driven off-screen by `an_svg_or_metafile_pastes_as_a_drawing_and_cuts_as_vector`, falsified with a cut that does not delete, and `copy_as_vector_without_the_mouse`. Not driven: a metafile from a real program's clipboard, which arrives as a handle the driven check cannot plant.
 
 ## O436 — **OPEN** — upgrade to the latest egui
 

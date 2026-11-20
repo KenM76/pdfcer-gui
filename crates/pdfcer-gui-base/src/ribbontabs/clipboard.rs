@@ -10,6 +10,9 @@ use egui_shell::manifest::{Item, Tab};
 /// Edit, where markup may be authored. Copy changes nothing, so it has none.
 pub const CHANGES_DOCUMENT: &str = "mode.author_markup"; // ui-text-exempt: a condition name, never displayed
 
+/// The condition a verb that removes page content is shown under: Edit.
+const EDITS_CONTENT: &str = "mode.edit_content"; // ui-text-exempt: a condition name, never displayed
+
 /// A large command shown only where the document may change.
 fn changing(id: &str) -> Item {
     large(id).shown_when(CHANGES_DOCUMENT)
@@ -37,6 +40,9 @@ pub fn tab() -> Tab {
                 ribbon::group_clipboard_other_programs(),
                 [
                     large("edit.copy_as_vector"),
+                    // It removes page content, so it is absent wherever content
+                    // cannot change, Review included.
+                    large("edit.cut_as_vector").shown_when(EDITS_CONTENT),
                     large("edit.copy_snapshot_outlines"),
                     large("edit.copy_snapshot_text"),
                 ],

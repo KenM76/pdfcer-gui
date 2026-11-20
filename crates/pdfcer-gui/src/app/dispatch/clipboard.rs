@@ -21,6 +21,7 @@ pub fn handles(id: &str) -> bool {
         "edit.cut"
             | "edit.copy"
             | "edit.copy_as_vector"
+            | "edit.cut_as_vector"
             | "edit.copy_snapshot_outlines"
             | "edit.copy_snapshot_text"
             | "edit.paste"
@@ -44,7 +45,10 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
         // The copy-OUT takes no `ctx` and raises no `Action`, and both
         // absences are the point: it neither reads the internal clipboard nor
         // changes the document. It renders and it places. See `copy_as_vector`.
-        "edit.copy_as_vector" => copy_as_vector(app),
+        "edit.copy_as_vector" => {
+            copy_as_vector(app, false);
+        }
+        "edit.cut_as_vector" => cut_as_vector(app, id, actions),
         "edit.copy_snapshot_outlines" => {
             super::snapshotclip::copy_as(
                 app,
@@ -451,9 +455,11 @@ fn paste(
 
 /// **`edit.copy_as_vector`** — put the page, or the selection on it, on the
 /// operating system's clipboard as **editable geometry**.
-fn copy_as_vector(app: &mut PdfcerApp) {
+/// Returns whether the selection, rather than the page, was placed. `cut`
+/// picks the status sentence: the cut's, which says one Ctrl+Z restores it.
+fn copy_as_vector(app: &mut PdfcerApp, cut: bool) -> bool {
     let Status::Open(doc) = &app.status else {
-        return;
+        return false;
     };
     let epoch = doc.edit_epoch;
     match crate::clipboard::place::copy_out(doc) {
@@ -469,10 +475,13 @@ fn copy_as_vector(app: &mut PdfcerApp) {
                     placed.formats.join(",")
                 )
             });
-            crate::app::actions::record_note(
-                epoch,
-                crate::text::clipboard::copied_as_vector(placed.selection, placed.formats.len()),
-            );
+            let note = if cut && placed.selection {
+                crate::text::clipboard::cut_as_vector(placed.formats.len())
+            } else {
+                crate::text::clipboard::copied_as_vector(placed.selection, placed.formats.len())
+            };
+            crate::app::actions::record_note(epoch, note);
+            placed.selection
         }
         Err(refusal) => {
             crate::diag::trace(|| {
@@ -483,8 +492,49 @@ fn copy_as_vector(app: &mut PdfcerApp) {
                 epoch,
                 crate::text::clipboard::copy_out_refusal(&refusal),
             );
+            false
         }
     }
+}
+
+/// **`edit.cut_as_vector`** — [`copy_as_vector`] of the selected page
+/// objects, then their delete, one undo step. Nothing is removed unless the
+/// selection itself was placed.
+fn cut_as_vector(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
+    if !app.capabilities().edit_content {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("command-declined id={id} reason=mode-cannot-remove-content")
+        });
+        crate::app::status::decline::record_mode_refusal(
+            crate::text::clipboard::ModeRefusal::CutContent,
+        );
+        return;
+    }
+    let Status::Open(doc) = &app.status else {
+        return;
+    };
+    let page = doc.view.page_index;
+    let objects = doc.selection.object_indices_on(page);
+    if objects.is_empty() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("command-declined id={id} reason=no-objects-selected")
+        });
+        crate::app::actions::record_note(
+            doc.edit_epoch,
+            crate::text::clipboard::cut_as_vector_needs_objects().to_owned(),
+        );
+        return;
+    }
+    if !copy_as_vector(app, true) {
+        return;
+    }
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("clipboard-cut-out page={page} objects={}", objects.len())
+    });
+    actions.push(crate::app::actions::VectorAction::DeleteSelection { page, objects }.into());
 }
 
 #[cfg(test)]

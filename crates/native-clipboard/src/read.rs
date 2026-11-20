@@ -3,7 +3,9 @@
 //!
 //! Contract: [`get`] copies the bytes out while the clipboard is open and
 //! closes it before returning, so no handle outlives the call. Formats whose
-//! handle is not a memory block (bitmap, metafile, palette) are never read.
+//! handle is not a memory block (bitmap, metafile, palette) are never read by
+//! it; [`enhmetafile`] copies the one GDI format a caller reads, the [MS-EMF]
+//! metafile, out as its bytes.
 
 use super::win32::{OpenGuard, register};
 use crate::Format;
@@ -16,6 +18,13 @@ unsafe extern "system" {
     fn GetClipboardData(format: u32) -> Handle;
     fn GetClipboardSequenceNumber() -> u32;
     fn IsClipboardFormatAvailable(format: u32) -> i32;
+}
+
+#[link(name = "gdi32")]
+unsafe extern "system" {
+    /// Copy a metafile's [MS-EMF] bytes into `buf`, or with a null `buf`
+    /// return how many there are; 0 on failure.
+    fn GetEnhMetaFileBits(hemf: Handle, size: u32, buf: *mut u8) -> u32;
 }
 
 #[link(name = "kernel32")]
@@ -72,4 +81,29 @@ pub(crate) fn get(format: Format) -> Option<Vec<u8>> {
     // SAFETY: paired with the lock above.
     unsafe { GlobalUnlock(handle) };
     Some(bytes)
+}
+
+pub(crate) fn enhmetafile() -> Option<Vec<u8>> {
+    const CF_ENHMETAFILE: u32 = crate::CF_ENHMETAFILE;
+    // SAFETY: a plain query; needs no open clipboard.
+    if unsafe { IsClipboardFormatAvailable(CF_ENHMETAFILE) } == 0 {
+        return None;
+    }
+    let _open = OpenGuard::acquire()?;
+    // SAFETY: the clipboard is open (held by `_open`); null means absent. The
+    // handle is the clipboard's and is never deleted here.
+    let handle = unsafe { GetClipboardData(CF_ENHMETAFILE) };
+    if handle.is_null() {
+        return None;
+    }
+    // SAFETY: `handle` is an HENHMETAFILE valid while the clipboard is open; a
+    // null buffer asks only for the size.
+    let size = unsafe { GetEnhMetaFileBits(handle, 0, std::ptr::null_mut()) };
+    if size == 0 {
+        return None;
+    }
+    let mut bytes = vec![0u8; size as usize];
+    // SAFETY: `bytes` holds exactly `size` writable bytes.
+    let written = unsafe { GetEnhMetaFileBits(handle, size, bytes.as_mut_ptr()) };
+    (written == size).then_some(bytes)
 }

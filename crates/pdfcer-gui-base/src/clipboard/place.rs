@@ -139,8 +139,16 @@ fn page_payload(
         options,
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
+    // The page alone, as a complete PDF, so a PDF-reading paste gets the page
+    // itself rather than one of its drawings.
+    let pdf = doc
+        .session
+        .copy_pages(&[doc.view.page_index])
+        .map_err(|error| Refusal::Render(error.to_string()))?;
 
-    raster_into(svg.svg, emf.emf, rendered.pixmap)
+    let mut payload = raster_into(svg.svg, emf.emf, rendered.pixmap)?;
+    payload.pdf = Some(pdf.to_bytes().to_vec());
+    Ok(payload)
 }
 
 /// The **selected page objects**, if any are selected.
@@ -178,6 +186,7 @@ fn selection_bytes(
     // of empty space. `canvas::clipimage` documents the same property from the
     // raster side.
     let pdf = clip.to_pdf();
+    let pdf_bytes = pdf.bytes.clone();
     let clipped = pdfcer_core::document::Document::from_bytes(pdf.bytes)
         .map_err(|error| Refusal::Render(error.to_string()))?;
     let pages = pdfcer_core::page_tree::pages(&clipped)
@@ -208,7 +217,10 @@ fn selection_bytes(
     )
     .map_err(|error| Refusal::Render(error.to_string()))?;
 
-    raster_into(svg.svg, emf.emf, rendered.pixmap)
+    let mut payload = raster_into(svg.svg, emf.emf, rendered.pixmap)?;
+    payload.pdf = Some(pdf_bytes);
+    payload.objects = Some(clip.to_bytes());
+    Ok(payload)
 }
 
 /// Assemble the three products into a [`CopyPayload`] at [`COPY_DPI`].
@@ -237,6 +249,7 @@ pub(super) fn raster_at(
         pixmap: Some(pixmap),
         pixels_per_metre: pixels_per_metre(dpi),
         pdf: None,
+        objects: None,
     })
 }
 
@@ -284,6 +297,7 @@ fn frame(payload: &CopyPayload) -> Result<Vec<Staged>, Refusal> {
                 .transpose()
                 .map_err(Refusal::TooLarge)?,
             ClipFormat::Pdf => payload.pdf.clone(),
+            ClipFormat::Objects => payload.objects.clone(),
         };
         if let Some(bytes) = bytes {
             out.push(Staged { format, bytes });
@@ -399,10 +413,12 @@ fn file_stem(name: &str) -> String {
 /// **How each format's bytes become a clipboard handle.**
 fn slot_for(format: ClipFormat) -> native_clipboard::Slot {
     match format {
-        // The three whose names do not exist until `RegisterClipboardFormat` has
+        // The ones whose names do not exist until `RegisterClipboardFormat` has
         // been called. `ClipFormat::is_registered` says the same thing from the
         // other side, and the tests assert the two against each other.
-        ClipFormat::Svg | ClipFormat::Png | ClipFormat::Pdf => native_clipboard::Slot::Registered,
+        ClipFormat::Svg | ClipFormat::Png | ClipFormat::Pdf | ClipFormat::Objects => {
+            native_clipboard::Slot::Registered
+        }
         // NOT `Predefined(CF_ENHMETAFILE)`. A metafile is a GDI handle, and
         // handing the clipboard an `HGLOBAL` under that id is undefined rather
         // than refused — see `Slot::EnhMetaFile`.
@@ -427,6 +443,7 @@ mod tests {
             pixmap: Some(pixmap),
             pixels_per_metre: 5906,
             pdf: None,
+            objects: None,
         }
     }
 

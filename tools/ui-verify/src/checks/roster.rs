@@ -541,6 +541,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(export_image_emf::ExportImageWritesAMetafile),
         Box::new(copy_as_vector::CopyAsVectorPlacesTheMeasuredOrder),
         Box::new(copy_as_vector_scripted::CopyAsVectorWithoutTheMouse),
+        Box::new(vector_paste_cut::AVectorPastesAndCuts),
         Box::new(insert_drawing::InsertImagePlacesADrawing),
         Box::new(export_text::ExportTextWritesTheDocumentsWords),
         // Insert an image. Its last assertion is the one

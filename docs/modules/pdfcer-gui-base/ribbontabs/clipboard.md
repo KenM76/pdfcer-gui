@@ -12,7 +12,9 @@ often (O380).
 - **Clipboard** — Cut, Copy, Paste, Paste as duplicate, Duplicate. Within
   this document, or between two pdfcer documents.
 - **Copy for other programs** — what another program pastes: the selection
-  or page as drawing geometry (`edit.copy_as_vector`), and the snapshot box
+  or page as drawing geometry (`edit.copy_as_vector`), the same copy of the
+  selection followed by its delete as one undo step (`edit.cut_as_vector`,
+  shown in Edit only, since it removes page content), and the snapshot box
   with its text as outlines (`edit.copy_snapshot_outlines`) or as editable
   text (`edit.copy_snapshot_text`). Both snapshot copies override the
   Snapshot setting's *Copy as*; Copy itself follows it.

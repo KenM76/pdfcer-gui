@@ -1,11 +1,16 @@
 //! What another program left on the clipboard, read as something a page can
 //! take.
 //!
-//! Contract: [`read`] prefers a drawing (registered `application/pdf`, as a
-//! snapshot copy places it) to a picture, and a picture to text; among
-//! pictures the registered `PNG` format (lossless, carries alpha) over
-//! `CF_DIBV5` over `CF_DIB`. A PDF that does not parse, or whose first page has
-//! no area, is passed over for the picture beside it.
+//! Contract: [`read`] prefers a drawing to a picture, and a picture to text.
+//! Among drawings, registered `application/pdf` (pdfcer's copies place it)
+//! over registered `image/svg+xml` over `CF_ENHMETAFILE`, the three vector
+//! formats Office, Inkscape and CAD programs place; among pictures the
+//! registered `PNG` format (lossless, carries alpha) over `CF_DIBV5` over
+//! `CF_DIB`. A drawing that does not parse, or has no area, is passed over for
+//! the next format. [`read_pages`] is the same without SVG and metafile, which
+//! no page-making route takes. With a capture folder set
+//! (`clipboard::place::DIAG_CLIPBOARD_DIR`) every format is read from it,
+//! never from the OS clipboard.
 //! A picture that states no resolution is taken at 96 pixels per
 //! inch, the resolution screen captures are made at, so a pasted screenshot
 //! lands at the size it had on screen. [`rect_at`] is the placement rule for
@@ -39,6 +44,13 @@ pub enum Incoming {
         /// The first page's crop box size, in points.
         size_pt: (f64, f64),
     },
+    /// An SVG or metafile drawing, imported and ready for the placement verb.
+    Vector {
+        /// The drawing.
+        picture: Box<crate::picture::Picture>,
+        /// The clipboard format it came from, for the trace.
+        format: &'static str,
+    },
     /// A picture that could not be decoded, and why.
     Unreadable(String),
     /// Text, and no picture.
@@ -54,30 +66,113 @@ pub fn sequence() -> u32 {
     native_clipboard::sequence()
 }
 
-/// Read the clipboard.
+/// Read the clipboard for a paste onto a page.
 #[must_use]
 pub fn read() -> Incoming {
-    use native_clipboard::{CF_DIB, CF_DIBV5, CF_UNICODETEXT, Format, get};
-    let pdf_format = Format::Registered(crate::clipboard::ClipFormat::Pdf.name());
-    if let Some(drawing) = get(pdf_format).and_then(drawing) {
+    read_with(true)
+}
+
+/// Read the clipboard for a route that makes pages: [`read`] without the SVG
+/// and metafile drawings.
+#[must_use]
+pub fn read_pages() -> Incoming {
+    read_with(false)
+}
+
+fn read_with(vectors: bool) -> Incoming {
+    use crate::clipboard::ClipFormat;
+    use native_clipboard::{CF_DIB, CF_DIBV5, CF_UNICODETEXT, Format};
+    if let Some(drawing) = entry(Format::Registered(ClipFormat::Pdf.name())).and_then(drawing) {
         return drawing;
     }
+    if vectors && let Some(vector) = vector() {
+        return vector;
+    }
     let png_format = Format::Registered("PNG"); // ui-text-exempt: a Windows clipboard format name
-    if let Some(png) = get(png_format) {
+    if let Some(png) = entry(png_format) {
         return finish(
             pdfcer_core::image_import::import(&png).map_err(|e| e.to_string()),
             "png",
         );
     }
     for (id, name) in [(CF_DIBV5, "dibv5"), (CF_DIB, "dib")] {
-        if let Some(bytes) = get(Format::Predefined(id)) {
+        if let Some(bytes) = entry(Format::Predefined(id)) {
             return finish(image_from_dib(&bytes), name);
         }
     }
-    get(Format::Predefined(CF_UNICODETEXT))
+    entry(Format::Predefined(CF_UNICODETEXT))
         .map(|wide| text_from_utf16(&wide))
         .filter(|t| !t.trim().is_empty())
         .map_or(Incoming::Nothing, Incoming::Text)
+}
+
+/// The SVG entry, else the metafile, as a drawing that imports with area.
+fn vector() -> Option<Incoming> {
+    use crate::picture::Picture;
+    #[cfg(feature = "svg-import")]
+    {
+        let svg = native_clipboard::Format::Registered(crate::clipboard::ClipFormat::Svg.name());
+        if let Some(mut bytes) = entry(svg) {
+            // Chromium and pdfcer end the entry with a NUL; the parser wants none.
+            while bytes.last() == Some(&0) {
+                bytes.pop();
+            }
+            if let Ok(svg) = pdfcer_core::svg_import::import(&bytes) {
+                let picture = Picture::Svg(svg);
+                if has_area(&picture) {
+                    return Some(Incoming::Vector {
+                        picture: Box::new(picture),
+                        format: "svg",
+                    });
+                }
+            }
+        }
+    }
+    let emf = metafile()?;
+    let picture = Picture::Emf(pdfcer_core::emf_import::import(&emf).ok()?);
+    has_area(&picture).then(|| Incoming::Vector {
+        picture: Box::new(picture),
+        format: "emf",
+    })
+}
+
+fn has_area(picture: &crate::picture::Picture) -> bool {
+    let (w, h) = picture.natural_size_pt();
+    w > 0.0 && h > 0.0
+}
+
+/// One clipboard entry's bytes: from the capture folder when a driven check
+/// set one, else from the OS clipboard.
+fn entry(format: native_clipboard::Format) -> Option<Vec<u8>> {
+    use native_clipboard::Format;
+    if std::env::var_os(crate::clipboard::place::DIAG_CLIPBOARD_DIR).is_some() {
+        let name = match format {
+            Format::Registered(name) => name.to_owned(),
+            Format::Predefined(id) => predefined_name(id)?.to_owned(),
+        };
+        return crate::clipboard::place::captured(&name);
+    }
+    native_clipboard::get(format)
+}
+
+/// The metafile entry's [MS-EMF] bytes, from the capture folder under a
+/// driven check.
+fn metafile() -> Option<Vec<u8>> {
+    if std::env::var_os(crate::clipboard::place::DIAG_CLIPBOARD_DIR).is_some() {
+        return crate::clipboard::place::captured(crate::clipboard::ClipFormat::Emf.name());
+    }
+    native_clipboard::get_enhmetafile()
+}
+
+/// The capture folder's name for a predefined format this module reads.
+fn predefined_name(id: u32) -> Option<&'static str> {
+    // ui-text-exempt: clipboard format names, as the capture folder spells them
+    match id {
+        native_clipboard::CF_DIBV5 => Some(crate::clipboard::ClipFormat::DibV5.name()),
+        native_clipboard::CF_DIB => Some("CF_DIB"),
+        native_clipboard::CF_UNICODETEXT => Some("CF_UNICODETEXT"),
+        _ => None,
+    }
 }
 
 /// The selection another pdfcer-gui window copied, as

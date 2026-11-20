@@ -9,7 +9,7 @@
 //! through the same actions as Insert from file and Import text as pages, so
 //! it is one undo step with their receipts.
 
-use super::{decline, read};
+use super::{decline, read_pages};
 use crate::app::PdfcerApp;
 use crate::app::actions::Action;
 use crate::app::actions::importtext;
@@ -33,8 +33,8 @@ pub fn handles(id: &str) -> bool {
 /// Route one of the two commands.
 pub fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     match id {
-        "file.new_from_clipboard" => new_document(app, read()),
-        "pages.insert_from_clipboard" => insert(app, id, read(), actions),
+        "file.new_from_clipboard" => new_document(app, read_pages()),
+        "pages.insert_from_clipboard" => insert(app, id, read_pages(), actions),
         _ => {}
     }
 }

@@ -207,6 +207,16 @@ pub const fn edit_copy_as_vector() -> CommandText {
     )
 }
 
+/// `edit.cut_as_vector` — Copy as vector, then remove what was copied.
+#[must_use]
+pub const fn edit_cut_as_vector() -> CommandText {
+    CommandText::new(
+        "Cut as vector",
+        "Copy the selected objects as editable geometry, as Copy as vector does, and remove \
+         them from the page. One Ctrl+Z brings them back.",
+    )
+}
+
 /// `pages.copy` — copy the picked sheets.
 #[must_use]
 pub const fn pages_copy() -> CommandText {

@@ -11,7 +11,9 @@
 //! selected in a mode that edits content, the picture becomes the button's
 //! icon instead. A drawing (a PDF another copy placed) lands its crop box's
 //! size: drawn into the page's content in a mode that edits content, as a
-//! stamp in one that only authors markup and from [`paste_stamp`].
+//! stamp in one that only authors markup and from [`paste_stamp`]. An SVG
+//! or metafile drawing lands at its natural size by the same rule, placed
+//! the way Insert ▸ Picture places one.
 //! Text becomes page text in
 //! a mode that edits content and a
 //! `/FreeText` comment in one that only authors markup;
@@ -50,6 +52,14 @@ fn read() -> Incoming {
     clippaste::read()
 }
 
+/// [`read`] for a route that makes pages, which takes no SVG or metafile.
+fn read_pages() -> Incoming {
+    #[cfg(test)]
+    return tests_fake::take();
+    #[cfg(not(test))]
+    clippaste::read_pages()
+}
+
 /// Paste `incoming` onto the page under the pointer, or the viewed page.
 pub fn paste(
     app: &mut PdfcerApp,
@@ -63,10 +73,51 @@ pub fn paste(
         Incoming::Pdf { bytes, size_pt } => {
             drawing(app, ctx, id, (&bytes, size_pt), false, actions);
         }
+        Incoming::Vector { picture, format } => {
+            vector(app, ctx, id, *picture, format, false, actions);
+        }
         Incoming::Text(text) => words(app, ctx, id, &text, actions),
         Incoming::Unreadable(why) => decline("unreadable", OsPasteRefusal::Unreadable(why)),
         Incoming::Nothing => decline("nothing", OsPasteRefusal::Nothing),
     }
+}
+
+/// An SVG or metafile drawing at its natural size, centred on the pointer or
+/// the view: placed as content where the mode edits content and `as_stamp`
+/// is false, else as a stamp.
+fn vector(
+    app: &PdfcerApp,
+    ctx: &egui::Context,
+    id: &str,
+    picture: pdfcer_gui_base::picture::Picture,
+    format: &str,
+    as_stamp: bool,
+    actions: &mut Vec<Action>,
+) {
+    let caps = app.capabilities();
+    let as_content = caps.edit_content && !as_stamp;
+    if !as_content && !caps.author_markup {
+        return refuse(id, ModeRefusal::PasteDrawing);
+    }
+    let Some((page, at, crop)) = target(app, ctx) else {
+        return;
+    };
+    let rect = clippaste::rect_at(at, picture.natural_size_pt(), crop);
+    let image = std::sync::Arc::new(picture);
+    if as_content {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        pasted(&format!("kind=vector format={format} as=content"), page, rect);
+        actions.push(Action::InsertImage {
+            page,
+            rect,
+            fit: pdfcer_core::edit::ImageFit::Contain,
+            image,
+        });
+        return;
+    }
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    pasted(&format!("kind=vector format={format} as=stamp"), page, rect);
+    actions.push(Action::StampPicture { page, rect, image });
 }
 
 fn target(app: &PdfcerApp, ctx: &egui::Context) -> Option<(usize, (f64, f64), Rect)> {
@@ -146,6 +197,9 @@ pub fn paste_stamp(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
         Incoming::Image { image, format } => (image, format),
         Incoming::Pdf { bytes, size_pt } => {
             return drawing(app, ctx, id, (&bytes, size_pt), true, actions);
+        }
+        Incoming::Vector { picture, format } => {
+            return vector(app, ctx, id, *picture, format, true, actions);
         }
         Incoming::Unreadable(why) => return decline("unreadable", OsPasteRefusal::Unreadable(why)),
         Incoming::Text(_) | Incoming::Nothing => {

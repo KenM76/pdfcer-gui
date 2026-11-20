@@ -12,12 +12,12 @@ under `--no-input`. The payload goes to a folder through
    `ribbon.tab.edit`, the collapsed `ribbon.group.edit.clipboard` when the
    band is narrow, then `ribbon.item.edit.copy_as_vector`.
 3. The trace must carry `clipboard-copy-out selection=false
-   formats=image/svg+xml,CF_ENHMETAFILE,PNG,CF_DIBV5` and a
+   formats=image/svg+xml,CF_ENHMETAFILE,PNG,CF_DIBV5,application/pdf` and a
    `clipboard-captured` line, and no refusal.
-4. The folder must hold exactly four files, in that order, each well formed:
+4. The folder must hold exactly five files, in that order, each well formed:
    the SVG names `<svg`; the EMF starts with record type 1 and carries ` EMF`
    at offset 40; the PNG has its signature; the DIB starts with
-   `BITMAPV5HEADER`'s size, 124.
+   `BITMAPV5HEADER`'s size, 124; the PDF starts `%PDF-`.
 
 ## Falsification
 
@@ -28,4 +28,5 @@ under `--no-input`. The payload goes to a folder through
 
 The real clipboard: `copy_as_vector_places_the_measured_order` reads the
 placement back from Windows, needs OS input, and replaces the clipboard, so
-it runs only when the machine is free. Copying a selection is not driven.
+it runs only when the machine is free. Copying a selection is driven by `vector_paste_cut`, as the first half of
+its Cut as vector.

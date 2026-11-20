@@ -181,6 +181,11 @@
                     caption: "Copy for other programs",
                     items: [
                         Command(id: "edit.copy_as_vector", size: Large),
+                        Command(
+                            id: "edit.cut_as_vector",
+                            size: Large,
+                            visible_when: "mode.edit_content",
+                        ),
                         Command(id: "edit.copy_snapshot_outlines", size: Large),
                         Command(id: "edit.copy_snapshot_text", size: Large),
                     ],
@@ -764,10 +769,7 @@
                             id: "format.path_continue",
                             visible_when: "selection.nodes_shapeable",
                         ),
-                        Command(
-                            id: "format.path_open",
-                            visible_when: "selection.nodes_shapeable",
-                        ),
+                        Command(id: "format.path_open", visible_when: "selection.nodes_shapeable"),
                     ],
                 ),
                 (

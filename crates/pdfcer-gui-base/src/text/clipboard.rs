@@ -256,6 +256,22 @@ pub fn copied_as_vector(selection: bool, formats: usize) -> String {
     )
 }
 
+/// **What a vector cut put on the clipboard**, said on the status row.
+#[must_use]
+pub fn cut_as_vector(formats: usize) -> String {
+    format!(
+        "Cut the selection to the clipboard in {formats} formats, vectors first. One Ctrl+Z \
+         brings it back."
+    )
+}
+
+/// Why Cut as vector did nothing: no page object is selected.
+#[must_use]
+pub const fn cut_as_vector_needs_objects() -> &'static str {
+    "Cut as vector takes objects on the page. Select the line-work to cut first \u{2014} \
+     nothing was put on the clipboard."
+}
+
 /// Why a vector copy-out did not happen.
 #[must_use]
 pub fn copy_out_refusal(reason: &CopyOut) -> String {

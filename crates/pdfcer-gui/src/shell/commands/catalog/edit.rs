@@ -120,6 +120,18 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.copy_as_vector", t::edit_copy_as_vector(), 408)
             .with_icon("copy-as-vector")
             .enabled_when("doc.pages"),
+        // Copy as vector, then the selection's delete, as one undo step. It
+        // removes page content, so it takes the content mode and the delete
+        // gate, and it needs a selection: there is no whole-page cut. O435.
+        command("edit.cut_as_vector", t::edit_cut_as_vector(), 417)
+            .with_icon("cut")
+            .with_enable(egui_shell::commands::Enable::Custom(std::sync::Arc::new(
+                |c| {
+                    c.is_set("mode.edit_content")
+                        && c.is_set("selection.any")
+                        && c.is_set("selection.delete_permitted")
+                },
+            ))),
         // The snapshot box's two copies, each forcing its text form whatever
         // the Snapshot setting says. O379.
         command(

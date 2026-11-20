@@ -229,7 +229,7 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 | Group | Commands |
 |---|---|
 | **Clipboard** | Cut · Copy · Paste · Paste as duplicate · Duplicate |
-| **Copy for other programs** | Copy as vector · Copy region, text as drawing · Copy region, text as text |
+| **Copy for other programs** | Copy as vector · Cut as vector · Copy region, text as drawing · Copy region, text as text |
 
 **In every mode, second after File.** Copy is shown everywhere; Cut, the two
 pastes and Duplicate change the document and are absent in Read
@@ -241,6 +241,10 @@ the operator asked for them big.
 
 **The ids keep `edit.`**, as Forms' keep `edit.form_`: keymaps, saved layouts
 and the ui-verify checks name them by id.
+
+**Cut as vector is Copy as vector then Delete, one undo step**, and is shown
+in Edit only: it removes page content, which Review cannot. It takes a
+selection of page objects; there is no whole-page cut, which Pages ▸ Cut is.
 
 **The two region copies force their text form** — outlines, or text another
 program can edit — over Settings ▸ Images ▸ *Region copies as*, which Copy

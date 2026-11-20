@@ -136,6 +136,17 @@ pub fn get(format: Format) -> Option<Vec<u8>> {
     None
 }
 
+/// The clipboard's `CF_ENHMETAFILE` entry as its [MS-EMF] bytes, or `None`
+/// when there is none, it cannot be copied out, or the clipboard is held by
+/// another program past the retry budget. The clipboard is closed on return.
+#[must_use]
+pub fn get_enhmetafile() -> Option<Vec<u8>> {
+    #[cfg(windows)]
+    return read::enhmetafile();
+    #[cfg(not(windows))]
+    None
+}
+
 /// **`CF_DIBV5`** — a `BITMAPV5HEADER` followed by pixel data.
 ///
 /// Exported so a caller can name the format without hard-coding `17`. It is a
