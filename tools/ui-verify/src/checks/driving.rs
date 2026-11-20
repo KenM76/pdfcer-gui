@@ -631,7 +631,7 @@ pub const VIEW_TAB: (&str, &str) = ("ribbon.tab.view", "view");
 /// ribbon route delivered the command.
 pub fn arm_select_from_ribbon(
     session: &Session,
-    driver: &Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     report: &mut crate::report::CheckReport,
 ) -> Result<bool> {
@@ -649,7 +649,7 @@ pub fn arm_select_from_ribbon(
             ));
             return Ok(false);
         };
-        driver.click_at(session.frame()?.declared_center(tab))?;
+        driver.click_rect(session, tab)?;
         session.settle(14);
         if !shell_trace(session)?
             .events(TAB_EVENT)
@@ -681,7 +681,7 @@ pub fn arm_select_from_ribbon(
     // armed the select tool earlier in the run for its own reasons, and what
     // this step needs to know is whether THIS click landed.
     let before = select_invokes(session)?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    driver.click_rect(session, item)?;
     session.settle(20);
     if select_invokes(session)? <= before {
         report.note(format!(
@@ -746,7 +746,11 @@ const SELECTED: &str = "ribbon-item-selected"; // ui-text-exempt: a trace event 
 /// The Edit tab must already be showing. Returns `Ok(None)` once the toggle is
 /// off, or `Ok(Some(failure))` when the press arrived and the toggle is still
 /// drawn pressed.
-pub fn paragraphs_off(session: &Session, driver: &Driver, ui_rect: &str) -> Result<Option<String>> {
+pub fn paragraphs_off(
+    session: &Session,
+    driver: &impl crate::input::Click,
+    ui_rect: &str,
+) -> Result<Option<String>> {
     let on = |t: &Trace| {
         t.events(SELECTED)
             .filter(|l| l.get("id") == Some(PARAGRAPHS.1))

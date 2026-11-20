@@ -7,8 +7,10 @@ use crate::checks::CheckContext;
 use crate::checks::driving::{declared_in, declared_names, list};
 use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
+use crate::geom::{LRect, Pt};
+use crate::image::Image;
 use crate::input::scripted::ScriptedPointer;
-use crate::launch::Session;
+use crate::launch::{LaunchSpec, Session};
 
 /// The trace event every region is declared under.
 const UI_RECT: &str = "ui-rect";
@@ -39,4 +41,76 @@ pub fn userdata(ctx: &CheckContext) -> Result<std::path::PathBuf> {
         .parent()
         .ok_or_else(|| Error::new("the binary has no parent directory"))?
         .join("userdata"))
+}
+
+/// Where an off-desktop launch places its window: no OS input reaches it and
+/// none of the operator's is taken.
+pub const OFFSCREEN: &str = "-4200,-4200,1400,1000";
+
+/// Place `spec`'s window off the desktop and attach a scripted pointer whose
+/// step file is `<stem>.pointer.txt` in the scratch folder. Call before
+/// [`Session::launch`].
+pub fn offscreen(ctx: &CheckContext, spec: &mut LaunchSpec, stem: &str) -> Result<ScriptedPointer> {
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
+    spec.env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.place = false;
+    ScriptedPointer::attach(spec, ctx.out(&format!("{stem}.pointer.txt")))
+}
+
+/// The window's own rendered frame, written to `png` and read back. Its pixels
+/// are client pixels from the origin, so `WindowFrame::logical_to_capture_pixels`
+/// maps declared rects into it as it does into an OS capture.
+pub fn shot(session: &Session, pointer: &ScriptedPointer, png: &std::path::Path) -> Result<Image> {
+    pointer.screenshot(session, png)?;
+    Image::load_png(png)
+}
+
+/// Press `key` (with `mods`) in the root viewport until one of `evidence`'s
+/// events gains a line, at most `driving::PRESS_TRIES` times. Answers whether
+/// it ever did.
+pub fn key_until_traced(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    key: &str,
+    mods: Option<&str>,
+    evidence: &[&str],
+) -> Result<bool> {
+    let count = |session: &Session| -> Result<usize> {
+        let trace = session.trace()?;
+        Ok(evidence.iter().map(|name| trace.events(name).count()).sum())
+    };
+    let before = count(session)?;
+    for _ in 0..crate::checks::driving::PRESS_TRIES {
+        pointer.key(session, None, key, mods)?;
+        session.settle(12);
+        if count(session)? > before {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+/// The point `(fx, fy)` of the way across `r`: the scripted twin of
+/// `WindowFrame::declared_at`.
+#[must_use]
+pub fn at_fraction(r: LRect, fx: f32, fy: f32) -> WindowPoint {
+    let p = Pt {
+        x: r.min.x + (r.max.x - r.min.x) * fx,
+        y: r.min.y + (r.max.y - r.min.y) * fy,
+    };
+    WindowPoint::centre_of(LRect { min: p, max: p })
+}
+
+/// `p` moved by `(dx, dy)` logical points: the scripted twin of
+/// `WindowFrame::offset_from`.
+#[must_use]
+pub fn offset(p: WindowPoint, dx: f32, dy: f32) -> WindowPoint {
+    let q = Pt {
+        x: p.x() + dx,
+        y: p.y() + dy,
+    };
+    WindowPoint::centre_of(LRect { min: q, max: q })
 }

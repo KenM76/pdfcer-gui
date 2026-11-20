@@ -3,12 +3,12 @@
 //! `fixtures/dimension-scaled.pdf` through [`run`]; others name theirs through
 //! [`run_on`].
 
+use super::scripteddrive::at_fraction;
 use super::stroke_style::into_view;
 use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::geom::{LRect, Pt};
 use crate::input::Click;
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -285,13 +285,4 @@ pub(super) fn pick_space(
     pointer.key(session, vp.as_deref(), "Escape", None)?;
     session.settle(40);
     Ok(None)
-}
-
-/// The point `(fx, fy)` of the way across `r`.
-fn at_fraction(r: LRect, fx: f32, fy: f32) -> WindowPoint {
-    let p = Pt {
-        x: r.min.x + (r.max.x - r.min.x) * fx,
-        y: r.min.y + (r.max.y - r.min.y) * fy,
-    };
-    WindowPoint::centre_of(LRect { min: p, max: p })
 }
