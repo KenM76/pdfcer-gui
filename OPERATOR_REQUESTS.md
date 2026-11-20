@@ -8087,6 +8087,8 @@ Built on engine v0.156.0, driven by `the_3d_viewer_reads_the_light_on_a_surface`
 
 A switch on the print preview that shows the plates in place of the colour page, and a left and a right arrow beside the preview's other controls that step through the inks. The note that the preview is still in colour goes when the preview can show the plates.
 
+Built, driven off-screen by `print_preview_shows_plates`, which fails against a planted dead next-ink arrow: under Colour ▸ *Separations* the preview strip has a plates switch (three ink circles). With it on, the preview shows the page's plates as they print, each ink's grey sheet with its name at the foot, and a left and a right arrow beside the ink's name (*Cyan (1 of 4)*) step through them. A page too large to separate shows in colour and says so; n-up, booklet and poster sheets say they print in colour. The Colour tab's note now points at the switch. A plate shows at the preview's base resolution, without the sharper zoomed-in redraw. All the page's plates are drawn when the switch goes on, so on a dense drawing the first plate takes several preview renders' time; not yet measured on one.
+
 ## O439 — **OPEN** — glyphs on the print preview's controls, and the main window's view controls there too
 
 *"Also we need glyphs for our print preview controls, and also we should add the controls for navigating that we have at the bottom right of our main pdfcer-gui window, and they also need glyphs."*

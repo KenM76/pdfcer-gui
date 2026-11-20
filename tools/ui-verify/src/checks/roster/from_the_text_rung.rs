@@ -326,6 +326,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(print_user_unit::PrintSizesAUserUnitPagePhysically),
         Box::new(canvas_user_unit::ActualSizeShowsAUserUnitPagePhysically),
         Box::new(print_separations::PrintSeparatesIntoPlates),
+        Box::new(print_preview_plates::PrintPreviewShowsPlates),
         Box::new(print_direct::PrintSendsThePdfItself),
         Box::new(print_direct_compose::PrintComposesSheetsForThePdf),
         // After the print checks above it, for the reason the two above

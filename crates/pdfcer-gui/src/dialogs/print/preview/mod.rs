@@ -203,8 +203,14 @@ pub(super) fn column(
     // `STRIP_HEIGHT_PTS` for why the constant rather than the strip's
     // measured height, and `CANVAS_MAX_HEIGHT_PTS` for why the result is
     // clamped at both ends.
+    let strip_height = STRIP_HEIGHT_PTS
+        + if dialog.separations {
+            plates::ROW_PTS
+        } else {
+            0.0
+        };
     let canvas_height =
-        (column_height - STRIP_HEIGHT_PTS).clamp(CANVAS_MIN_HEIGHT_PTS, CANVAS_MAX_HEIGHT_PTS);
+        (column_height - strip_height).clamp(CANVAS_MIN_HEIGHT_PTS, CANVAS_MAX_HEIGHT_PTS);
     // The width is passed IN, not read from a constant, because the operator
     // drags it — see `PrintDialog::splitter`. The `fit` computed below is
     // recomputed from this rect every frame, so a wider column simply shows a
@@ -598,7 +604,18 @@ fn paint(
     // The rendered page, if one is available. The fallback is a flat fill — a
     // preview showing the right rectangle and no content is degraded but
     // honest; one showing a stale page would be wrong.
-    let texture = texture_for(ui.ctx(), inputs, dialog, plan.index, plan.placement.scale);
+    let plain = plan.tile.is_none();
+    let texture = texture_for(
+        ui.ctx(),
+        inputs,
+        dialog,
+        plan.index,
+        plan.placement.scale,
+        plain,
+    );
+    let base = inputs.context.preview_key(plan.index, plan.placement.scale);
+    // A plate is drawn at the base resolution: the detail render is in colour.
+    let plate = plates::PlateView::wanted(dialog, plain, &base);
     if let Some(texture) = texture {
         painter.image(
             texture,
@@ -615,7 +632,7 @@ fn paint(
     } else {
         painter.rect_filled(placed, 0.0, visuals.panel_fill);
     }
-    if texture.is_some() {
+    if texture.is_some() && !plate {
         let frame = detail::Frame {
             doc: inputs.doc,
             copy: dialog.running.copy(),
@@ -680,9 +697,12 @@ fn paint(
     // exactly what the count consults: what the ink test found in the overhang
     // of a sheet that has one. A sheet that fits is not a sheet anybody needs
     // a verdict about.
-    dialog
-        .verdicts
-        .remember(inputs.context, &plan, inputs.page_sizes, overhang);
+    // A plate's overhang is one ink's; the verdict is the sheet's.
+    if !plate {
+        dialog
+            .verdicts
+            .remember(inputs.context, &plan, inputs.page_sizes, overhang);
+    }
     (texture, overhang, overhang_edges(placed, printable))
 }
 
@@ -883,6 +903,18 @@ fn strip(
             rect.width()
         )
     });
+    let plain = dialog.impose.out.get(shown).is_none()
+        && inputs
+            .job
+            .plans
+            .get(shown)
+            .is_some_and(|p| p.tile.is_none());
+    readout(ui, dialog, plain, scale);
+}
+
+/// The strip's second row: the plates controls under separations, then the
+/// magnification readout and the pan hint.
+fn readout(ui: &mut Ui, dialog: &mut PrintDialog, plain: bool, scale: f32) {
     // `horizontal_wrapped`, not `horizontal`, for the reason the strip probe
     // above documents: a plain `ui.horizontal` lays out past the end of its
     // column and reports a `min_rect` that wide, which propagates outward as
@@ -890,6 +922,7 @@ fn strip(
     // cannot dismiss. Measured: this row laid out 402.5 pt inside a 340 pt
     // column and took the body to 822.5 pt against a 776 pt viewport.
     ui.horizontal_wrapped(|ui| {
+        plates::row(ui, dialog, plain);
         // The scale as a percentage of ACTUAL size, not of the fit — see
         // `text::print::preview_zoom_percent` for why a number that changes
         // when the window is dragged would be useless. Clamped and rounded
@@ -979,13 +1012,15 @@ fn texture_for(
     dialog: &mut PrintDialog,
     page: usize,
     placement: f64,
+    plain: bool,
 ) -> Option<TextureId> {
     // From the frame's context, not built here — see [`PreviewKey::new`].
     // The verdict cache's validity is defined by that context, so a key
     // derived from it cannot be stronger than the one the verdicts are held
     // under, which is the property that stops a remembered "the overhang is
     // blank" outliving the raster it was measured from.
-    let key = inputs.context.preview_key(page, placement);
+    let base = inputs.context.preview_key(page, placement);
+    let key = plates::PlateView::key(dialog, plain, &base);
     if let Some((cached, texture, _)) = &dialog.preview_texture
         && *cached == key
     {
@@ -1005,46 +1040,63 @@ fn texture_for(
     // overlay and the staging buffer, so unsaved edits are what the operator
     // is about to print.
     let view = source.session.view();
-    let rendered =
-        pdfcer_render::render_page_with_view(&view, page_obj, raster_scale(size), &options).ok();
-    let Some(mut rendered) = rendered else {
+    let scale = raster_scale(size);
+    let (key, pixmap) = dialog
+        .plates
+        .render(&base, key, &view, page_obj, scale, &options);
+    let plate = key.plate().is_some();
+    let Some(mut pixmap) = pixmap else {
         dialog.preview_texture = None;
         return None;
     };
-    // `stamp=` is what rendered, not what the key asked for; 0 is the document.
-    // `scope=` is the scope it rendered with.
-    // `ink=` and `of=` are the raster's non-white pixels and its pixel count.
-    crate::diag::trace(|| {
-        let data = rendered.pixmap.data();
-        let ink = data
-            .chunks_exact(4)
-            .filter(|p| p[..3].iter().any(|c| *c < 250))
-            .count();
-        // ui-text-exempt: diagnostic trace
-        format!(
-            "print-preview-render page={page} stamp={} ink={ink} of={} scope={}",
-            source.stamp,
-            data.len() / 4,
-            pdfcer_gui_base::prefs::printing::scope_key(options.annotation_scope)
-        )
-    });
-    dialog.icc.preview(rendered.pixmap.data_mut());
-    super::colour::recolour(rendered.pixmap.data_mut(), dialog.output_color, "preview"); // ui-text-exempt: trace token
+    trace_render(page, source.stamp, &pixmap, &key, &options);
+    // A plate is already the sheet's grey: the spooler skips the printer
+    // profile and recolouring for it, and so does the preview.
+    if !plate {
+        dialog.icc.preview(pixmap.data_mut());
+        super::colour::recolour(pixmap.data_mut(), dialog.output_color, "preview"); // ui-text-exempt: trace token
+    }
     // The ink mask is built HERE, from the same pixmap, on the same miss —
     // operator request O113. Once per raster and never per frame: it is a pure
     // function of these bytes, so recomputing it while the operator pans would
     // be re-deriving an answer that cannot have changed. See the
     // `preview_texture` field's own docs for why it shares this tuple and this
     // key rather than living in a cache of its own.
-    let mask = ink::InkMask::from_rgba_premultiplied(
-        rendered.pixmap.width(),
-        rendered.pixmap.height(),
-        rendered.pixmap.data(),
-    );
-    let texture = upload(ctx, &rendered.pixmap);
+    let mask =
+        ink::InkMask::from_rgba_premultiplied(pixmap.width(), pixmap.height(), pixmap.data());
+    let texture = upload(ctx, &pixmap);
     let id = texture.id();
     dialog.preview_texture = Some((key, texture, mask));
     Some(id)
+}
+
+/// Trace a preview render. `stamp=` is what rendered, not what the key asked
+/// for; 0 is the document. `scope=` is the scope it rendered with. `ink=` and
+/// `of=` are the raster's non-white pixels and its pixel count; `grey=`
+/// whether every pixel is neutral, as a plate's are.
+fn trace_render(
+    page: usize,
+    stamp: u64,
+    pixmap: &pdfcer_render::tiny_skia::Pixmap,
+    key: &pdfcer_gui_base::printpreviewkey::PreviewKey,
+    options: &pdfcer_render::RenderOptions,
+) {
+    crate::diag::trace(|| {
+        let data = pixmap.data();
+        let ink = data
+            .chunks_exact(4)
+            .filter(|p| p[..3].iter().any(|c| *c < 250))
+            .count();
+        let grey = data.chunks_exact(4).all(|p| p[0] == p[1] && p[1] == p[2]);
+        // ui-text-exempt: diagnostic trace
+        format!(
+            "print-preview-render page={page} stamp={stamp} ink={ink} of={} grey={grey} plate={} scope={}",
+            data.len() / 4,
+            key.plate()
+                .map_or_else(|| "none".to_owned(), |i| i.to_string()),
+            pdfcer_gui_base::prefs::printing::scope_key(options.annotation_scope)
+        )
+    });
 }
 
 /// Upload a rendered pixmap as the preview's own texture.
@@ -1080,6 +1132,7 @@ use pdfcer_gui_base::printgeometry as geometry;
 
 /// The zoomed-in preview, rendered sharp up to the print resolution.
 pub(super) mod detail;
+pub(super) mod plates;
 
 /// The preview of a Multiple or Booklet sheet.
 mod imposed;

@@ -35,8 +35,8 @@ pub const fn separations() -> &'static str {
 pub const fn separations_note() -> &'static str {
     "Each page prints as one grey sheet per ink: cyan, magenta, yellow and \
      black, then each spot colour, with the ink named on the sheet. Plate greys \
-     approximate ink density. The preview shows the page in colour; n-up, \
-     booklet and poster sheets print in colour."
+     approximate ink density. The preview's plates switch shows them one ink \
+     at a time. N-up, booklet and poster sheets print in colour."
 }
 
 /// After a job printed as separations. `inks` are as the file spells them.

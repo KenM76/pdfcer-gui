@@ -1191,6 +1191,9 @@ pub enum Icon {
     /// Draw at actual size: a page bearing 1:1, always beside its label.
     ActualSize,
 
+    /// Show a page as its separate inks: three overlapping circles.
+    Separations,
+
     /// Read the ink at a point — `tools.ink_picker`.
     InkPicker,
 

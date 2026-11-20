@@ -43,6 +43,9 @@ pub struct PreviewKey {
     stamp: u64,
     /// `OpenDoc`'s layer generation: a layer shown or hidden re-renders.
     layers: u64,
+    /// Which separation plate is shown, in the page's plate order; `None`
+    /// for the page in colour.
+    plate: Option<usize>,
 }
 
 impl PreviewKey {
@@ -60,6 +63,7 @@ impl PreviewKey {
             lines,
             stamp: 0,
             layers: 0,
+            plate: None,
         }
     }
 
@@ -73,6 +77,18 @@ impl PreviewKey {
     #[must_use]
     pub fn with_layers(self, layers: u64) -> Self {
         Self { layers, ..self }
+    }
+
+    /// The same key for plate `plate` of the page (`None`: in colour).
+    #[must_use]
+    pub fn with_plate(self, plate: Option<usize>) -> Self {
+        Self { plate, ..self }
+    }
+
+    /// The plate this key shows, if any.
+    #[must_use]
+    pub const fn plate(&self) -> Option<usize> {
+        self.plate
     }
 
     /// Set the fixed line width, if any, on a render at `scale` pixels per

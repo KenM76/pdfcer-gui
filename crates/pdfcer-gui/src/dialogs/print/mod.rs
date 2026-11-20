@@ -410,6 +410,8 @@ pub struct PrintDialog {
     /// The visible part of the preview, re-rendered up to the print's own
     /// resolution when zoomed in — see [`preview::detail`].
     preview_detail: preview::detail::Detail,
+    /// The preview's separation plates (O438).
+    plates: preview::plates::PlateView,
     /// **What the preview found in the overhang of each sheet it has been
     /// shown** — operator request O113, 2026-09-04.
     ///
@@ -608,6 +610,7 @@ impl PrintDialog {
             preview_grab: position::Grab::default(),
             preview_texture: None,
             preview_detail: preview::detail::Detail::default(),
+            plates: preview::plates::PlateView::default(),
             // Empty, and emptied again by every change of context — see
             // `verdicts::Verdicts::remember`. A dialog opens knowing nothing
             // about any sheet, which is why a job printed without ever

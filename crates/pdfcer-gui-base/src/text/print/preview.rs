@@ -171,3 +171,45 @@ pub const fn overhang_is_blank() -> &'static str {
     "This sheet hangs over the printable area, but nothing is printed there — the overhang is \
      blank."
 }
+
+/// The preview's switch between the page in colour and its plates.
+#[must_use]
+pub const fn preview_plates() -> &'static str {
+    "Show plates"
+}
+
+/// What the plates switch does.
+#[must_use]
+pub const fn preview_plates_tooltip() -> &'static str {
+    "Show each ink's sheet as it will print, in place of the page in colour."
+}
+
+/// Plates are on, but this sheet is n-up, a booklet or a poster.
+#[must_use]
+pub const fn preview_plates_imposed() -> &'static str {
+    "This sheet prints in colour: n-up, booklet and poster sheets are not separated."
+}
+
+/// Plates are on, but the engine could not separate this page.
+#[must_use]
+pub const fn preview_plates_refused() -> &'static str {
+    "This page is too large to separate in memory, so it shows and prints in colour."
+}
+
+/// The previous-ink arrow's hover.
+#[must_use]
+pub const fn preview_plate_previous() -> &'static str {
+    "Previous ink"
+}
+
+/// The next-ink arrow's hover.
+#[must_use]
+pub const fn preview_plate_next() -> &'static str {
+    "Next ink"
+}
+
+/// Which plate is showing: the ink as the file spells it, `i` of `n`.
+#[must_use]
+pub fn preview_plate_position(ink: &str, index: usize, total: usize) -> String {
+    format!("{ink} ({index} of {total})")
+}

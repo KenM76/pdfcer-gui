@@ -74,9 +74,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 214 → 215: `page-boxes`, nested trim and bleed outlines, drawn for `view.page_boxes`.
     // 215 → 216: `camera`, the 3D viewer's save-a-picture.
     // 216 → 217: `actual-size`, the print preview's and status bar's actual size.
+    // 217 → 218: `separations`, the print preview's plates switch.
     assert_eq!(
         Icon::ALL.len(),
-        217,
+        218,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }
