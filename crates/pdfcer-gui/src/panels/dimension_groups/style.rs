@@ -5,7 +5,8 @@
 
 use egui::Ui;
 use pdfcer_core::dimension::{
-    ArrowForm, DimensionModel, Group, StyleDefaults, StyleSource, style_provenance,
+    ArrowForm, DimensionModel, Group, GroupStyle, StyleDefaults, StyleProvenance, StyleSource,
+    style_provenance,
 };
 
 use crate::app::actions::Action;
@@ -18,6 +19,14 @@ pub const REGION: &str = "dimension-groups.appearance"; // ui-text-exempt: trace
 pub const REGION_TEXT_HEIGHT: &str = "dimension-groups.text_height"; // ui-text-exempt: trace region name, never displayed
 /// The region the colour swatch publishes; its picker publishes beneath it.
 pub const REGION_COLOUR: &str = "dimension-groups.colour"; // ui-text-exempt: trace region name, never displayed
+/// The line-style row's *Set by group* checkbox.
+pub const REGION_DASH_SET: &str = "dimension-groups.dash.set"; // ui-text-exempt: trace region name, never displayed
+/// The line-style chooser: `.combo`, and `.option.{token}` while open.
+pub const REGION_DASH: &str = "dimension-groups.dash"; // ui-text-exempt: trace region name, never displayed
+/// The opacity row's *Set by group* checkbox.
+pub const REGION_OPACITY_SET: &str = "dimension-groups.opacity.set"; // ui-text-exempt: trace region name, never displayed
+/// The opacity percentage box.
+pub const REGION_OPACITY: &str = "dimension-groups.opacity"; // ui-text-exempt: trace region name, never displayed
 
 /// The drag speed for the three point-valued properties.
 const POINT_SPEED: f64 = 0.05;
@@ -37,68 +46,89 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
     ui.add_space(4.0);
 
     let mut next = group.style;
-    let total = model.member_count(group.id);
+    let rows = Rows {
+        model,
+        group,
+        total: model.member_count(group.id),
+    };
+    size_rows(ui, &rows, &mut next);
+    shape_rows(ui, &rows, &mut next);
+    stroke_rows(ui, &rows, &mut next);
 
-    // --- text height ----------------------------------------------------
-    let moving = will_move(model, group, |p| p.text_height);
+    if next != group.style {
+        actions.push(Action::Dimension(DimensionAction::SetGroupStyle {
+            group: group.id,
+            style: next,
+        }));
+    }
+}
+
+/// What every row reads: the model, the group, and its member count.
+struct Rows<'a> {
+    model: &'a DimensionModel,
+    group: &'a Group,
+    total: usize,
+}
+
+impl Rows<'_> {
+    /// The row's `(moving, total)` pair for the property `pick` names.
+    fn reach(&self, pick: impl Fn(&StyleProvenance) -> StyleSource) -> (usize, usize) {
+        (will_move(self.model, self.group, pick), self.total)
+    }
+}
+
+/// Text height, line width and arrow length: the three point-valued rows.
+fn size_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
     property_row(
         ui,
         t::prop_text_height(),
         &mut next.text_height,
-        StyleDefaults::FACTORY.text_height,
-        (moving, total),
+        (StyleDefaults::FACTORY.text_height, None),
+        rows.reach(|p| p.text_height),
         |ui, value| {
             let r = point_box(ui, value, TEXT_HEIGHT_RANGE);
             crate::diag::ui_rect(REGION_TEXT_HEIGHT, r.rect);
         },
         t::points_value,
     );
-
-    // --- line width -----------------------------------------------------
-    let moving = will_move(model, group, |p| p.line_width);
     property_row(
         ui,
         t::prop_line_width(),
         &mut next.line_width,
-        StyleDefaults::FACTORY.line_width,
-        (moving, total),
+        (StyleDefaults::FACTORY.line_width, None),
+        rows.reach(|p| p.line_width),
         |ui, value| {
             point_box(ui, value, LINE_WIDTH_RANGE);
         },
         t::points_value,
     );
-
-    // --- arrow length ---------------------------------------------------
-    let moving = will_move(model, group, |p| p.arrow_length);
     property_row(
         ui,
         t::prop_arrow_length(),
         &mut next.arrow_length,
-        StyleDefaults::FACTORY.arrow_length,
-        (moving, total),
+        (StyleDefaults::FACTORY.arrow_length, None),
+        rows.reach(|p| p.arrow_length),
         |ui, value| {
             point_box(ui, value, ARROW_LENGTH_RANGE);
         },
         t::points_value,
     );
+}
 
-    // --- arrow form -----------------------------------------------------
-    let moving = will_move(model, group, |p| p.arrow_form);
+/// Arrow form and colour.
+fn shape_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
     property_row(
         ui,
         t::prop_arrow_form(),
         &mut next.arrow_form,
-        StyleDefaults::FACTORY.arrow_form,
-        (moving, total),
+        (StyleDefaults::FACTORY.arrow_form, None),
+        rows.reach(|p| p.arrow_form),
         |ui, value| {
             egui::ComboBox::from_id_salt("dimension-group-arrow-form")
                 .selected_text(t::arrow_form_name(*value))
                 .show_ui(ui, |ui| {
-                    // `ArrowForm::ALL` rather than a local list. Its own doc
-                    // comment says why it exists — *"must not drift from the
-                    // enum"* — and a form the engine gains appears here without
-                    // a shell change, which is the same reason the New-document
-                    // window iterates `PaperSize::ALL`.
+                    // `ArrowForm::ALL`, so a form the engine gains appears
+                    // here without a shell change.
                     for form in ArrowForm::ALL {
                         ui.selectable_value(value, form, t::arrow_form_name(form));
                     }
@@ -106,15 +136,12 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
         },
         |v| t::arrow_form_name(v).to_owned(),
     );
-
-    // --- colour ---------------------------------------------------------
-    let moving = will_move(model, group, |p| p.color);
     property_row(
         ui,
         t::prop_color(),
         &mut next.color,
-        StyleDefaults::FACTORY.color,
-        (moving, total),
+        (StyleDefaults::FACTORY.color, None),
+        rows.reach(|p| p.color),
         |ui, value| {
             pdfcer_gui_base::colourpick::edit_color(
                 ui,
@@ -125,30 +152,70 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
         },
         |_| String::new(),
     );
+}
 
-    if next != group.style {
-        actions.push(Action::Dimension(DimensionAction::SetGroupStyle {
-            group: group.id,
-            style: next,
-        }));
-    }
+/// Line style and opacity, through the same editors as a single ce
+/// dimension's overrides.
+fn stroke_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
+    property_row(
+        ui,
+        t::prop_dash(),
+        &mut next.dash,
+        (StyleDefaults::FACTORY.dash, Some(REGION_DASH_SET)),
+        rows.reach(|p| p.dash),
+        |ui, value| {
+            pdfcer_gui_base::dimensionoverrides::dash_editor(
+                ui,
+                "dimension-group-dash",
+                Some(REGION_DASH),
+                value,
+            );
+        },
+        |d| {
+            if d.is_solid() {
+                t::dash_factory_value().to_owned()
+            } else {
+                String::new()
+            }
+        },
+    );
+    property_row(
+        ui,
+        t::prop_opacity(),
+        &mut next.opacity,
+        (StyleDefaults::FACTORY.opacity, Some(REGION_OPACITY_SET)),
+        rows.reach(|p| p.opacity),
+        |ui, value| {
+            let r = pdfcer_gui_base::dimensionoverrides::opacity_editor(ui, value);
+            crate::diag::ui_rect(REGION_OPACITY, r.rect);
+        },
+        t::percent_value,
+    );
 }
 
 /// One property: the override checkbox, the editor it gates, and the sentence
 /// saying what pressing it will move.
+///
+/// `seed` is the factory value a tick starts from, and the region the
+/// checkbox publishes, if any.
 fn property_row<T: Copy + PartialEq>(
     ui: &mut Ui,
     label: &str,
     slot: &mut Option<T>,
-    factory: T,
+    seed: (T, Option<&str>),
     reach: (usize, usize),
     editor: impl FnOnce(&mut Ui, &mut T),
     describe: impl FnOnce(T) -> String,
 ) {
     let (moving, total) = reach;
+    let (factory, set_region) = seed;
     ui.horizontal_wrapped(|ui| {
         let mut set = slot.is_some();
-        if ui.checkbox(&mut set, t::set_by_group()).changed() {
+        let tick = ui.checkbox(&mut set, t::set_by_group());
+        if let Some(region) = set_region {
+            crate::diag::ui_rect(region, tick.rect);
+        }
+        if tick.changed() {
             *slot = if set { Some(factory) } else { None };
         }
         ui.label(label);
@@ -173,7 +240,7 @@ fn property_row<T: Copy + PartialEq>(
 fn will_move(
     model: &DimensionModel,
     group: &Group,
-    pick: impl Fn(&pdfcer_core::dimension::StyleProvenance) -> StyleSource,
+    pick: impl Fn(&StyleProvenance) -> StyleSource,
 ) -> usize {
     model
         .members(group.id)

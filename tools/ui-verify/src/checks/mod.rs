@@ -218,6 +218,7 @@ pub mod form_part_copy;
 pub mod form_part_delete;
 pub mod form_style;
 pub mod form_text_reshape;
+pub mod group_dash_opacity;
 pub mod group_fraction_reduces;
 pub mod group_in_form;
 pub mod group_markups;

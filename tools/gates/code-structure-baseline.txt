@@ -375,7 +375,6 @@ fn crates/pdfcer-gui/src/panels/bookmarks/add.rs::show
 fn crates/pdfcer-gui/src/panels/bookmarks/mod.rs::body
 fn crates/pdfcer-gui/src/panels/bookmarks/mod.rs::rows
 fn crates/pdfcer-gui/src/panels/comments/editor.rs::editor
-fn crates/pdfcer-gui/src/panels/dimension_groups/style.rs::show
 fn crates/pdfcer-gui/src/panels/docprops/stamps.rs::section
 fn crates/pdfcer-gui/src/panels/fonts.rs::body
 fn crates/pdfcer-gui/src/panels/fonts.rs::row_body

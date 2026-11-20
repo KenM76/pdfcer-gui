@@ -171,6 +171,38 @@ pub(super) fn press(
     Ok(())
 }
 
+/// [`press`] `region` after wheeling inside the region `pane` until it lies
+/// wholly within it; an error when twelve turns do not bring it in.
+pub(super) fn press_in_pane(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    region: &str,
+    pane: &str,
+) -> Result<()> {
+    let event = ui_rect_event(ctx)?;
+    let find = |name: &str| -> Result<(LRect, Option<String>)> {
+        declared_in(&session.trace()?, event, name).ok_or_else(|| {
+            Error::new(format!(
+                "`{name}` was never declared. Trace: {}.",
+                session.trace_path().display()
+            ))
+        })
+    };
+    for _ in 0..12 {
+        let (outer, vp) = find(pane)?;
+        if outer.contains_rect(find(region)?.0) {
+            return press(ctx, session, pointer, region);
+        }
+        pointer.wheel_in(session, vp.as_deref(), WindowPoint::centre_of(outer), -3.0)?;
+        session.settle(12);
+    }
+    Err(Error::new(format!(
+        "twelve wheel turns in `{pane}` never brought `{region}` into it. Trace: {}.",
+        session.trace_path().display()
+    )))
+}
+
 /// Press `opener` (a dock tab or a folded heading) when `region` has not been drawn yet.
 pub(super) fn reveal(
     ctx: &CheckContext,

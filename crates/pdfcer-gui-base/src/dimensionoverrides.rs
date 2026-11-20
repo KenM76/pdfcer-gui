@@ -241,18 +241,7 @@ fn stroke_rows(
         || dash,
     )
     .edit(ui, |ui, value| {
-        let reading = if value.is_solid() {
-            crate::linestyle::DashReading::Solid
-        } else {
-            crate::linestyle::LineStyle::of_pattern(value.pattern()).map_or(
-                crate::linestyle::DashReading::Foreign,
-                crate::linestyle::DashReading::Offered,
-            )
-        };
-        let picked = crate::linestyle::chooser(ui, "dimension-override-dash", reading, 120.0);
-        if let Some(next) = picked.and_then(|s| DimDash::new(s.pattern().unwrap_or(&[]))) {
-            *value = next;
-        }
+        dash_editor(ui, "dimension-override-dash", None, value)
     });
     row(
         ui,
@@ -262,22 +251,46 @@ fn stroke_rows(
         || opacity,
     )
     .edit(ui, |ui, value| {
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let mut percent = (*value * 100.0).round().clamp(0.0, 100.0) as u8;
-        let (widget, refusal) =
-            crate::entry::drag_value(ui, &mut percent, crate::entry::Kind::Number(&["%"]));
-        let response = refusal.show(
-            ui.add(
-                widget
-                    .range(0..=100)
-                    .speed(1.0)
-                    .suffix(crate::text::markup::opacity_suffix()),
-            ),
-        );
-        if response.changed() {
-            *value = f64::from(percent) / 100.0;
-        }
+        opacity_editor(ui, value);
     });
+}
+
+/// A ce dimension's dash chooser, offering `linestyle::LineStyle::ALL`; a
+/// pattern from elsewhere reads as the chooser's foreign entry. `region`, when
+/// given, is published as by `linestyle::chooser_in`.
+pub fn dash_editor(ui: &mut Ui, id_salt: &str, region: Option<&str>, value: &mut DimDash) {
+    let reading = if value.is_solid() {
+        crate::linestyle::DashReading::Solid
+    } else {
+        crate::linestyle::LineStyle::of_pattern(value.pattern()).map_or(
+            crate::linestyle::DashReading::Foreign,
+            crate::linestyle::DashReading::Offered,
+        )
+    };
+    let picked = crate::linestyle::chooser_in(ui, id_salt, region, reading, 120.0);
+    if let Some(next) = picked.and_then(|s| DimDash::new(s.pattern().unwrap_or(&[]))) {
+        *value = next;
+    }
+}
+
+/// A ce dimension's opacity as a whole percentage; `value` is `0.0..=1.0`.
+pub fn opacity_editor(ui: &mut Ui, value: &mut f64) -> egui::Response {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let mut percent = (*value * 100.0).round().clamp(0.0, 100.0) as u8;
+    let (widget, refusal) =
+        crate::entry::drag_value(ui, &mut percent, crate::entry::Kind::Number(&["%"]));
+    let response = refusal.show(
+        ui.add(
+            widget
+                .range(0..=100)
+                .speed(1.0)
+                .suffix(crate::text::markup::opacity_suffix()),
+        ),
+    );
+    if response.changed() {
+        *value = f64::from(percent) / 100.0;
+    }
+    response
 }
 
 /// One row's checkbox and disclosure, with the editor still to be drawn.

@@ -361,6 +361,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             super::apply::vector_edit(doc, "set-group-style", 0, 1, |session| {
                 session.set_group_style(group, style).map(|_| Vec::new())
             });
+            trace_members_style(doc, group);
         }
         // The returned `bool` is the RESULTING visibility, and it is
         // deliberately dropped. The dialog re-reads the model next frame, so
@@ -464,6 +465,34 @@ fn trace_members_shown(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
                 )
             });
         }
+    }
+}
+
+/// One `dimension-member-style` line per member of `group`: the resolved
+/// dash and opacity each will draw with, and the tier each came from.
+fn trace_members_style(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
+    if !crate::diag::enabled() {
+        return;
+    }
+    let model = doc.session.dimension_model();
+    let Some(g) = model.group(group) else {
+        return;
+    };
+    for member in model.members(group) {
+        let drawn = pdfcer_core::dimension::resolve_style(g, &member.style);
+        let from = pdfcer_core::dimension::style_provenance(g, &member.style);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "dimension-member-style group={} dim={} dash={} solid={} opacity={} opacity_from={}",
+                group.0,
+                member.id.0,
+                from.dash.token(),
+                drawn.dash.is_solid(),
+                drawn.opacity,
+                from.opacity.token()
+            )
+        });
     }
 }
 
