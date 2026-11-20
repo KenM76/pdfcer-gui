@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **69 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `wanted` — a real gap — **68 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -177,15 +177,13 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **3D measure: read positions in a chosen coordinate system** — the module `pdfcer_3d::surface_measure::frame` (`CoordinateFrame`) | **wanted; the measure window.** Positions and deltas read in the model's frame or one the operator sets. |
 | **3D measure: projected area of a face** — `pdfcer-3d` `face_projected_area`, in the module `pdfcer_3d::surface_measure::projected` (`ProjectedArea`) | **wanted; the measure window.** A face pick also reads its projected area, toward and away, on the projection choice. |
 | **3D measure: units, dual units and precision** — the module `pdfcer_3d::length_unit` (`LengthUnit`, `UnknownLengthUnit`) | **wanted; the measure window.** Its unit, a second unit and decimal places, remembered with the other preferences. <!--namesake:LengthUnit--> (`entry::LengthUnit` is the shell's 2D entry unit) |
-| **3D bounce light built on the graphics card** — `PreparedModel::gpu_bounce_build`, `GpuBounceBuild`, `GLSL_ES_300_BOUNCE_BUILD_VERTEX`, `GLSL_ES_300_BOUNCE_TRACE_FRAGMENT`, `GLSL_ES_300_BOUNCE_REDUCE_FRAGMENT` | **wanted; the 3D viewer's bounce.** The viewer lights every frame through an exposure, so it takes the exposed twin below; this one is the same passes packed with the model's own lights. |
-| **3D bounce light built on the graphics card under an exposure** — `ExposedLighting::gpu_bounce_build` | **wanted; our request G311.** The card traces and reduces the atlas in row bands spread over frames and reads it back into `FrameBounce`, in place of the threaded CPU build, with that build kept where the context lacks float targets or the engine says `None`. |
 | **3D light meter map computed on the graphics card** — the module `pdfcer_3d::illuminance::map::gpu` (`LightMeter::gpu_map`, `GpuLightMap`, `GpuLightMap::finish`), `GLSL_ES_300_LIGHT_METER_MAP_FRAGMENT` | **wanted; Colour by light level.** The same map an order of magnitude faster on a large model; no cancel on the GPU path, so the viewer keeps `map` until it can bound a pass by row bands. |
-| **3D light meter volume and point reads computed on the graphics card** — the modules `pdfcer_3d::illuminance::gpu_meter` (`LightMeter::gpu_new`, `GpuLightMeter`, `GpuLightMeter::build`, `GpuLightMeter::finish`) and `pdfcer_3d::illuminance::map::gpu::read` (`LightMeter::gpu_scene`, `GpuLightRead`, its `points`, `normals`, `finish`) | **wanted; Measure light and Colour by light level.** The meter's bounce is the frame bounce's build, so it runs on the card passes the viewer's bounce uses (1.5 s against 9.9 s on the engine's Bancroft file); many readings go in one draw, an order of magnitude faster, direct light the processor's exactly and bounced light within a few percent. Each point's gather must be split into direction runs (`u_direction_first`, `u_direction_stop`) under the Windows watchdog. Waits on the viewer's card bounce landing first. |
+| **3D light meter volume and point reads computed on the graphics card** — the modules `pdfcer_3d::illuminance::gpu_meter` (`LightMeter::gpu_new`, `GpuLightMeter`, `GpuLightMeter::build`, `GpuLightMeter::finish`) and `pdfcer_3d::illuminance::map::gpu::read` (`LightMeter::gpu_scene`, `GpuLightRead`, its `points`, `normals`, `finish`) | **wanted; Measure light and Colour by light level.** The meter's bounce is the frame bounce's build, so it runs on the card passes the viewer's bounce uses (1.5 s against 9.9 s on the engine's Bancroft file); many readings go in one draw, an order of magnitude faster, direct light the processor's exactly and bounced light within a few percent. Each point's gather must be split into direction runs (`u_direction_first`, `u_direction_stop`) under the Windows watchdog. Waits on the viewer's card bounce landing first. <!--namesake:gpu_scene--> The shell's `gpu_scene` is `model3d::gpu`'s own frame-scene method, not the light meter's. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `blocked` — waiting on something named — **2 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -203,7 +201,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -214,7 +212,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `declined` — deliberately no surface — **21 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -261,7 +259,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **520 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **522 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -269,6 +267,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **3D bounce light built on the graphics card** — `PreparedModel::gpu_bounce_build`, `GpuBounceBuild`, `GLSL_ES_300_BOUNCE_BUILD_VERTEX`, `GLSL_ES_300_BOUNCE_TRACE_FRAGMENT`, `GLSL_ES_300_BOUNCE_REDUCE_FRAGMENT` | **shipped — consumed, G311.** `gpu_bounce::build` packs this when the frame has no exposure, and the exposed twin otherwise; the same card passes trace both (`gpu_bounce_card`). Driven by `the_card_builds_the_processors_bounce`. |
+| **3D bounce light built on the graphics card under an exposure** — `ExposedLighting::gpu_bounce_build` | **shipped — consumed, G311.** `gpu_bounce::build` packs `ExposedLighting::gpu_bounce_build` (or `PreparedModel::gpu_bounce_build` without an exposure) on the worker and `gpu_bounce_card::advance` traces and reduces it on the card in row bands under a 12 ms frame budget, alternating atlases; the processor's threaded build stays where the context lacks float targets, the engine says `None`, or `PDFCER_3D_BOUNCE_CPU=1`. Driven by `the_card_builds_the_processors_bounce` (card and processor means within 0.5%), falsified by a skipped first reduce. |
 | **Check a path end before extending or opening it** — `EditSession::can_extend_path`, `EditSession::can_open_subpath`, `EditSession::can_extend_path_in_form`, `EditSession::can_open_subpath_in_form` | **shipped at v0.158.0; our request G295.** Continue path and Open path here ask the engine when pressed; a middle node, a closed subpath or an already-open one is refused at the press with the reason on the status line, and no run is armed. Driven by `a_middle_node_is_refused_at_the_press`. |
 | **The light meter counts light from glowing surfaces** — `Illuminance::emitted`, `MeterSettings::glow` (`GlowLight`, `GlowLight::Counted`, `GlowLight::LeftOut`), `RelativeReason::GlowingParts`, `IlluminanceNote::GlowLeftOut`, `IlluminanceNote::GlowNotBounced` | **shipped, at v0.158.0; our request G291.** `dialogs::model3d::lightmeter` sets `MeterSettings::glow` from Measure ▸ Light level's *Count glowing parts* switch, drawn for a model with glowing parts; `Illuminance::emitted` is the reading's *From glowing parts*, and the engine's reasons and notes are said under it. Driven by `the_3d_viewer_reads_the_light_on_a_surface`. <!--namesake:LeftOut--> (`panels::align::LeftOut` is the align panel's own type) |
 | **Remove white margins** — `pdfcer_render::white_margin_crop` (shared by both shells) … | **shipped — `pdfcer_render::white_margin_crop` (the `pdfcer_render::white_margins` module; its scale and threshold constants are the engine's to choose), the Crop pages window's Remove white margins; the inferred box and its limits are disclosed in the status line and tooltip.** |
