@@ -160,7 +160,9 @@ impl Bounces {
     }
 }
 
-/// The key for a frame drawn with `options` at `exposure`.
+/// The key for a frame drawn with `options` at `exposure`. The bounce is
+/// traced on every core: it runs off the frame loop, and on one thread a
+/// large model waits minutes for it.
 pub(super) fn key(
     options: &ModelRenderOptions,
     exposure: Exposure,
@@ -172,6 +174,7 @@ pub(super) fn key(
         options: ModelRenderOptions {
             width: 0,
             height: 0,
+            threads: 0,
             ..*options
         },
         parts,
@@ -221,6 +224,11 @@ mod tests {
             0,
             egui::Color32::WHITE, // NOT A THEME COLOUR: test fixture accent, never drawn
         )
+    }
+
+    #[test]
+    fn the_bounce_is_traced_on_every_core() {
+        assert_eq!(at(Exposure::Metered).options.threads, 0);
     }
 
     fn kept(k: Key) -> Bounces {
