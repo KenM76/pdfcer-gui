@@ -132,6 +132,8 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     if !matches!(current.reach, Reach::Markup) {
         if let Some(marker) = current.marker {
             anyannot::marker_row(ui, marker, &target, actions);
+        } else if matches!(current.reach, Reach::Neither) {
+            anyannot::facts_row(ui, doc, &target);
         }
         anyannot::opacity_row(ui, current.alpha, &target, actions);
     }

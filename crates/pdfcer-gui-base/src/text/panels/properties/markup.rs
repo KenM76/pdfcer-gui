@@ -128,6 +128,24 @@ pub const fn markup_not_restylable() -> &'static str {
      can still move it, resize it, delete it, and edit the note it carries."
 }
 
+/// The label of the read-only colour a mark carries, `/C`.
+#[must_use]
+pub const fn facts_colour_label() -> &'static str {
+    "Colour"
+}
+
+/// Shown for a mark with no `/C`, or one naming no device colour.
+#[must_use]
+pub const fn facts_no_colour() -> &'static str {
+    "none"
+}
+
+/// The label of the icon a mark names, `/Name`.
+#[must_use]
+pub const fn facts_icon_label() -> &'static str {
+    "Icon"
+}
+
 /// The fill control's label — `/IC`, the interior colour.
 #[must_use]
 pub const fn markup_fill_label() -> &'static str {

@@ -5,6 +5,7 @@
 /// O263: Align left edges moves every box, in one undo.
 pub mod align_left;
 pub mod annot_angle_typed;
+pub mod annot_facts;
 
 pub mod annot_delete_gate;
 
