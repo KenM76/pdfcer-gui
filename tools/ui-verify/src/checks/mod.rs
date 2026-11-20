@@ -1030,6 +1030,7 @@ pub mod widget_no_border;
 pub mod band_scroll;
 
 pub mod block_nav;
+pub mod table_nav;
 
 /// A bookmark can be written into a document that has no outline.
 pub mod bookmark_add;

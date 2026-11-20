@@ -743,6 +743,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(shortcuts::ShortcutsReferenceIsLive),
         Box::new(band_scroll::ACommandTwoScrollStopsAwayIsStillReachable),
         Box::new(block_nav::ArrowKeysWalkBetweenBlocks),
+        Box::new(table_nav::ArrowKeysWalkATableByItsCells),
         Box::new(dialog_windows::DialogsOpenInTheirOwnWindow),
         Box::new(draft_selection::ShiftArrowsSelectText),
         Box::new(bookmark_add::BookmarkCanBeWritten),
