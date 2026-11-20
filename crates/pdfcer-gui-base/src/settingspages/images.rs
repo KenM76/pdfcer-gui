@@ -39,7 +39,11 @@ pub fn mask_resample(ui: &mut Ui, draft: &mut Draft) {
     );
 }
 
-/// How a large image is reduced to fit.
+/// The minify options' regions, `<this>.<file word>`: `point_sample`,
+/// `smooth`, `area_average`.
+pub const MINIFY_REGION: &str = "settings.images.minify"; // ui-text-exempt: trace region name, never displayed
+
+/// How a large image is reduced to fit: every `MinifyFilter` the engine has.
 pub fn minify(ui: &mut Ui, draft: &mut Draft) {
     widgets::header(
         ui,
@@ -47,18 +51,35 @@ pub fn minify(ui: &mut Ui, draft: &mut Draft) {
         t::minify_silence(),
         t::minify_radius(),
     );
-    widgets::option(
-        ui,
-        &mut draft.working.image_minify,
-        MinifyFilter::PointSample,
-        t::minify_point_label(),
-        Some(t::minify_point_note()),
-    );
-    widgets::option(
-        ui,
-        &mut draft.working.image_minify,
-        MinifyFilter::Smooth,
-        t::minify_smooth_label(),
-        Some(t::minify_smooth_note()),
-    );
+    let options = [
+        (
+            MinifyFilter::PointSample,
+            "point_sample", // ui-text-exempt: trace region name, never displayed
+            t::minify_point_label(),
+            t::minify_point_note(),
+        ),
+        (
+            MinifyFilter::Smooth,
+            "smooth", // ui-text-exempt: trace region name, never displayed
+            t::minify_smooth_label(),
+            t::minify_smooth_note(),
+        ),
+        (
+            MinifyFilter::AreaAverage,
+            "area_average", // ui-text-exempt: trace region name, never displayed
+            t::minify_area_label(),
+            t::minify_area_note(),
+        ),
+    ];
+    for (value, word, label, note) in options {
+        let radio = widgets::option(
+            ui,
+            &mut draft.working.image_minify,
+            value,
+            label,
+            Some(note),
+        );
+        let region = format!("{MINIFY_REGION}.{word}");
+        crate::diag::ui_rect_visible(&region, radio.rect, ui.clip_rect());
+    }
 }

@@ -65,21 +65,22 @@ pub fn header(ui: &mut Ui, title: &str, silence: &str, radius: &str) {
     ui.add_space(2.0);
 }
 
-/// One radio option, with an optional gloss under it.
+/// One radio option, with an optional gloss under it; the radio's response.
 pub fn option<T: PartialEq>(
     ui: &mut Ui,
     current: &mut T,
     value: T,
     label: &str,
     note: Option<&str>,
-) {
+) -> egui::Response {
     let label = name(ui, label);
-    ui.radio_value(current, value, label);
+    let radio = ui.radio_value(current, value, label);
     if let Some(note) = note
         && !note.is_empty()
     {
         ui.label(RichText::new(note).small().weak());
     }
+    radio
 }
 
 /// One switch, with an optional gloss under it.

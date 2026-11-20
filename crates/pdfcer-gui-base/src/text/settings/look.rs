@@ -388,31 +388,44 @@ pub const fn minify_radius() -> &'static str {
     "Affects what you see. Does not change the file."
 }
 
-/// The default.
+/// Point sampling.
 #[must_use]
 pub const fn minify_point_label() -> &'static str {
     "Take one pixel in each area"
 }
 
-/// **The guess disclosure the old window omitted.**
+/// What point sampling costs.
 #[must_use]
 pub const fn minify_point_note() -> &'static str {
     "Fast, and follows the standard's wording literally. Fine detail such as thin \
-     lines or small text in a scan can shimmer or disappear entirely. This is \
-     pdfcer's own reading rather than a rule from anywhere: what other viewers \
-     actually do when shrinking has not been checked, and if it turns out they \
-     smooth, this default should change."
+     lines or small text in a scan can shimmer or disappear entirely."
 }
 
-/// The alternative.
+/// Bilinear sampling.
 #[must_use]
 pub const fn minify_smooth_label() -> &'static str {
-    "Average the area (pdfcer's default)"
+    "Blend the four nearest pixels"
 }
 
-/// What it buys and costs.
+/// What bilinear sampling costs.
 #[must_use]
 pub const fn minify_smooth_note() -> &'static str {
-    "Better-looking on scanned pages and photographs — detail is averaged rather \
-     than dropped. Slower, and goes beyond what the standard describes."
+    "Softer than taking one pixel, without its shimmer. It still reads only four \
+     pixels however far the image is shrunk, so from about a third of its size down \
+     thin lines in a scan break up."
+}
+
+/// Area averaging, the default.
+#[must_use]
+pub const fn minify_area_label() -> &'static str {
+    "Average every pixel in each area (pdfcer's default)"
+}
+
+/// What area averaging buys and costs, and where the default came from.
+#[must_use]
+pub const fn minify_area_note() -> &'static str {
+    "Every pixel under each screen pixel counts, so a one-pixel line in a scan \
+     survives at any size. Slightly slower. This is pdfcer's own reading, not a rule \
+     from the standard: it is the default because it matched Adobe Acrobat on a scanned \
+     drawing where blending the four nearest pixels dropped lines Acrobat kept."
 }

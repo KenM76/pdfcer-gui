@@ -157,7 +157,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| **Area-averaged image minification** — a downscaled scan … | **wanted — O322 part 1, a third choice under Settings ▸ Images ▸ minify**, so a scan shown small does not shimmer or drop hairlines. Engine: `MinifyFilter::AreaAverage`. |
 
 ### Export
 
@@ -669,6 +668,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Enumerate every DIVERGENCE counter by name, zeros included** — `Diagnostics::DIVERGENCE_KEYS`, `Diagnostics::divergences()` | **shipped**, from `pdfcer_render::divergence`. `app::status::notes::ink` walks `Diagnostics::divergences()` for the render notes and the `render-findings` trace, keyed by the engine's metrics names; the hand roster and `check-ink-roster` are deleted. A key with no sentence is still disclosed (`ink_unworded`). Driven in `print_shop`. |
 | **Black point compensation for ICC conversions** — a profile-to-profile ICC conversion … | **Reachable — Settings ▸ Colour ▸ *Black point compensation*, on by default**, passed through `Settings::render_options` (G249, O340). |
 | **A reusable pick index over a 3D model** — `pdfcer_3d::PickIndex::new(&meshes)` … | **Consumed — the 3D walkthrough's walls, floors and double-click go-to** pick through one index per model (G251). |
+| **Area-averaged image minification** — a downscaled scan … | **shipped — Settings ▸ Images ▸ *Average every pixel in each area*** is the third `MinifyFilter` choice and the default (`settingspages::images::minify`, key `image_minify`). Driven by `every_minify_filter_is_offered`. |
 
 ### Reading, navigation & printing
 

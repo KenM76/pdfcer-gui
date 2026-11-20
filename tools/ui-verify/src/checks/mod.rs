@@ -1039,6 +1039,7 @@ pub mod bookmark_dest;
 
 pub mod bookmark_edit;
 
+pub mod settings_minify;
 pub mod settings_nav;
 /// A shortcut changed in Settings reaches the keys and survives a restart.
 pub mod shortcut_change;
