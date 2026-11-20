@@ -247,7 +247,28 @@ fn paste_into_group(
         Ok(m) => m,
         Err(why) => return Ok(Some(why)),
     };
-    Ok(judge_members(&members, 3))
+    if let Some(failure) = judge_members(&members, 3) {
+        return Ok(Some(failure));
+    }
+    Ok(judge_pasted_state(&pasted, &members))
+}
+
+/// The paste went by `paste_field`, and the state it reported is the one the
+/// saved new member carries.
+fn judge_pasted_state(pasted: &TraceLine, members: &[Member]) -> Option<String> {
+    let new = members.iter().find(|m| m.rect.0 < 100.0);
+    let reported = pasted.get("export");
+    if pasted.get("engine") != Some("paste_field")
+        || reported.is_none()
+        || new.and_then(|m| m.on_state.as_deref()) != reported
+    {
+        return Some(format!(
+            "the paste traced `{}`, wanted engine=paste_field and the saved new member's \
+             on-state equal to its export; the new member is {new:?}.",
+            pasted.raw
+        ));
+    }
+    None
 }
 
 fn fill_one_then_another(
@@ -307,6 +328,17 @@ fn join_from_properties(
     session.settle(30);
     let moved = step!(after(session, MOVED, mark, "Move to group was pressed"));
     report.note(format!("by the row: {}", moved.raw));
+    // One engine command that keeps the widget and removes its now-empty
+    // field; an add-then-delete fold traces neither.
+    if moved.get("engine") != Some("move_widget_to_field")
+        || moved.get("source_removed") != Some("true")
+    {
+        return Ok(Some(format!(
+            "Move to group traced `{}`: engine=move_widget_to_field and \
+             source_removed=true (the new button's own field emptied) were wanted.",
+            moved.raw
+        )));
+    }
 
     // --- another, joined by renaming it to the group's name.
     press_on_tab(ctx, session, pointer, RADIO_TOOL, FORMS_TAB)?;
