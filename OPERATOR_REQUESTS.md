@@ -8081,7 +8081,7 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 Built on engine v0.156.0, driven by `the_3d_viewer_reads_the_light_on_a_surface`: *Light level* beside the measure kinds in the 3D viewer's Measure tab. A click on a surface reads the light arriving there; *Average over a circle* takes the mean over a circle of a set radius on that surface and draws the circle. The amount is under the picture with its three parts (straight from the lights, bounced, ambient); each lamp's part, why a figure is not in lux and what the engine assumed are on the amount's hover and in the Measure tab. Hidden parts and switched-off lights count as the picture shows them. Light from parts that glow is counted by default (engine v0.158.0, G291): a model with glowing parts gets a *Count glowing parts* switch, and the reading lists the glow's part. Counted glow makes the figure relative, because a glow has no physical strength. A reading is in lux only when every light in the file states a physical output.
 
-## O438 — **OPEN** — the print preview shows the separations, one ink at a time
+## O438 — **BUILT, awaiting Ken** — the print preview shows the separations, one ink at a time
 
 *"When I am in the Print dialogue under Color and Separations (one sheet per ink) it notes that the preview still shows the page in colour, but I'd like an option to click to show the separations and navigation arrows that appear next to the other controls on the print preview - a left and right arrow that shows the preview separations."*
 
@@ -8089,7 +8089,7 @@ A switch on the print preview that shows the plates in place of the colour page,
 
 Built, driven off-screen by `print_preview_shows_plates`, which fails against a planted dead next-ink arrow: under Colour ▸ *Separations* the preview strip has a plates switch (three ink circles). With it on, the preview shows the page's plates as they print, each ink's grey sheet with its name at the foot, and a left and a right arrow beside the ink's name (*Cyan (1 of 4)*) step through them. A page too large to separate shows in colour and says so; n-up, booklet and poster sheets say they print in colour. The Colour tab's note now points at the switch. A plate shows at the preview's base resolution, without the sharper zoomed-in redraw. All the page's plates are drawn when the switch goes on, so on a dense drawing the first plate takes several preview renders' time; not yet measured on one.
 
-## O439 — **OPEN** — glyphs on the print preview's controls, and the main window's view controls there too
+## O439 — **BUILT, awaiting Ken** — glyphs on the print preview's controls, and the main window's view controls there too
 
 *"Also we need glyphs for our print preview controls, and also we should add the controls for navigating that we have at the bottom right of our main pdfcer-gui window, and they also need glyphs."*
 
@@ -8187,23 +8187,29 @@ Built: *Insert 3D model*'s glTF section has *Fill light*, on by default; off lig
 
 Built: the 3D viewer's *True light level* switch, off by default, with *Full white at* in lux, default 500. On, every picture (on screen, on the page, saved) is drawn at that fixed exposure instead of one metered to the model, so room-to-room levels are real ones; a model whose lamps state no strength stays metered and says why. Driven by `the_3d_viewer_draws_at_a_true_light_level`.
 
-## O447 — **OPEN** — the light meter says the lux figure for the area measured
+## O447 — **BUILT, awaiting Ken** — the light meter says the lux figure for the area measured
 
 *"When I use the light measurement tool I don't think it tells me what the lux number is for the area measured."*
 
-The reading says plainly, in lux, the figure for what was measured: the point, or the average over the circle. When it cannot be in lux, the reason is said beside the figure and not only on hover. The likely cause on a model with glowing parts: *Count glowing parts* is on by default, and a counted glow makes the whole reading relative, even when the glow states its brightness. **Waiting on the engine (G308)** for a glow of stated brightness to count in lux. The wording and the visible reason are shell work.
+The reading says plainly, in lux, the figure for what was measured: the point, or the average over the circle. When it cannot be in lux, the reason is said beside the figure and not only on hover. The likely cause on a model with glowing parts: *Count glowing parts* is on by default, and a counted glow makes the whole reading relative, even when the glow states its brightness. The engine's G308 makes a glow of stated brightness count in lux. The wording and the visible reason are shell work.
 
-## O448 — **OPEN** — the 3D viewer's save-a-picture glyph is a camera
+Built in v0.5.0-dev.20261119.5 and .6: the headline reads *At this point: N lux* or *Average over the circle: N lux*. When the reading is relative, it says *relative, not lux* with the engine's reasons on the same row. The meter check asserts it, and the release before fails it. Since .6 (engine G308), a glow that states its brightness counts in lux, and the glow switch's tooltip says so.
+
+## O448 — **BUILT, awaiting Ken** — the 3D viewer's save-a-picture glyph is a camera
 
 *"also save a picture of the view icon should be a camera."*
 
-The glyph over the picture that saves a picture of the view, and the options menu's Picture tab, show a camera. They now borrow the page-snapshot tool's dashed box.
+The glyph over the picture that saves a picture of the view, and the options menu's Picture tab, show a camera.
 
-## O449 — **OPEN** — *Draw as* at the top of the 3D viewer's View tab
+Built in v0.5.0-dev.20261119.5: a new camera glyph on the picture's save glyph and on the options menu's Picture tab, in place of the borrowed snapshot box.
+
+## O449 — **BUILT, awaiting Ken** — *Draw as* at the top of the 3D viewer's View tab
 
 *"also the "Draw as" section should be at the top under view."*
 
 The render-mode choice, *Draw as*, moves from the Look tab to the top of the View tab.
+
+Built in v0.5.0-dev.20261119.5: *Draw as* sits at the top of the View tab and stays in the shot dialog's look. `the_3d_viewer_draws_a_picked_render_mode` asserts it sits above the projection switch; the release before it fails.
 
 ## O450 — **OPEN** — a model lit by its own lights looks as bright on screen as the engine draws it
 
