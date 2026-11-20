@@ -175,7 +175,7 @@ fn entity_word(e: MeasureEntity) -> &'static str {
 fn trace_pick(n: usize, s: &Selection, figures: &Result<Figures, String>) {
     let [x, y, z] = s.pick.point;
     let head = format!(
-        "n={n} entity={} mesh={} triangle={} at={x:.6},{y:.6},{z:.6}",
+        "n={n} entity={} mesh={} triangle={} at={x:.6},{y:.6},{z:.6}", // ui-text-exempt: diagnostic trace, never displayed
         entity_word(s.entity),
         s.pick.mesh,
         s.pick.triangle
@@ -197,7 +197,7 @@ fn trace_figures(f: &Figures) -> String {
                 _ => ("curve", String::from("-")),
             };
             format!(
-                "length={:.6} chord={:.6} closed={} shape={shape} radius={radius}",
+                "length={:.6} chord={:.6} closed={} shape={shape} radius={radius}", // ui-text-exempt: diagnostic trace, never displayed
                 e.length,
                 e.chord,
                 u8::from(e.closed)
@@ -210,7 +210,7 @@ fn trace_figures(f: &Figures) -> String {
                 _ => ("unfitted", String::from("-")),
             };
             format!(
-                "area={:.6} perimeter={:.6} shape={shape} radius={radius} whole={} triangles={}",
+                "area={:.6} perimeter={:.6} shape={shape} radius={radius} whole={} triangles={}", // ui-text-exempt: diagnostic trace, never displayed
                 f.area,
                 f.perimeter,
                 u8::from(*whole),
@@ -379,7 +379,7 @@ impl ModelView {
             }
         }
         for (which, p) in [t::FIRST, t::SECOND].into_iter().zip(&s.picks) {
-            ui.strong(which);
+            ui.label(which);
             for line in pick_lines(p, unit) {
                 ui.small(line);
             }
