@@ -86,6 +86,10 @@ static OFF_DESKTOP: OnceLock<&'static str> = OnceLock::new();
 /// covers the operator's work or takes a click meant for it.
 const OFF_DESKTOP_VIEWPORT: &str = "-4200,-4200,1400,900";
 
+/// [`Session::maximize`]'s outer size off the desktop, in physical pixels: a
+/// common full-HD monitor's maximised window.
+const OFF_DESKTOP_GROWN: (i32, i32) = (1936, 1056);
+
 /// Keep every window launched from here on off the desktop; `viewport_env`
 /// is the profile's placement variable.
 pub fn keep_off_desktop(viewport_env: &'static str) {
@@ -343,10 +347,17 @@ impl Session {
     }
 
     /// Maximise the window, so a ribbon control past the fold is on screen
-    /// rather than in the overflow menu.
+    /// rather than in the overflow menu. Under `--no-input` the window is
+    /// instead grown to [`OFF_DESKTOP_GROWN`] where it stands: a maximised
+    /// window jumps onto a monitor, over the operator's work, and an OS
+    /// capture of it then photographs whatever that monitor shows.
     pub fn maximize(&self) {
         if let Some(w) = self.window {
-            sys::maximize_window(w);
+            if OFF_DESKTOP.get().is_some() {
+                sys::resize_window(w, OFF_DESKTOP_GROWN.0, OFF_DESKTOP_GROWN.1);
+            } else {
+                sys::maximize_window(w);
+            }
         }
     }
 

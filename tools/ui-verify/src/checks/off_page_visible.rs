@@ -9,6 +9,7 @@ use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
 use crate::geom::{LRect, Pt};
 use crate::image::Image;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -150,6 +151,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("off-page-visible.pointer.txt"))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched {} as pid {} on {}",
@@ -271,7 +273,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let paper_patch = patch_of(PAPER_AT)?;
 
     let shot = ctx.out("off-page-visible.png");
-    let image = crate::capture::window_to_png(&session, &shot)?;
+    // The window's own frame: an OS capture photographs whatever is on screen
+    // where the window stands, which off the desktop is nothing of it.
+    pointer.screenshot(&session, &shot)?;
+    let image = Image::load_png(&shot)?;
     report.artifact(shot.clone());
 
     let Some((ink, ink_px)) = ink_fraction(&image, ink_patch) else {

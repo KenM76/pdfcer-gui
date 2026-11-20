@@ -9,6 +9,7 @@ use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
 use crate::geom::{LRect, PixRect, Pt};
 use crate::image::Image;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -256,6 +257,10 @@ fn one_rung(
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = ScriptedPointer::attach(
+        &mut spec,
+        ctx.out(&format!("off-page-toggle-{}.pointer.txt", rung.label)),
+    )?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "rung `{}`: pid {} with PDFCER_DIAG_INVOKE={}",
@@ -369,7 +374,10 @@ fn one_rung(
     let on_patch = patch_of(ON_SHEET_AT)?;
 
     let shot = ctx.out(&format!("off-page-toggle-{}.png", rung.label));
-    let image = crate::capture::window_to_png(&session, &shot)?;
+    // The window's own frame: an OS capture photographs whatever is on screen
+    // where the window stands, which off the desktop is nothing of it.
+    pointer.screenshot(&session, &shot)?;
+    let image = Image::load_png(&shot)?;
     report.artifact(shot.clone());
 
     let Some((off_sheet, off_px)) = ink_fraction(&image, off_patch) else {
