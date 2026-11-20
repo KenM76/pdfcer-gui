@@ -8228,3 +8228,15 @@ Said on 2026-11-19, relayed by the EmilysOffice session, about the Bancroft offi
 Said on 2026-11-20, as engine v0.165.0 was being released, about the engine's new page drawing on the graphics card (`pdfcer_render::gpu`, decision 223): the page packed into one texture and drawn by two shaders, byte for byte the processor's picture, or refused for the whole page with the reason (shadings, soft masks, some blend modes). He wants a switch that makes the canvas draw on the card, so he can try it on his drawings.
 
 **Built, awaiting his try.** Settings ▸ Display ▸ *Draw pages on the graphics card*, off by default. On, each canvas page is packed by the engine on the render worker and drawn on the card on the UI thread; a page the card cannot take is drawn on the processor, and Render notes in the status bar lead with which way the page was drawn and why. Thumbnails, print and exports stay on the processor. Driven: `the_graphics_card_draws_the_page_the_processor_draws` — the A1 title block and the dense benchmark site plan both 0 pixels differing on vs off. On the site plan the processor took 2,805 ms, the card 1,963 ms packing plus 204 ms drawing.
+
+## O452 — **OPEN** — one window for every graphics-card switch, with what each actually does here
+
+*"Are there options to enable/disable GPU graphics for each part that has a CPU counterpart? Could we also add a secondary place to change all these settings - a window where each setting can be enabled/disabled but also shows its actual status, or limitation for each item since this probably differs depending on the system. If this stuff is easy to tack on and won't slow down the next release please add it, otherwise it can wait until the next one."*
+
+Said on 2026-11-20 while the v0.166.0 release sweep ran.
+
+**Where the switches stand when he asked.** The 3D viewer has a whole-picture switch plus seven per-part switches (shadows, lamp shadows, see-through shadows, ambient occlusion, fisheye, glow, lines and points), and `PDFCER_3D_CPU=1` forces it off for a session. The 2D page view has one switch, Settings ▸ Display ▸ *Draw pages on the graphics card* (O451). Inside the page view nothing finer is switchable: the engine draws a page on the card whole or refuses it whole, with the reason. Thumbnails, print and exports are processor-only, so they have no switch.
+
+**What is asked.** A second home for all of these in one window. Each row: the switch, and beside it what it actually did on *this* machine: in use, refused and why (the card's limit, a page feature the card cannot draw yet, forced off by the environment), or never tried this session. The existing switches stay where they are; this window shares their preferences.
+
+**Scheduled for the release after v0.166.0's.** It is not a tack-on: the status column needs each path's last outcome recorded where the window can read it, and it needs a driven check. The release sweep in progress forbids code changes until it ends.
