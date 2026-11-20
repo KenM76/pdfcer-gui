@@ -165,7 +165,7 @@ fn lines(m: &SurfaceMeasure, tolerance: f64, unit: &str) -> [String; 3] {
 
 /// A row of one line that never wraps, its whole text on hover, so the
 /// readout keeps its height.
-fn row(ui: &mut Ui, text: &str) {
+pub(super) fn row(ui: &mut Ui, text: &str) {
     let label = ui.add(egui::Label::new(RichText::new(text).small()).truncate());
     if text != BLANK {
         label.on_hover_text(text);

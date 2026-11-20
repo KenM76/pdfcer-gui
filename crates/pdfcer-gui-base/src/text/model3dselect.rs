@@ -1,6 +1,8 @@
 //! Strings for the 3D viewer's *Face, edge, corner* measure. Consumed by
 //! `pdfcer_gui::dialogs::model3d::select`.
 
+use super::model3dmeasure::with_unit;
+
 /// The measure's button in the kind row.
 pub const SELECT: &str = "Face, edge, corner";
 /// The button's tip.
@@ -44,14 +46,6 @@ pub fn next(done: usize, entity: usize) -> String {
         format!("Pick {article} {what}.")
     } else {
         format!("Pick a second {what} to measure between them.")
-    }
-}
-
-fn with_unit(value: f64, unit: &str) -> String {
-    if unit.is_empty() {
-        format!("{value:.3}")
-    } else {
-        format!("{value:.3} {unit}")
     }
 }
 

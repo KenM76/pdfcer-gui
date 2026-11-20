@@ -259,7 +259,9 @@ pub fn surface_next(done: usize) -> &'static str {
 }
 
 /// `value` followed by `unit` when there is one.
-fn with_unit(value: f64, unit: &str) -> String {
+/// `value` to three places, followed by `unit` when the file states one.
+#[must_use]
+pub fn with_unit(value: f64, unit: &str) -> String {
     if unit.is_empty() {
         format!("{value:.3}")
     } else {

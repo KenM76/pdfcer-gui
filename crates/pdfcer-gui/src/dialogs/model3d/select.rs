@@ -20,6 +20,7 @@ use pdfcer_3d::{
 use super::ModelView;
 use super::measure::{SELECT, Said, units_word};
 use super::measure_tab::REGION_START_AGAIN;
+use super::surfaces::row;
 use crate::text::model3dselect as t;
 
 /// The measure's button in the kind row.
@@ -308,14 +309,6 @@ fn distance_lines(d: &Result<EntityDistance, String>, unit: &str) -> Vec<String>
         lines.push(t::centres(c.length, unit));
     }
     lines
-}
-
-/// A row of one line that never wraps, its whole text on hover.
-fn row(ui: &mut Ui, text: &str) {
-    let label = ui.add(egui::Label::new(RichText::new(text).small()).truncate());
-    if text != BLANK {
-        label.on_hover_text(text);
-    }
 }
 
 impl ModelView {
