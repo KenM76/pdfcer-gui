@@ -28,6 +28,7 @@ mod overlay;
 mod passes;
 mod prepass;
 mod program;
+pub mod scene;
 mod spec;
 
 use glow::HasContext as _;

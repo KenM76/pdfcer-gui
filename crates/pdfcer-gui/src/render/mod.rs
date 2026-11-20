@@ -21,6 +21,9 @@ pub use pdfcer_gui_base::rasterhalo as halo;
 /// a diagnostic for the first time.
 pub mod pressure;
 
+/// The drawer the canvas's pages use on the graphics card.
+pub mod card;
+
 /// Rendered pixmaps into egui textures.
 pub use pdfcer_gui_base::raster;
 

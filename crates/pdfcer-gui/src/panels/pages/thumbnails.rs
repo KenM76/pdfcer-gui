@@ -692,6 +692,7 @@ fn thumbnail_request(doc: &OpenDoc, page_index: usize, page: &Page, scale: f32) 
         layers: None,
         layers_generation: 0,
         region: None,
+        card: pdfcer_gui_base::rendercard::CardAsk::Off,
     }
 }
 

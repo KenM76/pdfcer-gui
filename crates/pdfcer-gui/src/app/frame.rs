@@ -104,6 +104,7 @@ impl eframe::App for PdfcerApp {
         // an empty rectangle at full frame rate. That is O219.
         crate::render::pressure::poll(&ctx, frame.gl().map(std::sync::Arc::as_ref));
         crate::render::pressure::trace_texture_limit(&ctx);
+        crate::render::card::keep(&ctx, frame.gl());
         // The window every dialog is owned BY, published once a frame.
         // See `dialogs::host::set_owner` for why it travels this way, and the
         // host's G3 section for what ownership buys.

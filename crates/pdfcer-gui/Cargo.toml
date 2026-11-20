@@ -392,7 +392,7 @@ egui-shell.workspace = true
 # `cargo build` is byte-identical in capability to the old crate's.
 # ---------------------------------------------------------------------------
 pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
-pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false, features = ["gpu"] }
 
 # pdfcer-emf — the Enhanced Metafile writer (print, clipboard, export),
 # released in lockstep with pdfcer-render at one version.

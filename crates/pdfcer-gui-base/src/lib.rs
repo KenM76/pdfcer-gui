@@ -126,6 +126,9 @@ pub mod redact;
 /// How sharply a page is drawn, and how long zoom waits before drawing it.
 pub mod renderquality;
 
+/// A canvas page drawn on the graphics card, and the reason when it is not.
+pub mod rendercard;
+
 /// The background render thread: one page raster at a time, cancellable, and
 /// a typed refusal when there are no pixels.
 pub mod renderworker;

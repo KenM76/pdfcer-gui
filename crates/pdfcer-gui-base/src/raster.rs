@@ -43,6 +43,8 @@ pub struct PageTexture {
     /// documents ~99 % of render cost is resolution-independent and a duration
     /// with no scale beside it invites exactly the wrong conclusion.
     pub elapsed: std::time::Duration,
+    /// Which way it was drawn, for the render notes.
+    pub card: crate::rendercard::CardNote,
 }
 
 impl std::fmt::Debug for PageTexture {
@@ -122,6 +124,7 @@ pub fn texture_from_pixels(
         // the render did not; a clock started here would time the wrong thing
         // and would do it plausibly, which is the worst combination available.
         elapsed: pixels.elapsed,
+        card: pixels.card.clone(),
     }
 }
 

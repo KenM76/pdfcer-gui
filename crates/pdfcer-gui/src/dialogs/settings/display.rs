@@ -50,6 +50,17 @@ pub fn smooth_pictures(ui: &mut Ui, prefs: &mut Prefs) {
     );
 }
 
+/// Whether the canvas's pages are drawn on the graphics card — O451.
+pub fn graphics_card(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(ui, t::card_title(), t::card_silence(), t::card_radius());
+    widgets::toggle(
+        ui,
+        &mut prefs.card.draw_pages,
+        t::card_label(),
+        Some(t::card_note()),
+    );
+}
+
 /// The prefix of each overprint-default choice's region; the choice's id follows.
 pub const OVERPRINT_REGION: &str = "settings.display.overprint."; // ui-text-exempt: trace region prefix, never displayed
 

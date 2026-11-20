@@ -34,6 +34,7 @@ pub use crate::openingfit as opening;
 /// The DXF scale is the interesting omission; see its header.
 pub mod exporting;
 
+pub mod card;
 mod families;
 pub mod formstyle;
 pub mod markuptools;
@@ -89,6 +90,7 @@ pub use chrome::{DEFAULT_UI_SCALE, MAX_UI_SCALE, MIN_UI_SCALE, UI_SCALE_STEP};
 // `ImageFormat`, `PageScope`, `PageSeparator`, `LineEndings` and the engine's
 // own `DxfUnits` and `DxfText` -- is already `pub`, so no visibility chain
 // forces them down. Same storage decision, different constraint.
+pub use card::CardPrefs;
 pub use exporting::{
     ExportDxfPrefs, ExportImagePrefs, ExportPrefs, ExportTablePrefs, ExportTextPrefs,
     MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY,
@@ -400,6 +402,8 @@ pub struct Prefs {
     pub trust: TrustPrefs,
     /// How the page view draws an enlarged picture. See [`pictures`].
     pub pictures: PicturePrefs,
+    /// Whether the page view draws on the graphics card. See [`card`].
+    pub card: CardPrefs,
     /// Forms ▸ Style's look for the next placed field. See [`formstyle`].
     pub form_style: FormStylePrefs,
     /// The highlighter's shape and Delete in region's reach. See [`markuptools`].
@@ -874,6 +878,7 @@ impl Default for Prefs {
             ocr_models: OcrModelPrefs::default(),
             trust: TrustPrefs::default(),
             pictures: PicturePrefs::default(),
+            card: CardPrefs::default(),
             form_style: FormStylePrefs::default(),
             markup_tools: MarkupToolPrefs::default(),
             overprint_default: OverprintDefault::default(),

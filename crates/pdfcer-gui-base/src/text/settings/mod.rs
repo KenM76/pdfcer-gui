@@ -8,6 +8,8 @@
 
 pub mod blackpoint;
 pub mod bytes;
+/// The Display page's graphics-card setting.
+pub mod card;
 pub mod extract;
 pub mod keys;
 pub mod look;
@@ -40,6 +42,7 @@ pub mod tabface;
 
 pub use blackpoint::*;
 pub use bytes::*;
+pub use card::*;
 pub use extract::*;
 pub use look::*;
 pub use nav::*;

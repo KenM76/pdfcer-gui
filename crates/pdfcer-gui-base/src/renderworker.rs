@@ -57,6 +57,8 @@ pub struct RenderedPixels {
     /// dense CAD: *how long* and *at what scale* only mean something
     /// together, which is why the two travel on one struct.
     pub elapsed: std::time::Duration,
+    /// Which way it was drawn, for the render notes.
+    pub card: crate::rendercard::CardNote,
 }
 
 /// What a worker sends back: pixels, a failure, or nothing at all.
@@ -68,12 +70,46 @@ fn notdef_of(outcome: &Outcome) -> i64 {
         Outcome::Done(pixels) => {
             i64::try_from(pixels.diagnostics.glyphs_notdef).unwrap_or(i64::MAX)
         }
-        Outcome::Cancelled | Outcome::Failed(_) => -1,
+        Outcome::Cancelled | Outcome::Failed(_) | Outcome::Scene(_) => -1,
+    }
+}
+
+/// A page packed for the card drawn here, on the UI thread, as each result is
+/// received; every other outcome as it came. A failed draw retires the card
+/// and lands as `Cancelled`, so the canvas asks again and the processor draws.
+fn land(outcome: Outcome) -> Outcome {
+    match outcome {
+        Outcome::Scene(packed) => crate::rendercard::draw(*packed)
+            .map_or(Outcome::Cancelled, |pixels| Outcome::Done(Box::new(pixels))),
+        other => other,
+    }
+}
+
+/// The card's answer before the processor renders: `Err` with the outcome to
+/// send when the card takes the page, else the note the processor's raster
+/// carries.
+fn card_first(
+    view: &pdfcer_render::DocumentView<'_>,
+    request: &RenderRequest,
+    options: &pdfcer_render::RenderOptions,
+    cancel: &RenderCancel,
+) -> Result<crate::rendercard::CardNote, Outcome> {
+    use crate::rendercard::CardNote;
+    match crate::rendercard::pack(view, request, options) {
+        None => Ok(CardNote::Off),
+        Some(Ok(scene)) => Err(Outcome::Scene(Box::new(scene))),
+        Some(Err(_)) if cancel.is_cancelled() => Err(Outcome::Cancelled),
+        Some(Err(why)) => {
+            crate::rendercard::trace_processor(&why);
+            Ok(CardNote::Processor(why))
+        }
     }
 }
 
 enum Outcome {
     Done(Box<RenderedPixels>),
+    /// Packed for the card on the worker; [`land`] draws it.
+    Scene(Box<crate::rendercard::ScenePixels>),
     Failed(RenderRefusal),
     /// The render observed its cancellation token and stopped early.
     /// Distinguished from a failure so the shell does not report a
@@ -316,6 +352,8 @@ pub struct RenderRequest {
     /// How many times the override above has changed — the fourth staleness
     /// key. See [`RenderKey::layers_generation`].
     pub layers_generation: u64,
+    /// Whether to try the graphics card first; [`crate::rendercard::ask`].
+    pub card: crate::rendercard::CardAsk,
     /// **The page-space rectangle to rasterize, or `None` for the whole
     /// page.** O24.
     ///
@@ -390,6 +428,7 @@ impl RenderWorker {
         // The bounded in-frame wait. See IN_FRAME_BUDGET.
         match rx.recv_timeout(IN_FRAME_BUDGET) {
             Ok(outcome) => {
+                let outcome = land(outcome);
                 // Finished inside the budget: join immediately so no
                 // thread outlives the call, and return inline.
                 let _ = handle.join();
@@ -439,6 +478,7 @@ impl RenderWorker {
         let flight = self.in_flight.as_mut()?;
         match flight.rx.try_recv() {
             Ok(outcome) => {
+                let outcome = land(outcome);
                 let mut flight = self.in_flight.take()?;
                 if let Some(handle) = flight.handle.take() {
                     let _ = handle.join();
@@ -448,7 +488,7 @@ impl RenderWorker {
                 let kind = match &outcome {
                     Outcome::Done(_) => "done",
                     Outcome::Cancelled => "cancelled",
-                    Outcome::Failed(_) => "failed",
+                    Outcome::Failed(_) | Outcome::Scene(_) => "failed",
                 };
                 // How much ink the raster actually carries. See
                 // [`sampled_tone_count`] for why this is on the line at all;
@@ -456,7 +496,7 @@ impl RenderWorker {
                 // the render was cancelled or failed.
                 let ink = match &outcome {
                     Outcome::Done(pixels) => i32::from(ink::sampled_tone_count(&pixels.pixmap)),
-                    Outcome::Cancelled | Outcome::Failed(_) => -1,
+                    Outcome::Cancelled | Outcome::Failed(_) | Outcome::Scene(_) => -1,
                 };
                 let notdef = notdef_of(&outcome);
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -529,7 +569,7 @@ impl RenderWorker {
             Outcome::Failed(refusal) => Some(Err(refusal)),
             // A cancelled render has no result and is not a failure.
             // The shell keeps whatever it was already showing.
-            Outcome::Cancelled => None,
+            Outcome::Cancelled | Outcome::Scene(_) => None,
         }
     }
 }
@@ -593,6 +633,10 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // request can own the `Arc` and still hand `render_page_with_view` a
     // reference.
     let view = request.session.view();
+    let card = match card_first(&view, request, &options, cancel) {
+        Ok(note) => note,
+        Err(outcome) => return outcome,
+    };
     // The clock starts here and nowhere else. Everything above is option
     // assembly and a borrow; everything below is a `match` on the result. What
     // is timed is therefore the rasterization, which is what
@@ -660,6 +704,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
                 // the inputs that produced it.
                 key: RenderKey::of(request),
                 elapsed: started.elapsed(),
+                card,
             }))
         }
         Err(e) if cancel.is_cancelled() => {

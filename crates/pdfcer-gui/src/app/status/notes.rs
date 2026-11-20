@@ -47,7 +47,7 @@ pub(super) fn show(ui: &mut egui::Ui, doc: &OpenDoc) {
             if !open {
                 return;
             }
-            let line = notes_line(&texture.diagnostics);
+            let line = with_card(&texture.card, notes_line(&texture.diagnostics));
             // A bounded sub-region, so a page with eight findings cannot
             // squeeze the navigation controls off the right of the bar.
             let width = (ui.available_width() * NOTES_WIDTH_FRACTION).max(0.0);
@@ -87,6 +87,16 @@ fn notes_line(d: &pdfcer_render::Diagnostics) -> String {
         t::diagnostics_clean().to_owned()
     } else {
         t::diagnostics_join(&parts)
+    }
+}
+
+/// The render notes, led by which way the page was drawn when the switch is on.
+fn with_card(card: &pdfcer_gui_base::rendercard::CardNote, line: String) -> String {
+    use pdfcer_gui_base::rendercard::CardNote;
+    match card {
+        CardNote::Off => line,
+        CardNote::Drew => t::card_drew(&line),
+        CardNote::Processor(why) => t::card_processor(why, &line),
     }
 }
 

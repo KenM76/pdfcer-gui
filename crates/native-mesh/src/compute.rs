@@ -374,7 +374,7 @@ fn upload(gl: &glow::Context, input: &Input<'_>) -> Result<(glow::Texture, u32),
 /// # Safety
 ///
 /// A texture is bound to `target` on the caller's context.
-unsafe fn nearest(gl: &glow::Context, target: u32) {
+pub(crate) unsafe fn nearest(gl: &glow::Context, target: u32) {
     for (name, value) in [
         (glow::TEXTURE_MIN_FILTER, glow::NEAREST),
         (glow::TEXTURE_MAG_FILTER, glow::NEAREST),

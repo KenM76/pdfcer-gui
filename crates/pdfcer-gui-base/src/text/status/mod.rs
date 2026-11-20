@@ -20,6 +20,9 @@ pub use diagnostics::{
     diagnostics_toggle, diagnostics_tooltip,
 };
 
+/// Which way the page on screen was drawn.
+mod card;
+pub use card::*;
 mod formdelete;
 mod inknotes;
 pub use inknotes::*;

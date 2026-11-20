@@ -14,6 +14,7 @@ pub mod annot_rotate;
 
 pub mod blend_space;
 pub mod calibrated_cmyk_setting;
+pub mod card_pages;
 pub mod export_keep_text;
 pub mod field_outline;
 pub mod merge_runs;

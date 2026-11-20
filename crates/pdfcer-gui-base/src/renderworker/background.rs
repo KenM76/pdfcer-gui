@@ -90,7 +90,7 @@ impl RenderWorker {
     pub fn poll_background(&self) -> Option<BackgroundResult> {
         let mut slot = self.background.0.borrow_mut();
         let outcome = match slot.as_ref()?.rx.try_recv() {
-            Ok(outcome) => Some(outcome),
+            Ok(outcome) => Some(super::land(outcome)),
             Err(TryRecvError::Empty) => return None,
             Err(TryRecvError::Disconnected) => None,
         };
@@ -102,7 +102,7 @@ impl RenderWorker {
         let outcome = match outcome {
             Some(Outcome::Done(pixels)) => Some(Ok(*pixels)),
             Some(Outcome::Failed(refusal)) => Some(Err(refusal)),
-            Some(Outcome::Cancelled) => None,
+            Some(Outcome::Cancelled | Outcome::Scene(_)) => None,
             None => Some(Err(RenderRefusal::other(RefusalReason::WorkerStopped))),
         };
         Some(BackgroundResult {

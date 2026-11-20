@@ -986,6 +986,7 @@ impl Prefs {
         ocrmodels::write_block(&self.ocr_models, &mut out);
         trust::write_block(&self.trust, &mut out);
         pictures::write_block(&self.pictures, &mut out);
+        super::card::write_block(&self.card, &mut out);
         formstyle::write_block(&self.form_style, &mut out);
         markuptools::write_block(&self.markup_tools, &mut out);
         overprint::write_block(self.overprint_default, &mut out);

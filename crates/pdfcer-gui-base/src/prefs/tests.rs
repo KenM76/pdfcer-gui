@@ -49,6 +49,7 @@ fn every_preference_round_trips_through_the_file() {
         for fit in OpeningFit::ALL {
             for reach in RedactionReach::ALL {
                 let original = Prefs {
+                    card: crate::prefs::CardPrefs { draw_pages: true },
                     pictures: crate::prefs::PicturePrefs {
                         smooth_enlarged: false,
                     },
@@ -665,6 +666,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
     // A non-default in every field, so no emitted value can coincide with
     // what a failed parse would have left behind.
     let prefs = Prefs {
+        card: crate::prefs::CardPrefs { draw_pages: true },
         pictures: crate::prefs::PicturePrefs {
             smooth_enlarged: false,
         },

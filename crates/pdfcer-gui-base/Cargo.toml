@@ -71,7 +71,7 @@ pdfcer-fetch = { git = "file:///D:/Dev/pdfcer", branch = "main", default-feature
 
 # pdfcer-render — `ocr` rasterises a page to show the recogniser. Same spec as
 # `pdfcer-gui`'s, for the unification reason given above.
-pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false, features = ["gpu"] }
 
 # pdfcer-emf — the Enhanced Metafile writer (print, clipboard, export),
 # released in lockstep with pdfcer-render at one version.

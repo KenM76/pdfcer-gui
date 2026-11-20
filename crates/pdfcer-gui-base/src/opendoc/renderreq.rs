@@ -99,6 +99,7 @@ impl OpenDoc {
             image_magnify: self.prefs.pictures.magnify(),
             layers: self.layer_visibility(),
             layers_generation: self.layers.generation,
+            card: crate::rendercard::ask(self.prefs.card.draw_pages),
             // The SNAPSHOT, not a live read — see the field's own docs.
             //
             // The worker runs on another thread and may finish after the
