@@ -23,6 +23,10 @@ const DECLINE: &str = "canvas-decline-recorded";
 const MERGED: &str = "merge-text-runs-applied";
 const SPLIT: &str = "split-text-lines-applied";
 const SPLIT_DECLINED: &str = "split-text-lines-declined";
+const SPLIT_FUNNEL: &str = "split-text-lines";
+/// A phrase only the engine's plan sentence carries (`split_plan_of`), so a
+/// disclosure worded by the shell cannot satisfy it.
+const ENGINE_INFERENCE: &str = "ISO 32000-1 14.8";
 const WIDTH: &str = "text-run-width";
 const MERGE_ROW: &str = "menu.item.canvas.object.format.merge_text_runs";
 const SPLIT_ROW: &str = "menu.item.canvas.object.format.split_text_lines";
@@ -133,6 +137,18 @@ fn split(
         )));
     }
     report.note(format!("the engine split it: `{}`", line.raw));
+    let trace = session.trace()?;
+    let funnel = trace.last_after(SPLIT_FUNNEL, mark);
+    let engine_worded = funnel.is_some_and(|l| l.raw.contains(ENGINE_INFERENCE));
+    if !engine_worded || line.get("disclosed") != Some("1") {
+        return Ok(Some(format!(
+            "the line-inference disclosure is not the engine's plan sentence \
+             (`text_object_split_plan_in_form`, carrying `{ENGINE_INFERENCE}`, `disclosed=1`): \
+             funnel `{}`. Trace: {}.",
+            funnel.map_or("none", |l| l.raw.as_str()),
+            session.trace_path().display()
+        )));
+    }
     Ok(None)
 }
 

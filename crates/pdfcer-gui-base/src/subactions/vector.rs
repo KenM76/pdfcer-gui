@@ -760,7 +760,7 @@ pub enum VectorAction {
     /// Cut one text object into one object per inferred line
     /// (`EditSession::text_object_split_plan` with `SplitGranularity::Line`,
     /// then `EditSession::split_text_object`; for a form leaf,
-    /// `text_object_split_points` then `split_text_object_in_form`). One undo
+    /// `text_object_split_plan_in_form` then `split_text_object_in_form`). One undo
     /// entry, `CommandKind::SplitTextObject`; later objects renumber up by the
     /// cut count.
     SplitTextLines {

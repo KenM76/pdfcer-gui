@@ -28,7 +28,10 @@ FAIL when the menu row is absent (an error naming the rows offered), when no
 `merge-text-runs-applied` / `split-text-lines-applied` / `text-run-width`
 line follows (quoting any decline line), or when that line lacks
 `in_form=true`. Then merge needs `merged=2`, split `pieces=2`, width
-`detail=applied`. PASS otherwise.
+`detail=applied`. Split also needs `disclosed=1` and the funnel's
+`split-text-lines` line to carry `ISO 32000-1 14.8`, a phrase only the
+engine's plan sentence (`text_object_split_plan_in_form`) holds. PASS
+otherwise.
 
 ## Falsified
 
