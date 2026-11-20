@@ -2,7 +2,7 @@
 //!
 //! The dialog behind `pages.insert_blank`. It raises
 //! `PageAction::InsertBlankPages`; the sheets themselves are made by
-//! `app::actions::insertruns::insert_blank`.
+//! `app::actions::insertblank::insert_blank`.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/insert_blank.md`.
 
@@ -34,8 +34,8 @@ const REGION_LANDSCAPE: &str = "insert-blank.landscape";
 /// The commit button.
 const REGION_INSERT: &str = "insert-blank.insert";
 
-/// The most sheets one press inserts. Each is a separate engine call on the
-/// UI thread (see `app::actions::insertruns`), so a dragged count is capped
+/// The most sheets one press inserts. The engine copies every sheet on the
+/// UI thread (see `app::actions::insertblank`), so a dragged count is capped
 /// where the wait stays short.
 const MAX_COUNT: usize = 500;
 
