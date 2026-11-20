@@ -34,6 +34,8 @@ pub mod run_width;
 pub mod selection_drop;
 pub mod smooth_pictures;
 pub mod snapshot_picture;
+/// A line written one letter per show operator edits as one run.
+pub mod spanned_edit;
 /// One text object split into one per line, and a split the engine refuses.
 pub mod split_lines;
 pub mod spots_flattened;

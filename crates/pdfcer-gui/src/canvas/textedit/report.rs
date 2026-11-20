@@ -55,7 +55,7 @@ pub fn trace_target(page: usize, run: usize, report: &pdfcer_core::text_edit::Ed
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
             "edit-text-target page={page} run={run} form={} invocations={} pages={} \
-             followers={} disposition={:?}",
+             followers={} disposition={:?} operators_spanned={}",
             report
                 .form_object
                 .map_or_else(|| "none".to_owned(), |o| o.to_string()),
@@ -80,6 +80,9 @@ pub fn trace_target(page: usize, run: usize, report: &pdfcer_core::text_edit::Ed
             // regression names itself, rather than being found by him again.
             report.followers_repositioned,
             report.disposition,
+            // How many show operators the match ran across; the engine's
+            // `span:` disclosure says the same to him when it is above 1.
+            report.operators_spanned,
         )
     });
 }

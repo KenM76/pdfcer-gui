@@ -95,6 +95,19 @@ fn record_edit_text(why: crate::text::textedit::EditRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::EditText(why)));
 }
 
+/// Whether the engine answered that the find text is on the page only across
+/// show operators or text objects it does not join.
+pub(crate) fn engine_says_split(error: &pdfcer_core::text_edit::EditError) -> bool {
+    use pdfcer_core::text_edit::{EditError, NotFoundReason};
+    matches!(
+        error,
+        EditError::NoMatch {
+            reason: NotFoundReason::SplitRun { .. } | NotFoundReason::SpansTextObjects { .. },
+            ..
+        }
+    )
+}
+
 /// **Classify the engine's refusal of a committed text edit, say it on the
 /// trace, and put the sentence in the slot** — the one entry point
 /// `app::actions::apply`'s `edit_text` arm calls.
@@ -120,6 +133,11 @@ pub(crate) fn record_edit_text_refusal(
         error,
         pdfcer_core::text_edit::EditError::PinnedSpanNotFound { .. }
     );
+    // The engine says when the text is there only across pieces it will not
+    // join; that answer outranks the shell's own operator count, which still
+    // decides a pinned request the engine confined to one operator.
+    let engine_split = engine_says_split(error);
+    let one_operator = one_operator && !engine_split;
     let missing = missing_character(error);
     let typed = crate::canvas::textedit::last_commit().filter(|c| c.page == page && c.run == run);
     let char_kind = refused_char_kind(error, typed.as_ref());
@@ -173,9 +191,10 @@ pub(crate) fn record_edit_text_refusal(
 
         format!(
             "edit-text-classified page={page} run={run} kind={kind:?} \
-             one_operator={one_operator} stale_pin={} character={character} \
-             character_font={character_font} said={said}",
-            u8::from(stale_pin)
+             one_operator={one_operator} stale_pin={} engine_split={} \
+             character={character} character_font={character_font} said={said}",
+            u8::from(stale_pin),
+            u8::from(engine_split)
         )
     });
     record_edit_text(why);

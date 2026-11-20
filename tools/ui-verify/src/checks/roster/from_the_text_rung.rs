@@ -45,6 +45,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(redraw_layout::ARedrawSaysWhatItDidToAFieldsText),
         Box::new(edit_never_blanks::AnEditNeverBlanksOrBlocks),
         Box::new(two_codes::ALetterDrawnTwoWaysIsNamed),
+        Box::new(spanned_edit::ALineOfOneLetterOperatorsEditsAsOne),
         Box::new(strike_source::AStrikethroughSaysWhereItsLineCameFrom),
         Box::new(style_off::CtrlBAgainTakesBoldOff),
         Box::new(replace_all::ReplaceAllIsOneUndo),

@@ -857,3 +857,23 @@ fn a_refused_stamp_is_not_reported_as_an_edit() {
     );
     retire();
 }
+
+/// The engine's own answer that the text is there only across pieces it does
+/// not join is read as a split; an absent text is not.
+#[test]
+fn the_engines_split_answer_is_read_as_a_split() {
+    use pdfcer_core::text_edit::{EditError, NotFoundReason};
+    let no_match = |reason| EditError::NoMatch {
+        find: "ABC".to_owned(),
+        reason,
+    };
+    assert!(textedit::engine_says_split(&no_match(
+        NotFoundReason::SplitRun { operators: 3 }
+    )));
+    assert!(textedit::engine_says_split(&no_match(
+        NotFoundReason::SpansTextObjects { objects: 2 }
+    )));
+    assert!(!textedit::engine_says_split(&no_match(
+        NotFoundReason::NoSuchText
+    )));
+}
