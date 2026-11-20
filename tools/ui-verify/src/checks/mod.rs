@@ -570,6 +570,8 @@ pub mod security_notes;
 pub mod security_passwords;
 /// The Security tab's two bands, and the rail's snapshot row.
 pub mod security_tab;
+/// The Straighten scans storage choice reaches the saved file.
+pub mod straighten_codec;
 /// Straighten scans turns the tilted pages and leaves the rest.
 pub mod straighten_confidence;
 pub mod straighten_scans;

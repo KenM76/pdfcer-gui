@@ -177,12 +177,60 @@ pub fn stopped(done: usize, of: usize) -> String {
     format!("Stopped after {done} of {of} page(s). What was straightened is kept.")
 }
 
-/// The straightened pictures are stored losslessly and so take more room.
+/// The straightened pictures take more room than the ones they replaced.
 #[must_use]
 pub fn growth(old: usize, new: usize) -> String {
     format!(
-        "The straightened pictures are stored without loss, so they take more room: {} became {}.",
+        "The straightened pictures take more room: {} became {}.",
         byte_size(old),
         byte_size(new)
     )
+}
+
+/// The storage choice's label.
+#[must_use]
+pub fn codec() -> &'static str {
+    "Store the straightened scan"
+}
+
+/// Keep the scan's own kind of compression.
+#[must_use]
+pub fn codec_keep() -> &'static str {
+    "As the original"
+}
+
+/// What keeping the kind means.
+#[must_use]
+pub fn codec_keep_tooltip() -> &'static str {
+    "A JPEG scan stays JPEG at about its own quality, a black-and-white fax scan stays fax-compressed, and anything else is stored without loss. The file stays about the size it was."
+}
+
+/// Store without loss.
+#[must_use]
+pub fn codec_lossless() -> &'static str {
+    "Without loss"
+}
+
+/// What lossless costs.
+#[must_use]
+pub fn codec_lossless_tooltip() -> &'static str {
+    "Every pixel of the straightened picture is kept exactly. A photograph-like scan can take several times the room a JPEG would."
+}
+
+/// Store as JPEG.
+#[must_use]
+pub fn codec_jpeg() -> &'static str {
+    "JPEG"
+}
+
+/// What JPEG costs.
+#[must_use]
+pub fn codec_jpeg_tooltip() -> &'static str {
+    "Smallest for photographs and grey scans, but it blurs fine lines and small text a little, more at lower quality. A picture JPEG cannot hold, such as a black-and-white one, is stored without loss and the result says so."
+}
+
+/// The JPEG quality box's label.
+#[must_use]
+pub fn codec_quality() -> &'static str {
+    "Quality"
 }

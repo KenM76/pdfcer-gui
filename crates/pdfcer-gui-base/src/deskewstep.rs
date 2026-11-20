@@ -17,6 +17,8 @@ pub enum ScanJob {
         /// The least confidence, in percent, at which a measured tilt is
         /// applied; 0 applies every measured tilt.
         min_confidence_percent: u8,
+        /// How the straightened picture is stored.
+        encoding: pdfcer_core::edit::DeskewEncoding,
     },
     /// Enlarge the picture's samples; it keeps its place and size on the page.
     Enlarge {

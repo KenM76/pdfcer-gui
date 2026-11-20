@@ -190,9 +190,10 @@ fn turn(doc: &mut OpenDoc, page: usize, object: Option<usize>, job: ScanJob) -> 
         ScanJob::Straighten {
             skip_text,
             min_confidence_percent,
+            encoding,
         } => {
             let least = f64::from(min_confidence_percent) / 100.0;
-            page_turn(doc, page, object, skip_text, least)
+            page_turn(doc, page, object, (skip_text, least), encoding)
         }
         ScanJob::Enlarge {
             factor_halves,
@@ -209,8 +210,8 @@ fn page_turn(
     doc: &mut OpenDoc,
     page: usize,
     object: Option<usize>,
-    skip_text: bool,
-    least: f64,
+    (skip_text, least): (bool, f64),
+    encoding: pdfcer_core::edit::DeskewEncoding,
 ) -> Outcome {
     let had_text = page_has_text(doc, page);
     if had_text && skip_text {
@@ -234,7 +235,7 @@ fn page_turn(
     let mut done = None;
     let mut refusal = None;
     super::funnel::vector_edit_on_page(doc, "deskew", page, 1, |session| {
-        match session.deskew_image(page, index, degrees) {
+        match session.deskew_image_with(page, index, degrees, encoding) {
             Ok(d) => {
                 let notes = d.notes.clone();
                 done = Some(d);

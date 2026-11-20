@@ -14,6 +14,7 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use pdfcer_core::edit::DeskewEncoding;
 use pdfcer_core::ocr::upscale::UpscaleFilter;
 use pdfcer_core::vector::{ImageSource, VectorObject};
 
@@ -39,6 +40,8 @@ pub const REGION_MIN_CONFIDENCE: &str = "deskew.min-confidence"; // ui-text-exem
 pub const REGION_LANCZOS: &str = "deskew.lanczos"; // ui-text-exempt: trace region name, never displayed
 /// The only-the-selected-pictures checkbox.
 pub const REGION_SELECTED: &str = "deskew.selected"; // ui-text-exempt: trace region name, never displayed
+/// The storage choices' prefix; `.keep`, `.lossless`, `.jpeg` follow.
+pub const REGION_CODEC: &str = "deskew.codec"; // ui-text-exempt: trace region name, never displayed
 /// The button that starts the run.
 pub const REGION_COMMIT: &str = "deskew.commit"; // ui-text-exempt: trace region name, never displayed
 /// The Stop button.
@@ -52,6 +55,47 @@ pub enum ScanKind {
     /// File ▸ Enlarge scans.
     Enlarge,
 }
+
+/// How a straightened picture is stored, as the window offers it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Codec {
+    Keep,
+    Lossless,
+    Jpeg,
+}
+
+impl Codec {
+    const ALL: [Self; 3] = [Self::Keep, Self::Lossless, Self::Jpeg];
+
+    /// The region suffix and trace word.
+    fn token(self) -> &'static str {
+        // ui-text-exempt: trace vocabulary, never displayed
+        match self {
+            Self::Keep => "keep",
+            Self::Lossless => "lossless",
+            Self::Jpeg => "jpeg",
+        }
+    }
+
+    fn label(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Keep => (t::codec_keep(), t::codec_keep_tooltip()),
+            Self::Lossless => (t::codec_lossless(), t::codec_lossless_tooltip()),
+            Self::Jpeg => (t::codec_jpeg(), t::codec_jpeg_tooltip()),
+        }
+    }
+
+    fn encoding(self, quality: u8) -> DeskewEncoding {
+        match self {
+            Self::Keep => DeskewEncoding::SameFamily,
+            Self::Lossless => DeskewEncoding::Flate,
+            Self::Jpeg => DeskewEncoding::Dct { quality },
+        }
+    }
+}
+
+/// The JPEG quality offered first.
+const DEFAULT_QUALITY: u8 = 85;
 
 /// Run ids, unique for the process so two windows' logs never mix.
 static NEXT_RUN: AtomicU64 = AtomicU64::new(1);
@@ -86,6 +130,9 @@ pub struct DeskewDialog {
     /// Least confidence to turn, percent; seeded from and saved to
     /// `Prefs::deskew_min_confidence`.
     min_confidence: u8,
+    /// Straighten's storage choice and its JPEG quality.
+    codec: Codec,
+    quality: u8,
     /// Enlarge's factor and kernel.
     factor: f32,
     filter: UpscaleFilter,
@@ -106,6 +153,8 @@ impl DeskewDialog {
             selected: (page, selected),
             skip_text: true,
             min_confidence,
+            codec: Codec::Keep,
+            quality: DEFAULT_QUALITY,
             factor: super::ocr_upscale::DEFAULT_FACTOR,
             filter: UpscaleFilter::default(),
             phase: Phase::Choosing,
@@ -119,6 +168,7 @@ impl DeskewDialog {
             ScanKind::Straighten => ScanJob::Straighten {
                 skip_text: self.skip_text,
                 min_confidence_percent: self.min_confidence,
+                encoding: self.codec.encoding(self.quality),
             },
             ScanKind::Enlarge => ScanJob::Enlarge {
                 factor_halves: halves(self.factor),
@@ -305,6 +355,26 @@ impl DeskewDialog {
                     .suffix("%"),
             );
         });
+        self.codec_choice(ui);
+    }
+
+    /// How the straightened picture is stored.
+    fn codec_choice(&mut self, ui: &mut egui::Ui) {
+        ui.add_space(6.0);
+        ui.label(t::codec());
+        ui.horizontal(|ui| {
+            for codec in Codec::ALL {
+                let (label, tip) = codec.label();
+                let r = ui
+                    .radio_value(&mut self.codec, codec, label)
+                    .on_hover_text(tip);
+                crate::diag::ui_rect(&format!("{REGION_CODEC}.{}", codec.token()), r.rect);
+            }
+            if self.codec == Codec::Jpeg {
+                ui.label(t::codec_quality());
+                ui.add(egui::DragValue::new(&mut self.quality).range(1..=100));
+            }
+        });
     }
 
     /// Keep the least confidence for the next run, when it changed.
@@ -329,12 +399,14 @@ impl DeskewDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "deskew-started run={run} job={} turns={} skip-text={} min-confidence={} selected={}",
+                "deskew-started run={run} job={} turns={} skip-text={} min-confidence={} selected={} codec={} quality={}",
                 job_token(self.job()),
                 queue.len(),
                 self.skip_text,
                 self.min_confidence,
-                self.only_selected && !self.selected.1.is_empty()
+                self.only_selected && !self.selected.1.is_empty(),
+                self.codec.token(),
+                self.quality
             )
         });
         self.phase = Phase::Running {

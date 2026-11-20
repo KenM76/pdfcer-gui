@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **69 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `wanted` — a real gap — **68 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,7 +66,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Straightened or enlarged scans keep their source codec; the replaced original is deleted** — the module `pdfcer_core::edit::resample_encode` (`DeskewEncoding`), `EditSession::deskew_image_with`, `ImageDeskew::replaced_dropped`, `ImageUpscale::replaced_dropped` | **wanted — the codec choice.** The default half already reaches him: *Straighten scans* calls `deskew_image`, which keeps the source family and drops the replaced picture in the same undo entry, and the engine's lossy-JPEG note arrives on the results line through the edit funnel. Missing: a *Keep the scan's kind / Lossless / JPEG* choice in the Straighten scans dialog passed as `DeskewEncoding` to `deskew_image_with`. |
 | **Set Crop, Bleed, Trim or Art box, each with its own rect, in one undo step** … | **consumed — O405 §4.** The crop window uses `EditSession::set_page_boxes` (module `pdfcer_core::edit::page_boxes`, `PageBoxEdit`, `CommandKind::SetPageBoxes`) so each page in scope gets its own rect, one undo step; the refusals `EditError::PageBoxEmpty` and `EditError::PageBoxRepeated` reach the status line verbatim. **Bleed, Trim and Art consumed — O421 §4:** the window's *Box* choice sends the chosen `PageBox`; `CropBoxEdit::Reset` on those removes the entry (*Remove*). |
 | **Crop odd or even pages only** — `set-crop-box --odd` / `--even` … | **consumed — O405 §4: the crop window's page choice offers This page, All, Odd, Even and a range, with the page count shown.** |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
@@ -260,7 +259,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **523 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **524 of 615** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -268,6 +267,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Straightened or enlarged scans keep their source codec; the replaced original is deleted** — the module `pdfcer_core::edit::resample_encode` (`DeskewEncoding`), `EditSession::deskew_image_with`, `ImageDeskew::replaced_dropped`, `ImageUpscale::replaced_dropped` | **shipped — File ▸ Recognise ▸ Straighten scans.** *Store the straightened scan* offers As the original (`DeskewEncoding::SameFamily`, the default), Without loss (`Flate`) or JPEG with a quality (`Dct`), passed by `app::actions::deskew::page_turn` to `deskew_image_with`; the replaced picture is dropped in the same undo entry. Driven: `straighten_scans_stores_the_scan_as_chosen`. Enlarge scans' `ImageUpscale::replaced_dropped` is reached through `upscale_image`, which keeps the source family. |
 | **3D bounce light built on the graphics card** — `PreparedModel::gpu_bounce_build`, `GpuBounceBuild`, `GLSL_ES_300_BOUNCE_BUILD_VERTEX`, `GLSL_ES_300_BOUNCE_TRACE_FRAGMENT`, `GLSL_ES_300_BOUNCE_REDUCE_FRAGMENT` | **shipped — consumed, G311.** `gpu_bounce::build` packs this when the frame has no exposure, and the exposed twin otherwise; the same card passes trace both (`gpu_bounce_card`). Driven by `the_card_builds_the_processors_bounce`. |
 | **3D bounce light built on the graphics card under an exposure** — `ExposedLighting::gpu_bounce_build` | **shipped — consumed, G311.** `gpu_bounce::build` packs `ExposedLighting::gpu_bounce_build` (or `PreparedModel::gpu_bounce_build` without an exposure) on the worker and `gpu_bounce_card::advance` traces and reduces it on the card in row bands under a 12 ms frame budget, alternating atlases; the processor's threaded build stays where the context lacks float targets, the engine says `None`, or `PDFCER_3D_BOUNCE_CPU=1`. Driven by `the_card_builds_the_processors_bounce` (card and processor means within 0.5%), falsified by a skipped first reduce. |
 | **Check a path end before extending or opening it** — `EditSession::can_extend_path`, `EditSession::can_open_subpath`, `EditSession::can_extend_path_in_form`, `EditSession::can_open_subpath_in_form` | **shipped at v0.158.0; our request G295.** Continue path and Open path here ask the engine when pressed; a middle node, a closed subpath or an already-open one is refused at the press with the reason on the status line, and no run is armed. Driven by `a_middle_node_is_refused_at_the_press`. |

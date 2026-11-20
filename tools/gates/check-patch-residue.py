@@ -162,6 +162,11 @@ SKIP_DIRS = {
     ".venv",
 }
 
+# Agent worktrees under `.claude/`: other checkouts of this repository, each
+# gated in its own right, plus a junction to the engine, which is not this
+# repository's source.
+WORKTREES = "worktrees"
+
 # Extensions walked. Deliberately NOT `.txt` or `.jsonl`: gate snapshots and
 # captured traces hold whatever the program emitted, and a gate that reports its
 # own recorded evidence is a gate that gets carved out until it means nothing.
@@ -351,6 +356,8 @@ def main() -> int:
     found: list[tuple[str, int, str, str]] = []
     for here, dirs, files in os.walk(root):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        if os.path.basename(here) == ".claude":
+            dirs[:] = [d for d in dirs if d != WORKTREES]
         for name in files:
             if not name.endswith(EXTENSIONS):
                 continue
