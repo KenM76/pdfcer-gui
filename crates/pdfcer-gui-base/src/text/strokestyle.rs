@@ -72,12 +72,6 @@ pub fn restyled_partly(changed: usize, refused: usize) -> String {
     )
 }
 
-/// The status line when the gesture could not be folded into one undo step.
-#[must_use]
-pub fn several_undos(steps: usize) -> String {
-    format!("The change was applied; undoing it takes {steps} steps.")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,7 +90,6 @@ mod tests {
             opacity_unknown(),
             restyled(2),
             restyled_partly(2, 1),
-            several_undos(2),
         ] {
             assert!(!s.trim().is_empty());
         }

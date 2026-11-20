@@ -3,36 +3,25 @@
 Applies `Action::SetObjectStrokeStyle` through the Document-scoped
 `vector_edit` funnel with `EditSession::set_object_stroke_style`, or, when
 the action's `leaves` is set, with `EditSession::set_object_stroke_style_in_form`
-on leaves of one placed drawing (`PageObjects::leaves`). A leaf's geometry and
-`ctm` are already page space, so its scale is read the same way; `object_of`
-picks the object by index from the right list. The `_in_form` twin's
-`FormSurgeryOutcome::disclosures` are appended to the outcome's notes.
+on leaves of one placed drawing (`PageObjects::leaves`). `object_of` picks an
+object by index from the right list; Properties reads through it.
 
 ## Units
 
 The action carries width and dash in **points**, because that is what the
-operator types. The verb takes them in each path's **own user space**
-(`PathObject::line_width` and `PathObject::dash` are user-space values). A
-path's points-per-unit is `canvas::shapes::average_scale` of its `ctm`, the
-same measure the canvas uses to draw its stroke.
+operator types. The arm sends the style with `units: StrokeUnits::Page`; the
+engine divides the width, dash array and phase by each path's own
+`PathObject::stroke_scale` before writing, so one call strokes a selection
+under mixed CTM scales alike, and one call is one undo step. A leaf's scale is
+taken from its page-space CTM by the engine, so the in-form twin needs nothing
+different.
 
-So the arm reads every object's scale from `EditSession::page_objects`, groups
-the objects whose scales agree within a relative `1e-6`, and makes one verb
-call per group with width, dash array and phase divided by that group's scale.
-A style carrying neither width nor dash (opacity only) is unitless and goes in
-one call.
+`PathObject::line_width_pt` and `dash_pt` read the value back with the same
+measure, which is why Properties shows those and not a scale of its own.
 
-Every call's style is validated before the first commits, so a value one
-group cannot take leaves the page untouched.
-
-## One undo step
-
-Several calls are several commands. `EditSession::coalesce_last(n,
-CommandKind::SetObjectStrokeStyle)` folds them into one. When it declines, the
-outcome says how many steps the undo takes rather than hiding it.
-
-This grouping is a workaround: the verb has no way to take points or a
-per-object width. It is reported to the engine as G174.
+A path whose CTM scales its axes differently has no single width in points:
+the engine uses the geometric mean and says how many paths that was in a
+disclosure, which the funnel shows.
 
 ## What the engine refuses
 
@@ -41,12 +30,14 @@ Text, and any image or form the style would not change, comes back in
 Width and dash never reach an image or a form; images read only the fill
 alpha.
 
-## Shared resources
+## Disclosures
 
-The alphas land in a new `/ExtGState`. When the page's resources are shared
-with other pages the engine says so in a disclosure, which the funnel shows.
+The page verb's `PaintOutcome::disclosures` and the in-form twin's
+`FormSurgeryOutcome::disclosures` are appended to the outcome's notes: the
+non-uniform-scale sentence above, and the shared-resources sentence when the
+new `/ExtGState` lands in a `/Resources` dictionary other pages share.
 
 ## Trace
 
-`stroke-style-calls calls= commands= folded= changed= refused= user_widths=`
-— `user_widths` is the width each call sent, in user units, `-` for none.
+`stroke-style-calls calls=1 units=page width_pt= changed= refused=` —
+`width_pt` is the width sent, in points, `-` for none.

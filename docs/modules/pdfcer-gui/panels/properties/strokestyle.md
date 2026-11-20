@@ -17,9 +17,10 @@ the indices each row applies to.
 | Fill opacity | paths | `fill_alpha` |
 | Picture opacity | pictures | both alphas — a placed drawing reads both, an image only the fill |
 
-Values are read in points: width × the path's scale, and the dash array × the
-scale rounded to `1e-3` before `LineStyle::of_pattern` names it, so a pattern
-drawn at an awkward scale still reads as the entry that wrote it.
+Values are read in points through `PathObject::line_width_pt` and
+`PathObject::dash_pt`, the engine's own measure of the scale it writes by. The
+dash array is rounded to `1e-3` before `LineStyle::of_pattern` names it, so a
+pattern drawn at an awkward scale still reads as the entry that wrote it.
 
 A field commits once, when a drag stops or the field loses focus, and only if
 the value changed. Otherwise every pixel of a drag would be a content rewrite

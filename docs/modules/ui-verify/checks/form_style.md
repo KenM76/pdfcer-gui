@@ -12,8 +12,8 @@ check enters the drawing and selects one leaf through
 Selects the line. PASS needs:
 
 1. `stroke-style-shown leaves=true … width_pt=2.000`;
-2. 5 typed into Width → `stroke-style-calls … user_widths=10.000` and a
-   re-read `width_pt=5.000`;
+2. 5 typed into Width → `stroke-style-calls calls=1 units=page width_pt=5.000`
+   and a re-read `width_pt=5.000`;
 3. 40 typed into Line opacity → re-read `line_alpha=0.400`.
 
 ## `a_part_of_a_placed_drawing_can_be_recoloured`

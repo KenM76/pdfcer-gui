@@ -165,7 +165,7 @@ mod redact;
 mod restylebatch;
 /// Line width, dash and opacity of page objects, in points.
 mod strokestyle;
-pub(crate) use strokestyle::{object_of as styled_object, scale_of as stroke_scale};
+pub(crate) use strokestyle::object_of as styled_object;
 /// Commit Group and Ungroup.
 pub mod group;
 /// Group and Ungroup inside a placed drawing.

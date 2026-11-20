@@ -110,11 +110,14 @@ fn width(
         )));
     };
     report.note(format!("width applied: `{}`", calls.raw));
-    let want_user = 5.0 / SCALE;
-    if calls.get("user_widths") != Some(&format!("{want_user:.3}")[..]) {
+    if !(calls.get("calls") == Some("1")
+        && calls.get("units") == Some("page")
+        && calls.get("width_pt") == Some("5.000"))
+    {
         return Ok(Some(format!(
-            "5 pt on a drawing placed at scale {SCALE} must reach the engine as {want_user:.3} \
-             of the drawing's units; the call was `{}`. Trace: {}.",
+            "5 pt on a drawing placed at scale {SCALE} must reach the engine as one call in points \
+             (`calls=1 units=page width_pt=5.000`), the engine dividing by the path's own \
+             scale; the call was `{}`. Trace: {}.",
             calls.raw,
             session.trace_path().display()
         )));
