@@ -58,6 +58,7 @@ pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;
 pub mod compact_profile;
+pub mod compact_profile_fonts;
 pub mod compact_reach;
 pub mod compact_round;
 pub mod compact_target;

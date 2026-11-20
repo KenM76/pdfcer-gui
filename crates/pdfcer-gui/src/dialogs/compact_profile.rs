@@ -4,10 +4,11 @@
 //!
 //! Load settings… reads one; while it is in use the window runs it in place
 //! of the starting point, switches and size target. Save settings… writes
-//! what the window would run. A profile cannot say "cut fonts to the glyphs
-//! drawn" (`OptimizeSettings::resubset`), so the fonts switch stays the
-//! window's own and is laid over a loaded file; the size target is not an
-//! optimize setting at all.
+//! what the window would run. A file's `resubset-fonts` and
+//! `merge-font-subsets` parse to a request with no cutter
+//! (`ResubsetFonts::unbound`); [`read`] binds the shell's cutter with
+//! `OptimizeSettings::install_resubsetter`, so the file alone decides
+//! whether fonts are cut. The size target is not an optimize setting at all.
 //!
 //! `allow-signed`: the window always runs with it on, because the compacted
 //! copy it optimizes already keeps no signatures. That reason is the
@@ -18,6 +19,7 @@ use std::path::{Path, PathBuf};
 
 use egui::Ui;
 use pdfcer_core::optimize::{OptimizeSettings, profile};
+use pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER;
 
 use crate::app::files::{Picked, from_env};
 use crate::dialogs::filename::file_name_of;
@@ -114,11 +116,13 @@ impl State {
                 crate::diag::trace(|| {
                     format!(
                         // ui-text-exempt: diagnostic trace
-                        "compact-profile loaded name={:?} rules={} objects={} linearize={}",
+                        "compact-profile loaded name={:?} rules={} objects={} linearize={} resubset={} merge={}",
                         file_name_of(&path),
                         settings.rules.len(),
                         settings.objects.len(),
-                        settings.structure.linearize
+                        settings.structure.linearize,
+                        settings.resubset.is_some(),
+                        settings.resubset.as_ref().is_some_and(|r| r.merge)
                     )
                 });
                 self.loaded = Some(Loaded {
@@ -138,7 +142,8 @@ impl State {
     }
 }
 
-/// Parse `path`, an `extends` naming a file read beside it, as the CLI does.
+/// Parse `path`, an `extends` naming a file read beside it, as the CLI does,
+/// with the shell's font cutter bound to a `resubset-fonts` request.
 fn read(path: &Path) -> Result<OptimizeSettings, String> {
     let read = |p: &Path| {
         std::fs::read_to_string(p)
@@ -147,7 +152,10 @@ fn read(path: &Path) -> Result<OptimizeSettings, String> {
     let text = read(path)?;
     let base = path.parent().map(Path::to_path_buf).unwrap_or_default();
     let mut resolve = |name: &str| read(&base.join(name));
-    profile::parse(&file_name_of(path), &text, &mut resolve).map_err(|e| e.to_string())
+    let mut settings =
+        profile::parse(&file_name_of(path), &text, &mut resolve).map_err(|e| e.to_string())?;
+    settings.install_resubsetter(&GLYPH_ZERO_RESUBSETTER);
+    Ok(settings)
 }
 
 /// Ask where, and write `settings` there; the file's name, or `None` when
@@ -212,6 +220,33 @@ mod tests {
         assert!(!back.allow_signed);
         assert!(back.structure.linearize);
         assert_eq!(back.images, settings.images);
+    }
+
+    /// A file asking for fonts cut gets the shell's cutter, keeps its merge
+    /// choice, and writes both keys back.
+    #[test]
+    fn a_file_cutting_fonts_is_bound_and_round_trips() {
+        let dir = std::env::temp_dir().join(format!(
+            "pdfcer-gui-compact-profile-fonts-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("fonts.toml");
+        std::fs::write(
+            &path,
+            "extends = \"lossless\"
+resubset-fonts = true
+merge-font-subsets = false
+",
+        )
+        .unwrap();
+        let back = read(&path).unwrap();
+        let cut = back.resubset.as_ref().expect("fonts cut");
+        assert!(cut.is_bound());
+        assert!(!cut.merge);
+        let text = profile::to_profile(&back);
+        assert!(text.contains("resubset-fonts = true"), "{text}");
+        assert!(text.contains("merge-font-subsets = false"), "{text}");
     }
 
     #[test]
