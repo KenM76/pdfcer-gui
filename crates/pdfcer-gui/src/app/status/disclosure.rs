@@ -10,9 +10,10 @@ use egui::{Align, Layout, Vec2};
 
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_DRAFT_NOTE,
-    REGION_EDIT_DISCLOSURE, REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES,
-    REGION_OUTPUT_PREVIEW, REGION_OVERPRINT, REGION_OVERPRINT_UNKNOWN, REGION_PREVIEW_FALLBACK,
-    REGION_RECOVERED, REGION_SPOTS_FLATTENED, REGION_TINY_DETAILS, ROW_HEIGHT_PTS,
+    REGION_EDIT_DISCLOSURE, REGION_FIELDS_REDRAWN, REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS,
+    REGION_LOAD_ANOMALIES, REGION_OUTPUT_PREVIEW, REGION_OVERPRINT, REGION_OVERPRINT_UNKNOWN,
+    REGION_PREVIEW_FALLBACK, REGION_RECOVERED, REGION_SPOTS_FLATTENED, REGION_TINY_DETAILS,
+    ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -223,6 +224,25 @@ fn spots_flattened_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     );
 }
 
+/// **Form fields on this page are drawn from their values, not their saved
+/// look**: the form sets `/NeedAppearances` and the render honours it, so the
+/// canvas may differ from a viewer that shows `/AP`. Only fields that have an
+/// `/AP` are counted; the file is not changed.
+fn fields_redrawn_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+    let Some(texture) = doc.page_texture.as_ref() else {
+        return;
+    };
+    let fields = texture.diagnostics.widgets_redrawn_for_need_appearances;
+    if fields == 0 {
+        return;
+    }
+    disclosure_line(
+        ui,
+        REGION_FIELDS_REDRAWN,
+        &t::fields_redrawn_status_line(fields),
+    );
+}
+
 /// **The canvas is deliberately not showing what will print** —
 /// `OPERATOR_REQUESTS.md` **O137**, and the line that makes the whole feature
 /// safe to ship.
@@ -378,6 +398,7 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     load_anomalies_disclosure(ui, doc);
     blend_space_disclosure(ui, doc);
     spots_flattened_disclosure(ui, doc);
+    fields_redrawn_disclosure(ui, doc);
     // LAST, and the position is the argument. Every line above is about
     // something that HAPPENED — a fill, an edit, how the file was assembled, a
     // buffer that would not fit. This one is about a stance the operator is

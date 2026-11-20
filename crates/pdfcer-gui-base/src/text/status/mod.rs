@@ -456,6 +456,24 @@ pub fn spots_flattened_status_line(inks: u64) -> String {
     )
 }
 
+/// Shown when the renderer reports `widgets_redrawn_for_need_appearances`:
+/// `fields` form fields drawn from their values rather than their saved look,
+/// because the form asks every viewer to redraw them.
+#[must_use]
+pub fn fields_redrawn_status_line(fields: usize) -> String {
+    if fields == 1 {
+        "1 form field on this page is drawn from its value, not its saved look \u{2014} the \
+         form asks viewers to redraw its fields (Forms panel > Redraw values)."
+            .to_owned()
+    } else {
+        format!(
+            "{fields} form fields on this page are drawn from their values, not their saved \
+             look \u{2014} the form asks viewers to redraw its fields (Forms panel > Redraw \
+             values)."
+        )
+    }
+}
+
 /// The status-bar line for a document whose index pdfcer had to rebuild.
 #[must_use]
 pub const fn recovered_status_line() -> &'static str {
@@ -509,6 +527,18 @@ mod tests {
     fn a_spots_flattened_count_agrees_with_its_verb() {
         assert!(spots_flattened_status_line(1).starts_with("1 spot colour on this page is "));
         assert!(spots_flattened_status_line(3).starts_with("3 spot colours on this page are "));
+    }
+
+    #[test]
+    fn a_fields_redrawn_count_agrees_with_its_verb() {
+        assert!(
+            fields_redrawn_status_line(1)
+                .starts_with("1 form field on this page is drawn from its ")
+        );
+        assert!(
+            fields_redrawn_status_line(2)
+                .starts_with("2 form fields on this page are drawn from their ")
+        );
     }
 
     /// **The absent case is a different sentence, not the same one with a

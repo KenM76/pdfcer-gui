@@ -5,6 +5,7 @@
 /// O263: Align left edges moves every box, in one undo.
 pub mod align_left;
 pub mod annot_angle_typed;
+/// Reading a selected mark's colour and icon on any subtype.
 pub mod annot_facts;
 
 pub mod annot_delete_gate;
@@ -18,6 +19,7 @@ pub mod calibrated_cmyk_setting;
 pub mod card_pages;
 pub mod export_keep_text;
 pub mod field_outline;
+pub mod fields_redrawn;
 pub mod merge_runs;
 pub mod ocr_colour_setting;
 pub mod ocr_layer_view;
@@ -1181,6 +1183,7 @@ pub mod field_multiselect;
 pub mod fieldbandmerge;
 /// Arrow keys over several annotations, several form fields, or a ce dimension.
 pub mod groupnudge;
+/// Picking a named destination for a link from a list.
 pub mod link_named;
 /// Moving, resizing, copying and deleting a link, its quads following its box.
 pub mod link_quads;

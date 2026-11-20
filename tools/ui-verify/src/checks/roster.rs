@@ -182,6 +182,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         // The other render approximation the status bar discloses; it opens
         // its own fixture, so it needs no --pdf.
         Box::new(spots_flattened::ExtraSpotInksAreDisclosed),
+        Box::new(fields_redrawn::FieldsRedrawnForNeedAppearancesAreDisclosed),
         Box::new(field_outline::DefaultFieldIsOutlined),
         Box::new(text_render_mode::ChoosingARenderModeReachesTheDocument),
         Box::new(text_spacing::SuperscriptReachesTheDocument),
