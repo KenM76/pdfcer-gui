@@ -25,6 +25,8 @@ mod animate;
 mod behind;
 mod bindings;
 mod card;
+pub(crate) use card::{CardParts, forced_by_environment as card_forced_by_environment};
+pub(crate) use memory::{card_keys, saved_card};
 mod closing;
 mod controls;
 mod drone;
@@ -538,6 +540,7 @@ impl ModelView {
         if self.rendered != Some(wanted) {
             self.draw_picture(ui.ctx(), wanted, gpu);
         }
+        self.note_card_status(gpu);
         match (&self.texture, &self.failed) {
             (_, Some(said)) => {
                 ui.put(rect, egui::Label::new(said.as_str()));

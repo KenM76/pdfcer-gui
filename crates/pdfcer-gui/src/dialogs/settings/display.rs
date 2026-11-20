@@ -50,8 +50,12 @@ pub fn smooth_pictures(ui: &mut Ui, prefs: &mut Prefs) {
     );
 }
 
-/// Whether the canvas's pages are drawn on the graphics card — O451.
-pub fn graphics_card(ui: &mut Ui, prefs: &mut Prefs) {
+/// The region of the button opening every graphics-card switch.
+pub const CARD_SWITCHES_REGION: &str = "settings.display.card_switches"; // ui-text-exempt: trace region name, never displayed
+
+/// Whether the canvas's pages are drawn on the graphics card — O451; and
+/// the button setting `open_switches` to open every card switch — O452.
+pub fn graphics_card(ui: &mut Ui, prefs: &mut Prefs, open_switches: &mut bool) {
     widgets::header(ui, t::card_title(), t::card_silence(), t::card_radius());
     widgets::toggle(
         ui,
@@ -59,6 +63,13 @@ pub fn graphics_card(ui: &mut Ui, prefs: &mut Prefs) {
         t::card_label(),
         Some(t::card_note()),
     );
+    let button = ui
+        .button(crate::text::cardstatus::open_button())
+        .on_hover_text(crate::text::cardstatus::open_tooltip());
+    crate::diag::ui_rect_visible(CARD_SWITCHES_REGION, button.rect, ui.clip_rect());
+    if button.clicked() {
+        *open_switches = true;
+    }
 }
 
 /// The prefix of each overprint-default choice's region; the choice's id follows.

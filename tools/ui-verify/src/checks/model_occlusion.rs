@@ -91,7 +91,9 @@ fn occlusion(ctx: &CheckContext, report: &mut CheckReport, bake: bool) -> Result
     let Some(gltf) = trace.events("model-insert-gltf").last() else {
         return Ok(Some(format!("{stem}: the glTF was not converted.")));
     };
-    if gltf.get("occlusion") != Some(mode) || gltf.get("textured").and_then(|n| n.parse::<u32>().ok()) != Some(textured) {
+    if gltf.get("occlusion") != Some(mode)
+        || gltf.get("textured").and_then(|n| n.parse::<u32>().ok()) != Some(textured)
+    {
         return Ok(Some(format!(
             "★★★ {stem}: the conversion read `{}`; occlusion={mode} textured={textured} is \
              the scene the switch asks for.",

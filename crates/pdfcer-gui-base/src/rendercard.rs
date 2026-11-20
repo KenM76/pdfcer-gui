@@ -21,6 +21,7 @@ use std::time::{Duration, Instant};
 
 use pdfcer_render::{GpuRefusal, GpuScene};
 
+use crate::cardstatus::{Outcome, Path, note};
 use crate::renderworker::{RenderKey, RenderRequest, RenderedPixels};
 
 /// Something that draws a packed scene into `RGBA8` bytes, row 0 first.
@@ -116,13 +117,18 @@ pub fn installed() -> bool {
 #[must_use]
 pub fn ask(wanted: bool) -> CardAsk {
     if !wanted {
+        note(Path::Pages, Outcome::Off);
         return CardAsk::Off;
     }
-    CARD.with_borrow(|card| match card {
+    let ask = CARD.with_borrow(|card| match card {
         Card::Ready(_) => CardAsk::Try,
         Card::Retired(why) => CardAsk::Unavailable(why.clone()),
         Card::None => CardAsk::Unavailable(crate::text::status::card_no_context().to_owned()),
-    })
+    });
+    if let CardAsk::Unavailable(why) = &ask {
+        note(Path::Pages, Outcome::Processor(why.clone()));
+    }
+    ask
 }
 
 /// On the worker: the page packed for the card, or the reason the processor
@@ -185,6 +191,7 @@ fn refusal(e: &GpuRefusal) -> String {
 
 /// Trace a page the processor drew with the switch on.
 pub(crate) fn trace_processor(why: &str) {
+    note(Path::Pages, Outcome::Processor(why.to_owned()));
     crate::diag::trace(|| format!("render-card drew=0 reason={why:?}")); // ui-text-exempt: diagnostic trace, never displayed
 }
 
@@ -217,6 +224,7 @@ pub(crate) fn draw(packed: ScenePixels) -> Option<RenderedPixels> {
                     started.elapsed().as_millis()
                 )
             });
+            note(Path::Pages, Outcome::InUse);
             Some(RenderedPixels {
                 pixmap,
                 diagnostics: packed.diagnostics,

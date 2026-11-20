@@ -270,6 +270,34 @@ fn get_look(get: &Get<'_>, look: &mut LookSet) {
     get.pick("highlights", &HIGHLIGHTS, &mut x.highlights);
 }
 
+fn put_card(put: &mut Put<'_>, card: CardParts) {
+    put.flag("card_picture", card.picture);
+    for (i, on) in card.parts.iter().enumerate() {
+        put.flag(&format!("card_part_{i}"), *on);
+    }
+}
+
+fn get_card(get: &Get<'_>, card: &mut CardParts) {
+    get.flag("card_picture", &mut card.picture);
+    for (i, on) in card.parts.iter_mut().enumerate() {
+        get.flag(&format!("card_part_{i}"), on);
+    }
+}
+
+/// The card switches a new viewer opens with, from the saved defaults.
+pub(crate) fn saved_card(settings: &Settings) -> CardParts {
+    let mut card = CardParts::default();
+    get_card(&Get(settings, ""), &mut card);
+    card
+}
+
+/// `card` as saved-default keys, for `PrefAction::ModelViewMerge`.
+pub(crate) fn card_keys(card: &CardParts) -> Settings {
+    let mut map = Settings::new();
+    put_card(&mut Put(&mut map, ""), *card);
+    map
+}
+
 /// What one viewer keeps, apart from its tab and OS window.
 struct Kept<'a> {
     prefs: &'a nav::Prefs,
@@ -298,10 +326,7 @@ impl Kept<'_> {
         put.pick("lens", &LensKind::ALL, &lens.kind);
         put.pick("lens_curve", &CURVES, &lens.curve);
         put.value("lens_auto_at", format!("{:.0}", lens.auto_at));
-        put.flag("card_picture", self.card.picture);
-        for (i, on) in self.card.parts.iter().enumerate() {
-            put.flag(&format!("card_part_{i}"), *on);
-        }
+        put_card(&mut put, *self.card);
         put_look(&mut Put(map, "look_"), self.look);
         let s = self.shot;
         let mut put = Put(map, "shot_");
@@ -377,10 +402,7 @@ impl ModelView {
         get.pick("lens", &LensKind::ALL, &mut self.lens.kind);
         get.pick("lens_curve", &CURVES, &mut self.lens.curve);
         get.number("lens_auto_at", AUTO_RANGE, &mut self.lens.auto_at);
-        get.flag("card_picture", &mut self.gpu.card.picture);
-        for (i, on) in self.gpu.card.parts.iter_mut().enumerate() {
-            get.flag(&format!("card_part_{i}"), on);
-        }
+        get_card(&get, &mut self.gpu.card);
         let mut size = [0.0_f32; 2];
         get.number("window_w", 200.0..=20_000.0, &mut size[0]);
         get.number("window_h", 200.0..=20_000.0, &mut size[1]);

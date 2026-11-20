@@ -38,9 +38,16 @@ pub(super) fn light_meter<'m>(
 ) -> Result<LightMeter<'m>, String> {
     let processor =
         || LightMeter::new(model, prepared, camera, options, settings).map_err(|e| e.to_string());
-    let Some(card) = card.filter(|c| c.wanted()) else {
+    use pdfcer_gui_base::cardstatus::{Outcome, Path, note};
+    let on_processor = |why: String| note(Path::Meter, Outcome::Processor(why));
+    let Some(card) = card else {
+        on_processor(crate::text::cardstatus::meter_not_drawing().to_owned());
         return processor();
     };
+    if !card.wanted() {
+        on_processor(crate::text::cardstatus::meter_refused().to_owned());
+        return processor();
+    }
     let meter = LightMeter::gpu_new(model, prepared, camera, options, settings)
         .map_err(|e| e.to_string())?;
     // `finish` reads the atlas only while `build` is set, so the card gets a
@@ -53,15 +60,22 @@ pub(super) fn light_meter<'m>(
     let job = CardJob::new(build, tx, Arc::downgrade(&alive), Box::new(|| Ok(None)));
     card.hand(Slot::Meter, job);
     match rx.recv_timeout(WAIT) {
-        Ok(Ok(Some(bounce))) => meter.finish(&bounce.atlas).map_err(|e| e.to_string()),
+        Ok(Ok(Some(bounce))) => {
+            note(Path::Meter, Outcome::InUse);
+            meter.finish(&bounce.atlas).map_err(|e| e.to_string())
+        }
         // The card could not run it: its fallback sends no bounce.
-        Ok(Ok(None) | Err(_)) => processor(),
+        Ok(Ok(None) | Err(_)) => {
+            on_processor(crate::text::cardstatus::meter_refused().to_owned());
+            processor()
+        }
         // Returning drops `alive`, so the next paint drops the job.
         Err(RecvTimeoutError::Timeout) => {
             // ui-text-exempt: diagnostic trace, never displayed
             crate::diag::trace(|| {
                 "model-light-meter-bounce built=processor reason=\"timeout\"".into()
             });
+            on_processor(crate::text::cardstatus::meter_timeout(WAIT.as_secs()));
             processor()
         }
         Err(RecvTimeoutError::Disconnected) => Err(SUPERSEDED.to_owned()),

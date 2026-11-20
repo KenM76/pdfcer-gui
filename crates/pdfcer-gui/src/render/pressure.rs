@@ -17,6 +17,9 @@ pub fn poll(ctx: &egui::Context, gl: Option<&eframe::glow::Context>) {
     if drained.is_clean() {
         return;
     }
+    if drained.out_of_memory {
+        pdfcer_gui_base::cardstatus::saw_out_of_memory();
+    }
 
     // The verdict is assembled inside the closure, not before it: `diag::trace`
     // takes a thunk precisely so that a build with tracing off pays nothing,

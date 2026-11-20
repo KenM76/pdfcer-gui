@@ -189,7 +189,7 @@ impl Default for Gpu {
             prepared: None,
             bounce,
             built: None,
-            forced_off: std::env::var_os("PDFCER_3D_CPU").is_some_and(|v| v == "1"),
+            forced_off: super::card::forced_by_environment(),
             told: false,
             card: super::card::CardParts::default(),
             facts: Facts::default(),
@@ -233,6 +233,11 @@ impl Gpu {
         !self.forced_off && self.card.picture && lock(&self.shared).failed.is_none()
     }
 
+    /// The widest point the card draws, pixels; 0 before the first paint.
+    pub(super) fn widest_point(&self) -> f32 {
+        lock(&self.shared).widest_point
+    }
+
     /// `PDFCER_3D_CPU=1` keeps the card off for the session.
     pub(super) fn forced_off(&self) -> bool {
         self.forced_off
@@ -241,6 +246,11 @@ impl Gpu {
     /// The operator switched the card off for the whole picture.
     pub(super) fn turned_off(&self) -> bool {
         !self.forced_off && !self.card.picture
+    }
+
+    /// The driver's words when the card failed.
+    pub(super) fn failure(&self) -> Option<String> {
+        lock(&self.shared).failed.clone()
     }
 
     /// Whether the card failed, so the processor draws every frame.

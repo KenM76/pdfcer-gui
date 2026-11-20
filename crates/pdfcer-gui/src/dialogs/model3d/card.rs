@@ -6,8 +6,19 @@
 
 use egui::Ui;
 
+use pdfcer_gui_base::cardstatus::{Outcome, Path, note};
+
 use super::ModelView;
-use crate::text::model3dlook::{self as k, CardPart};
+use crate::text::cardstatus as cs;
+use crate::text::model3dlook::{self as k, CardPart, ProcessorReason};
+
+/// `PDFCER_3D_CPU=1` keeps the 3D viewer off the card for the session.
+const CPU_VAR: &str = "PDFCER_3D_CPU";
+
+/// Whether [`CPU_VAR`] keeps the 3D viewer off the card.
+pub(crate) fn forced_by_environment() -> bool {
+    std::env::var_os(CPU_VAR).is_some_and(|v| v == "1")
+}
 
 /// The whole-picture switch.
 pub const REGION_CARD_PICTURE: &str = "model3d.card.picture"; // ui-text-exempt: trace region name, never displayed
@@ -70,11 +81,65 @@ impl CardParts {
 }
 
 impl ModelView {
+    /// The card's switches as they stand.
+    pub(crate) fn card(&self) -> CardParts {
+        self.gpu.card
+    }
+
+    /// Set the card's switches from outside the Look tab.
+    pub(crate) fn set_card(&mut self, card: CardParts) {
+        let before = self.gpu.card;
+        self.gpu.card = card;
+        self.card_changed(before);
+    }
+
     /// The Look tab's graphics card switches.
     pub(super) fn card_control(&mut self, ui: &mut Ui) {
         let forced = self.gpu.forced_off();
         let before = self.gpu.card;
         self.gpu.card.controls(ui, forced);
+        self.card_changed(before);
+    }
+
+    /// Record what the picture and each part did this frame, `gpu` being
+    /// whether the frame was offered to the card.
+    pub(super) fn note_card_status(&self, gpu: bool) {
+        let whole = if self.gpu.forced_off() {
+            Some(Outcome::ForcedOff(CPU_VAR))
+        } else if self.gpu.turned_off() {
+            Some(Outcome::Off)
+        } else if let Some(why) = self.gpu.failure() {
+            Some(Outcome::Processor(why))
+        } else if !gpu {
+            Some(Outcome::Processor(cs::light_map_shown().to_owned()))
+        } else {
+            None
+        };
+        let declined = self.gpu.declined();
+        let picture = whole.clone().unwrap_or_else(|| {
+            declined.map_or(Outcome::InUse, |r| {
+                Outcome::Processor(k::processor_reason(r).to_owned())
+            })
+        });
+        for (i, part) in CardPart::ALL.into_iter().enumerate() {
+            let outcome = whole.clone().unwrap_or_else(|| match declined {
+                Some(ProcessorReason::TurnedOff(p)) if p == part => {
+                    Outcome::Processor(cs::part_refused().to_owned())
+                }
+                Some(ProcessorReason::WidePoints) if part == CardPart::Lines => {
+                    Outcome::Processor(cs::wide_points(self.gpu.widest_point()))
+                }
+                _ if !self.gpu.card.parts[i] => Outcome::Off,
+                Some(r) => Outcome::Processor(k::processor_reason(r).to_owned()),
+                None => Outcome::InUse,
+            });
+            note(Path::Part(i), outcome);
+        }
+        note(Path::Picture, picture);
+    }
+
+    /// Trace a change of the card's switches from `before`.
+    fn card_changed(&self, before: CardParts) {
         if self.gpu.card != before {
             let c = self.gpu.card;
             crate::diag::trace(|| {

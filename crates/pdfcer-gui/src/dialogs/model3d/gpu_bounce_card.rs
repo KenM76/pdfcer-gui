@@ -34,6 +34,8 @@ pub(super) type Built = Result<Option<FrameBounce>, String>;
 /// The processor's build of the same bounce, run when the card cannot.
 pub(super) type Fallback = Box<dyn FnOnce() -> Result<Option<FrameBounce>, RenderError> + Send>;
 
+/// `PDFCER_3D_BOUNCE_CPU=1` keeps the bounce build on the processor.
+const BOUNCE_CPU: &str = "PDFCER_3D_BOUNCE_CPU";
 /// The card's time per paint: a paint stays well inside a 60 Hz frame.
 const BUDGET: Duration = Duration::from_millis(12);
 /// The first band's rows; a band then doubles or halves to fit [`BUDGET`].
@@ -101,8 +103,20 @@ impl CardQueue {
         while self.0.support.load(Ordering::Relaxed) == 0 && started.elapsed() < SUPPORT_WAIT {
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
-        self.0.support.load(Ordering::Relaxed) == 1
-            && std::env::var_os("PDFCER_3D_BOUNCE_CPU").is_none_or(|v| v != "1")
+        use pdfcer_gui_base::cardstatus::{Outcome, Path, note};
+        let forced = std::env::var_os(BOUNCE_CPU).is_some_and(|v| v == "1");
+        let supported = self.0.support.load(Ordering::Relaxed) == 1;
+        note(
+            Path::Bounce,
+            match (forced, supported) {
+                (true, _) => Outcome::ForcedOff(BOUNCE_CPU),
+                (false, true) => Outcome::InUse,
+                (false, false) => {
+                    Outcome::Processor(crate::text::cardstatus::bounce_unsupported().to_owned())
+                }
+            },
+        );
+        supported && !forced
     }
 
     /// Record what the paint found the card can do.

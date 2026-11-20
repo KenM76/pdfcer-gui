@@ -1042,6 +1042,8 @@ pub mod bookmark_dest;
 
 pub mod bookmark_edit;
 
+/// Every graphics-card switch is in one window beside its status.
+pub mod card_switches;
 pub mod settings_minify;
 pub mod settings_nav;
 /// A shortcut changed in Settings reaches the keys and survives a restart.
