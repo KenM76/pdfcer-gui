@@ -60,7 +60,7 @@ fn squared(value: f64, unit: &str) -> String {
 /// A corner's position.
 #[must_use]
 pub fn corner([x, y, z]: [f64; 3]) -> String {
-    format!("Corner at X {x:.3}   Y {y:.3}   Z {z:.3}")
+    format!("Corner at X {x:.3}, Y {y:.3}, Z {z:.3}")
 }
 
 /// An edge's headline.
