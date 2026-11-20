@@ -141,6 +141,8 @@ pub(super) struct Shared {
     /// that picture again, so a repaint of the window around an unmoved
     /// model costs a blit rather than every pass.
     pub(super) drawn: bool,
+    /// Bounce builds the paint traces on the card.
+    pub(super) card: super::gpu_bounce_card::CardQueue,
 }
 
 /// A texture's pixels, held until the paint uploads them.
@@ -162,10 +164,14 @@ struct Casters {
 
 impl Default for Gpu {
     fn default() -> Self {
+        let bounce = super::gpu_bounce::Bounces::default();
         Self {
-            shared: Arc::default(),
+            shared: Arc::new(Mutex::new(Shared {
+                card: bounce.card(),
+                ..Shared::default()
+            })),
             prepared: None,
-            bounce: super::gpu_bounce::Bounces::default(),
+            bounce,
             built: None,
             forced_off: std::env::var_os("PDFCER_3D_CPU").is_some_and(|v| v == "1"),
             told: false,
@@ -178,6 +184,7 @@ impl Default for Gpu {
 
 impl Drop for Gpu {
     fn drop(&mut self) {
+        self.bounce.close();
         let mesh = lock(&self.shared).mesh.take();
         if let Some(mesh) = mesh {
             RETIRED
@@ -251,7 +258,10 @@ impl Gpu {
     /// again for it; while one is in flight, look again shortly.
     pub(super) fn bounce_arrived(&mut self, ctx: &egui::Context) -> bool {
         let arrived = self.bounce.poll();
-        if self.bounce.waiting() {
+        if self.bounce.card_busy() {
+            // Each paint advances the card build by one time budget.
+            ctx.request_repaint();
+        } else if self.bounce.waiting() {
             ctx.request_repaint_after(std::time::Duration::from_millis(50));
         }
         arrived

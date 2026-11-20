@@ -93,7 +93,9 @@ fn click(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, name: &str
     Ok(true)
 }
 
-fn drive(
+/// Open the viewer, pick Night lights, fix them to the model and wait for
+/// their bounce; `Some` failure, else `None`.
+pub(crate) fn drive(
     ctx: &CheckContext,
     report: &mut CheckReport,
     session: &Session,

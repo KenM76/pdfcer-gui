@@ -11,6 +11,10 @@
 //! build arrives the faces are drawn without bounce, and the frame is drawn
 //! again when it does. A new white point alone rescales the kept build
 //! instead of tracing again.
+//!
+//! Where the card renders into float targets the worker only packs the
+//! scene and the paint traces it (`gpu_bounce_card`); the result arrives on
+//! the same channel either way.
 
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
@@ -19,6 +23,7 @@ use native_mesh::Value;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{AssembledModel, Camera, Exposure, FrameBounce, LampCut, PreparedModel};
 
+use super::gpu_bounce_card::{CardJob, CardQueue};
 use super::gpu_uniforms::Uniforms;
 
 /// What one build depends on.
@@ -34,8 +39,7 @@ pub(super) struct Key {
     pub(super) exposure: Exposure,
 }
 
-/// A finished build: the bounce, or `None` when the frame has none.
-type Built = Result<Option<FrameBounce>, String>;
+use super::gpu_bounce_card::Built;
 
 /// The kept build and the one in flight.
 #[derive(Default)]
@@ -50,12 +54,37 @@ pub(super) struct Bounces {
     rescaled: bool,
     /// The last build to arrive failed, so the kept bounce is none.
     failed: bool,
+    /// Held while the build in flight is wanted; a card job drops itself
+    /// once it is not.
+    alive: Option<Arc<()>>,
+    /// Where a build packed for the card is handed to the paint.
+    card: CardQueue,
 }
 
 impl Bounces {
     /// Forget every build: the model was replaced.
     pub(super) fn forget(&mut self) {
-        *self = Self::default();
+        let card = std::mem::take(&mut self.card);
+        card.close();
+        *self = Self {
+            card,
+            ..Self::default()
+        };
+    }
+
+    /// The queue the paint advances card builds from.
+    pub(super) fn card(&self) -> CardQueue {
+        self.card.clone()
+    }
+
+    /// The card has bounce work for the next paint.
+    pub(super) fn card_busy(&self) -> bool {
+        self.card.busy()
+    }
+
+    /// Drop a card build in flight: the viewer is closing.
+    pub(super) fn close(&self) {
+        self.card.close();
     }
 
     /// The bounce to draw for `key`, starting a build when none is kept or
@@ -79,15 +108,15 @@ impl Bounces {
         if self.pending.as_ref().is_none_or(|(k, _)| *k != key) {
             let (model, prepared) = inputs();
             let (tx, rx) = channel();
-            let (options, exposure) = (key.options, key.exposure);
-            std::thread::spawn(move || {
-                let built = match super::truelight::lit(&model, exposure, &options) {
-                    Some(l) => l.drawn.frame_bounce(&prepared, &model, &camera),
-                    None => prepared.frame_bounce(&model, &camera, &options),
-                }
-                .map_err(|e| e.to_string());
-                let _ = tx.send(built);
-            });
+            let alive = Arc::new(());
+            let job = Spawned {
+                key,
+                camera,
+                card: self.card.clone(),
+                alive: Arc::downgrade(&alive),
+            };
+            std::thread::spawn(move || build(job, model, prepared, tx));
+            self.alive = Some(alive);
             self.pending = Some((key, rx));
         }
         scaled.flatten()
@@ -177,6 +206,79 @@ impl Bounces {
                 .is_none_or(|(ready, _)| ready != pending)
         })
     }
+}
+
+/// What a build thread is started with, besides the model.
+struct Spawned {
+    key: Key,
+    camera: Camera,
+    card: CardQueue,
+    alive: std::sync::Weak<()>,
+}
+
+/// The build thread: pack the scene for the card when it can trace it and
+/// hand it over, else trace it here.
+fn build(
+    job: Spawned,
+    model: AssembledModel,
+    prepared: Arc<PreparedModel>,
+    tx: std::sync::mpsc::Sender<Built>,
+) {
+    let Spawned {
+        key,
+        camera,
+        card,
+        alive,
+    } = job;
+    let (options, exposure) = (key.options, key.exposure);
+    let lit = super::truelight::lit(&model, exposure, &options);
+    if card.wanted() {
+        let packed = match &lit {
+            Some(l) => l.drawn.gpu_bounce_build(&prepared, &model, &camera),
+            None => prepared.gpu_bounce_build(&model, &camera, &options),
+        };
+        match packed {
+            Ok(Some(packed)) => {
+                let fallback =
+                    Box::new(move || on_processor(lit, &prepared, &model, &camera, &options));
+                card.hand(CardJob::new(packed, tx, alive, fallback));
+                return;
+            }
+            Ok(None) => {}
+            Err(error) => {
+                let _ = tx.send(Err(error.to_string()));
+                return;
+            }
+        }
+    }
+    let _ =
+        tx.send(on_processor(lit, &prepared, &model, &camera, &options).map_err(|e| e.to_string()));
+}
+
+/// The bounce traced on the processor, as the card would trace it.
+fn on_processor(
+    lit: Option<super::truelight::Lit>,
+    prepared: &PreparedModel,
+    model: &AssembledModel,
+    camera: &Camera,
+    options: &ModelRenderOptions,
+) -> Result<Option<FrameBounce>, pdfcer_3d::RenderError> {
+    let started = std::time::Instant::now();
+    let built = match lit {
+        Some(l) => l.drawn.frame_bounce(prepared, model, camera),
+        None => prepared.frame_bounce(model, camera, options),
+    }?;
+    if let Some(b) = &built {
+        let (ms, mean) = (
+            started.elapsed().as_millis(),
+            super::gpu_bounce_card::irradiance(b),
+        );
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| {
+            format!("model-view-bounce built=processor ms={ms} irradiance={mean:.6}")
+        });
+    }
+    Ok(built)
 }
 
 /// The key for a frame drawn with `options` at `exposure`. The bounce is

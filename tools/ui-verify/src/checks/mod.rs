@@ -953,6 +953,7 @@ pub mod attachments;
 pub mod model_gltf;
 pub mod models;
 
+pub mod model_bounce_card;
 /// A part-coloured 3D model draws in its colours, in the viewer and on the page.
 pub mod model_colours;
 pub mod model_controls;

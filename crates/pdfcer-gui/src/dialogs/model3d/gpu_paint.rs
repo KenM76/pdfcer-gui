@@ -166,6 +166,9 @@ pub(super) fn draw(
     let gl = painter.gl();
     let mut guard = lock(shared);
     let s = &mut *guard;
+    s.card
+        .set_supported(native_mesh::compute::Compute::supported(gl));
+    super::gpu_bounce_card::advance(gl, &s.card);
     let Some(target) = ready(gl, s, info, painter) else {
         return;
     };

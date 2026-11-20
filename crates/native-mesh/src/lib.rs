@@ -21,6 +21,7 @@
 //! clip box. `egui_glow` re-prepares its own state after a callback.
 
 mod buffers;
+pub mod compute;
 mod layers;
 mod lens;
 mod overlay;

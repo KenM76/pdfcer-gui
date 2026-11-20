@@ -778,6 +778,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_poster::AnInsertedModelShowsItsPicture),
         Box::new(model_colours::AColouredModelDrawsInItsColours),
         Box::new(model_lighting::TheModelViewerIsLitAsChosen),
+        Box::new(model_bounce_card::TheCardBuildsTheProcessorsBounce),
         Box::new(model_shadows::TheModelViewerCastsShadows),
         Box::new(model_shadow_sun::ShadowsStayOnTheModel),
         Box::new(model_shadow_extra::EveryLightCastsOnTheCard),
