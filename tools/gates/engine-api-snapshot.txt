@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: ed604f5fcbbc103ecd7fbb8cae204e802cfc3df5
+# baseline: acc6aa3cdd04a1261de49591532908d5d2ddd727
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12610
+# items: 12624
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -286,6 +286,7 @@ pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::lights
 pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::notes
 pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::options
 pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::white_lux
+pdfcer-3d field pdfcer_3d::illuminance::gpu_meter::GpuLightMeter::build
 pdfcer-3d field pdfcer_3d::illuminance::map::IlluminanceMap::meshes
 pdfcer-3d field pdfcer_3d::illuminance::map::IlluminanceMap::notes
 pdfcer-3d field pdfcer_3d::illuminance::map::IlluminanceMap::reasons
@@ -319,6 +320,12 @@ pdfcer-3d field pdfcer_3d::illuminance::map::gpu::GpuLightMap::target_height
 pdfcer-3d field pdfcer_3d::illuminance::map::gpu::GpuLightMap::target_width
 pdfcer-3d field pdfcer_3d::illuminance::map::gpu::GpuLightMap::triangles
 pdfcer-3d field pdfcer_3d::illuminance::map::gpu::GpuLightMap::uvs
+pdfcer-3d field pdfcer_3d::illuminance::map::gpu::read::GpuLightRead::needs_pass
+pdfcer-3d field pdfcer_3d::illuminance::map::gpu::read::GpuLightRead::normals
+pdfcer-3d field pdfcer_3d::illuminance::map::gpu::read::GpuLightRead::point_count
+pdfcer-3d field pdfcer_3d::illuminance::map::gpu::read::GpuLightRead::points
+pdfcer-3d field pdfcer_3d::illuminance::map::gpu::read::GpuLightRead::target_height
+pdfcer-3d field pdfcer_3d::illuminance::map::gpu::read::GpuLightRead::target_width
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::ambient
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::bounced
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::direct
@@ -547,6 +554,8 @@ pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::frame_lights
 pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::gpu_bounce_build
 pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::render
 pdfcer-3d method pdfcer_3d::illuminance::exposure::Exposure::lighting
+pdfcer-3d method pdfcer_3d::illuminance::gpu_meter::GpuLightMeter::finish
+pdfcer-3d method pdfcer_3d::illuminance::gpu_meter::LightMeter::gpu_new
 pdfcer-3d method pdfcer_3d::illuminance::map::IlluminanceMap::patch
 pdfcer-3d method pdfcer_3d::illuminance::map::IlluminanceMap::range
 pdfcer-3d method pdfcer_3d::illuminance::map::IlluminanceMap::triangles
@@ -556,6 +565,9 @@ pdfcer-3d method pdfcer_3d::illuminance::map::MapPatch::index
 pdfcer-3d method pdfcer_3d::illuminance::map::MapPatch::triangles
 pdfcer-3d method pdfcer_3d::illuminance::map::gpu::GpuLightMap::finish
 pdfcer-3d method pdfcer_3d::illuminance::map::gpu::LightMeter::gpu_map
+pdfcer-3d method pdfcer_3d::illuminance::map::gpu::LightMeter::gpu_scene
+pdfcer-3d method pdfcer_3d::illuminance::map::gpu::read::GpuLightRead::finish
+pdfcer-3d method pdfcer_3d::illuminance::map::gpu::read::LightMeter::gpu_read
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::from_pick
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::new
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::over_disc
@@ -587,10 +599,12 @@ pdfcer-3d struct pdfcer_3d::gltf::GltfImport
 pdfcer-3d struct pdfcer_3d::gltf::GltfOptions
 pdfcer-3d struct pdfcer_3d::illuminance::LightMeter
 pdfcer-3d struct pdfcer_3d::illuminance::exposure::ExposedLighting
+pdfcer-3d struct pdfcer_3d::illuminance::gpu_meter::GpuLightMeter
 pdfcer-3d struct pdfcer_3d::illuminance::map::IlluminanceMap
 pdfcer-3d struct pdfcer_3d::illuminance::map::MapPatch
 pdfcer-3d struct pdfcer_3d::illuminance::map::MapProgress
 pdfcer-3d struct pdfcer_3d::illuminance::map::gpu::GpuLightMap
+pdfcer-3d struct pdfcer_3d::illuminance::map::gpu::read::GpuLightRead
 pdfcer-3d struct pdfcer_3d::illuminance::types::Illuminance
 pdfcer-3d struct pdfcer_3d::illuminance::types::IlluminanceQuery
 pdfcer-3d struct pdfcer_3d::illuminance::types::LightShare
