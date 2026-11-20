@@ -165,7 +165,6 @@ pub fn section(
         field,
         &selected,
         super::widgetturn::WidgetFacts::read(
-            doc,
             field,
             selected.widget,
             widget_dash(field, selected.widget),
