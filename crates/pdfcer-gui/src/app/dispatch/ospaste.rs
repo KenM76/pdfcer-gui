@@ -106,7 +106,8 @@ fn vector(
     let image = std::sync::Arc::new(picture);
     if as_content {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
-        pasted(&format!("kind=vector format={format} as=content"), page, rect);
+        let what = format!("kind=vector format={format} as=content");
+        pasted(&what, page, rect);
         actions.push(Action::InsertImage {
             page,
             rect,

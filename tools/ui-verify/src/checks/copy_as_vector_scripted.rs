@@ -221,8 +221,14 @@ mod tests {
         assert_eq!(malformed("CF_ENHMETAFILE", &emf), None);
         assert_eq!(malformed("PNG", &png), None);
         assert_eq!(malformed("CF_DIBV5", &dib), None);
-        assert_eq!(malformed("application/pdf", b"%PDF-1.7
-"), None);
+        assert_eq!(
+            malformed(
+                "application/pdf",
+                b"%PDF-1.7
+"
+            ),
+            None
+        );
         assert!(malformed("application/pdf", &png).is_some());
         assert!(malformed("CF_ENHMETAFILE", &png).is_some());
         assert!(malformed("PNG", &emf).is_some());

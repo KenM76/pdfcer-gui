@@ -155,14 +155,19 @@ fn cut(
         )));
     };
     report.note(format!("`{}`", cut.raw));
-    let placed = trace.last(PLACED).map(|l| l.raw.clone()).unwrap_or_default();
+    let placed = trace
+        .last(PLACED)
+        .map(|l| l.raw.clone())
+        .unwrap_or_default();
     report.note(format!("`{placed}`"));
     let formats = trace
         .last(PLACED)
         .and_then(|l| l.get("formats"))
         .unwrap_or("");
     let has = |name: &str| formats.split(',').any(|f| f == name);
-    if !placed.contains("selection=true") || !has("application/pdf") || !has("pdfcer-gui ObjectClip")
+    if !placed.contains("selection=true")
+        || !has("application/pdf")
+        || !has("pdfcer-gui ObjectClip")
     {
         return Ok(Some(format!(
             "★★ the cut should place the selection with the PDF and pdfcer's object clip; it \
@@ -174,9 +179,9 @@ fn cut(
             "★★★ the cut placed the clip and left the drawing on the page: no `{DELETED}` line."
         )));
     }
-    Ok(pdf_file(dir).is_none_or(|b| !b.starts_with(b"%PDF-")).then(|| {
-        format!("the capture folder holds no `*{PDF_SUFFIX}` starting `%PDF-`.")
-    }))
+    Ok(pdf_file(dir)
+        .is_none_or(|b| !b.starts_with(b"%PDF-"))
+        .then(|| format!("the capture folder holds no `*{PDF_SUFFIX}` starting `%PDF-`.")))
 }
 
 /// The PDF entry the last capture wrote.

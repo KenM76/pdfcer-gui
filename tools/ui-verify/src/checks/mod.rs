@@ -160,9 +160,9 @@ pub mod recovery_losses;
 
 pub mod copy_as_vector;
 pub mod copy_as_vector_scripted;
-pub mod vector_paste_cut;
 /// O285: an SVG and an EMF placed through Insert image, without the mouse.
 pub mod insert_drawing;
+pub mod vector_paste_cut;
 
 // O120's fourth export format, and the one a driven check is worth most for:
 // EMF is the ONLY vector route LibreOffice 24.x and Word's Paste Special have,
