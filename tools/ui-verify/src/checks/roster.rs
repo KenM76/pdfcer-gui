@@ -638,6 +638,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(links::ALinkIsDrawnAndGivenAnAddress),
         Box::new(links::ASelectedLinkIsRepointedFromProperties),
         Box::new(links::AReviewClickFollowsALinkAndDoesNotSelectIt),
+        Box::new(link_named::ANamedDestinationIsPickedForANewLink),
+        Box::new(link_named::ANamedDestinationIsPickedForASelectedLink),
         Box::new(link_quads::ALinkIsMovedResizedCopiedAndDeleted),
         Box::new(markup_place::AMarkupIsNudgedDuplicatedRestackedAndTypedToSize),
         Box::new(radio_group::ACopiedRadioPastesIntoItsGroupAndStaysExclusive),

@@ -72,8 +72,23 @@ pub fn named_hint() -> &'static str {
 /// The note under the destination name field.
 #[must_use]
 pub fn named_note() -> &'static str {
-    "Type the name exactly as the document defines it. The link follows the \
-     destination if its page moves."
+    "Pick a name, or type it exactly as the document defines it. The link \
+     follows the destination if its page moves."
+}
+
+/// Said in place of the list when the document defines no names.
+#[must_use]
+pub fn named_none() -> &'static str {
+    "This document defines no named destinations."
+}
+
+/// One listed name, with the 1-based page it goes to when it reaches one.
+#[must_use]
+pub fn named_row(name: &str, page: Option<usize>) -> String {
+    match page {
+        Some(p) => format!("{name}  (page {})", p + 1),
+        None => format!("{name}  (no page in this document)"),
+    }
 }
 
 /// The refusal while the web address is empty.

@@ -10,7 +10,7 @@
 use egui::Ui;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_gui_base::linkaction::LinkAction;
-use pdfcer_gui_base::linkform::{LinkForm, Regions};
+use pdfcer_gui_base::linkform::{LinkForm, NamedDest, Regions};
 
 use crate::app::actions::Action;
 use crate::text::linkedit as t;
@@ -28,6 +28,7 @@ pub const REGIONS: Regions = Regions {
     field: "add-link.field",   // ui-text-exempt: trace region name, never displayed
     border: "add-link.border", // ui-text-exempt: trace region name, never displayed
     colour: "add-link.colour", // ui-text-exempt: trace region name, never displayed
+    names: "add-link.names",   // ui-text-exempt: trace region name, never displayed
 };
 
 /// A click places a box this size, in points: a line of 12-point text
@@ -39,6 +40,7 @@ pub const CLICK_SIZE_PT: (f64, f64) = (72.0, 18.0);
 pub struct LinkDialog {
     page_index: usize,
     page_count: usize,
+    names: Vec<NamedDest>,
     rect: Rect,
     form: LinkForm,
     add_requested: bool,
@@ -46,11 +48,11 @@ pub struct LinkDialog {
 }
 
 impl LinkDialog {
-    /// The window for a box drawn on page `page_index` of `page_count`. A
-    /// click's zero-area box becomes [`CLICK_SIZE_PT`] with its lower-left
-    /// corner at the click.
+    /// The window for a box drawn on page `page_index` of the document
+    /// `ask` describes. A click's zero-area box becomes [`CLICK_SIZE_PT`] with
+    /// its lower-left corner at the click.
     #[must_use]
-    pub fn open(page_index: usize, page_count: usize, rect: Rect) -> Self {
+    pub fn open(page_index: usize, ask: LinkAsk, rect: Rect) -> Self {
         let rect = if rect.urx - rect.llx <= 0.0 || rect.ury - rect.lly <= 0.0 {
             Rect {
                 llx: rect.llx,
@@ -63,7 +65,8 @@ impl LinkDialog {
         };
         Self {
             page_index,
-            page_count,
+            page_count: ask.page_count,
+            names: ask.names,
             rect,
             form: LinkForm::default(),
             add_requested: false,
@@ -119,7 +122,7 @@ impl LinkDialog {
                 .weak(),
         );
         ui.add_space(6.0);
-        self.form.goes_ui(ui, self.page_count, REGIONS);
+        self.form.goes_ui(ui, self.page_count, &self.names, REGIONS);
         ui.separator();
         self.form.border_ui(ui, "add-link-colour", REGIONS); // ui-text-exempt: an egui id salt, never displayed
         ui.separator();
@@ -145,31 +148,39 @@ impl LinkDialog {
     }
 }
 
+/// What the window needs to know about the document, read when Add link runs.
+#[derive(Debug, Clone, Default)]
+pub struct LinkAsk {
+    /// The document's page count, for the page field.
+    pub page_count: usize,
+    /// Its named destinations, for the Named choice's list.
+    pub names: Vec<NamedDest>,
+}
+
 /// **The Add-link round trip**: requested by `edit.insert_link`, waiting on
 /// the canvas for a box, then the window.
 #[derive(Debug, Default)]
 pub struct LinkSlot {
-    /// `edit.insert_link` ran; the frame has not armed the canvas yet. The
-    /// document's page count, for the window's page field.
-    requested: Option<usize>,
-    /// The canvas is armed for a box; the page count travels on.
-    waiting: Option<usize>,
+    /// `edit.insert_link` ran; the frame has not armed the canvas yet.
+    requested: Option<LinkAsk>,
+    /// The canvas is armed for a box; the ask travels on.
+    waiting: Option<LinkAsk>,
     /// The window, once the box is drawn.
     dialog: Option<LinkDialog>,
 }
 
 impl LinkSlot {
-    /// Ask for a box on a document of `page_count` pages.
-    pub fn request(&mut self, page_count: usize) {
-        self.requested = Some(page_count);
+    /// Ask for a box on the document `ask` describes.
+    pub fn request(&mut self, ask: LinkAsk) {
+        self.requested = Some(ask);
     }
 
     /// Read-and-clear the request, marking the slot as waiting for a box.
     pub fn take_request(&mut self) -> bool {
-        let Some(count) = self.requested.take() else {
+        let Some(ask) = self.requested.take() else {
             return false;
         };
-        self.waiting = Some(count);
+        self.waiting = Some(ask);
         true
     }
 
@@ -186,8 +197,8 @@ impl LinkSlot {
 
     /// The box was drawn on page `page_index`: open the window.
     pub fn deliver(&mut self, page_index: usize, rect: Rect) {
-        if let Some(count) = self.waiting.take() {
-            self.dialog = Some(LinkDialog::open(page_index, count, rect));
+        if let Some(ask) = self.waiting.take() {
+            self.dialog = Some(LinkDialog::open(page_index, ask, rect));
         }
     }
 
@@ -208,11 +219,18 @@ impl LinkSlot {
 mod tests {
     use super::*;
 
+    fn pages(page_count: usize) -> LinkAsk {
+        LinkAsk {
+            page_count,
+            names: Vec::new(),
+        }
+    }
+
     #[test]
     fn a_click_becomes_a_standard_box_at_its_corner() {
         let d = LinkDialog::open(
             0,
-            1,
+            pages(1),
             Rect {
                 llx: 100.0,
                 lly: 200.0,
@@ -237,7 +255,7 @@ mod tests {
         };
         slot.deliver(0, r);
         assert!(slot.dialog.is_none(), "nothing was asked for");
-        slot.request(3);
+        slot.request(pages(3));
         assert!(slot.take_request() && slot.waiting());
         assert!(!slot.take_request(), "the request is read-and-clear");
         slot.deliver(1, r);
@@ -254,6 +272,6 @@ mod tests {
             urx: 50.0,
             ury: 40.0,
         };
-        assert_eq!(LinkDialog::open(0, 1, r).rect, r);
+        assert_eq!(LinkDialog::open(0, pages(1), r).rect, r);
     }
 }

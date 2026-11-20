@@ -1180,6 +1180,7 @@ pub mod field_multiselect;
 pub mod fieldbandmerge;
 /// Arrow keys over several annotations, several form fields, or a ce dimension.
 pub mod groupnudge;
+pub mod link_named;
 /// Moving, resizing, copying and deleting a link, its quads following its box.
 pub mod link_quads;
 /// Drawing a link and repointing a selected one.

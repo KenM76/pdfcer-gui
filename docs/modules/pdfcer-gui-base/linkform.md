@@ -10,6 +10,9 @@ choice loses nothing typed:
 
 - `choice`: `Page`, `Web` or `Named`.
 - `page_number` (1-based), `uri`, `name`.
+- `picked`: the bytes of a name chosen from the list. A name that is not
+  UTF-8 shows lossily in `name`, so `target` writes `picked` while `name`
+  still reads as it, and the typed text once the operator edits it.
 - `border_on`, `width` (pt), `colour` (the engine `Color`), `dashed`.
 
 The default is page 1 with no visible border: how most producers write a link,
@@ -26,11 +29,20 @@ and the choice that changes nothing on the printed sheet.
   - Web: trimmed, and refused when empty, non-ASCII or containing a control
     character — the rules `set_link_target` applies, so the refusal shows
     before the button rather than after it.
-  - Named: refused when empty. Whether the name exists is the engine's check;
-    there is no public listing of names to pick from (request G179).
+  - Named: refused when empty. Whether a typed name exists is the engine's
+    check.
 - `border() -> Option<LinkBorder>`: `None` when off. The width is clamped to
   0.25–12 pt, the colour written in its own space (grey, RGB or CMYK), and a
   dashed border gets a 3 pt dash.
+- `named_destinations(graph) -> Vec<NamedDest>`: every name in both
+  §12.3.2.3 namespaces, from `DestinationReader::named_destinations`, in the
+  byte order it returns. `NamedDest` holds the name's bytes, its label, and
+  the 0-based page it reaches (`None` for a name whose destination is
+  missing or names no page here).
+- `goes_ui(ui, page_count, names, regions)` draws the Named choice as the
+  name field, then `names` as a list (row `i` publishes `{names}.{i}`); a
+  click puts that name in the field. With no names it says the document
+  defines none, and the field still takes a typed name.
 - `goes_ui` and `border_ui` draw the controls and return whether anything
   changed. Each publishes the regions its caller names in `Regions`. The
   colour is `colourpick::show` with grey, RGB and CMYK and no opacity (`/C`

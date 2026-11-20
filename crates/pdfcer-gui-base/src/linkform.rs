@@ -9,7 +9,8 @@
 use egui::Ui;
 use pdfcer_core::annot_author::{BorderDash, Color};
 use pdfcer_core::edit::{LinkBorder, LinkReading, LinkTarget};
-use pdfcer_core::outline::DestView;
+use pdfcer_core::graph::ObjectGraph;
+use pdfcer_core::outline::{DestView, Destination, DestinationReader};
 
 use crate::colourpick;
 use crate::text::linkedit as t;
@@ -42,8 +43,11 @@ pub struct LinkForm {
     pub page_number: usize,
     /// The web address.
     pub uri: String,
-    /// The destination name.
+    /// The destination name, as typed or as listed.
     pub name: String,
+    /// The name's bytes when it was picked from the list, which keeps a name
+    /// that is not UTF-8 exact; ignored once `name` no longer reads as it.
+    pub picked: Option<Vec<u8>>,
     /// Whether a visible rectangle is drawn.
     pub border_on: bool,
     /// Its width in points.
@@ -63,12 +67,42 @@ impl Default for LinkForm {
             page_number: 1,
             uri: String::new(),
             name: String::new(),
+            picked: None,
             border_on: false,
             width: 1.0,
             colour: Color::Rgb(0.0, 0.0, 0.0),
             dashed: false,
         }
     }
+}
+
+/// A named destination the document defines, as the Named choice lists it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NamedDest {
+    /// The name's bytes, as a link names it.
+    pub key: Vec<u8>,
+    /// The name as shown.
+    pub label: String,
+    /// The 0-based page it goes to; `None` when it reaches no page here.
+    pub page: Option<usize>,
+}
+
+/// **Every named destination the document defines**, both §12.3.2.3
+/// namespaces, in the byte order `DestinationReader::named_destinations` sorts them.
+#[must_use]
+pub fn named_destinations<G: ObjectGraph + ?Sized>(graph: &G) -> Vec<NamedDest> {
+    DestinationReader::new(graph)
+        .named_destinations(graph)
+        .into_iter()
+        .map(|(key, dest)| NamedDest {
+            label: String::from_utf8_lossy(&key).into_owned(),
+            page: match dest {
+                Some(Destination::Page { page_index, .. }) => Some(page_index),
+                _ => None,
+            },
+            key,
+        })
+        .collect()
 }
 
 /// Region names a caller publishes for one drawing of the form.
@@ -80,6 +114,8 @@ pub struct Regions {
     pub web: &'static str,
     /// The named destination choice.
     pub named: &'static str,
+    /// The listed names: row `i` publishes `{names}.{i}`.
+    pub names: &'static str,
     /// The text field of the current choice.
     pub field: &'static str,
     /// The visible-border switch.
@@ -147,10 +183,13 @@ impl LinkForm {
             }
             Choice::Named => {
                 if self.name.is_empty() {
-                    Err(t::needs_name())
-                } else {
-                    Ok(LinkTarget::Named(self.name.as_bytes().to_vec()))
+                    return Err(t::needs_name());
                 }
+                let key = match &self.picked {
+                    Some(key) if String::from_utf8_lossy(key) == self.name => key.clone(),
+                    _ => self.name.as_bytes().to_vec(),
+                };
+                Ok(LinkTarget::Named(key))
             }
         }
     }
@@ -174,8 +213,15 @@ impl LinkForm {
         )
     }
 
-    /// **Draw the "Goes to" controls.** Returns whether anything changed.
-    pub fn goes_ui(&mut self, ui: &mut Ui, page_count: usize, regions: Regions) -> bool {
+    /// **Draw the "Goes to" controls**, the Named choice listing `names`.
+    /// Returns whether anything changed.
+    pub fn goes_ui(
+        &mut self,
+        ui: &mut Ui,
+        page_count: usize,
+        names: &[NamedDest],
+        regions: Regions,
+    ) -> bool {
         let before = self.clone();
         ui.label(t::goes_to());
         for (choice, label, region) in [
@@ -210,18 +256,39 @@ impl LinkForm {
                 );
                 crate::diag::ui_rect(regions.field, r.rect);
             }
-            Choice::Named => {
-                // escape-disposition: keeps-draft — as the address above.
-                let r = ui.add(
-                    egui::TextEdit::singleline(&mut self.name)
-                        .hint_text(t::named_hint())
-                        .desired_width(f32::INFINITY),
-                );
-                crate::diag::ui_rect(regions.field, r.rect);
-                ui.label(egui::RichText::new(t::named_note()).small().weak());
-            }
+            Choice::Named => self.named_ui(ui, names, regions),
         }
         *self != before
+    }
+
+    /// The Named choice: the name field, then the document's names to pick.
+    fn named_ui(&mut self, ui: &mut Ui, names: &[NamedDest], regions: Regions) {
+        // escape-disposition: keeps-draft — as the address above.
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut self.name)
+                .hint_text(t::named_hint())
+                .desired_width(f32::INFINITY),
+        );
+        crate::diag::ui_rect(regions.field, r.rect);
+        if names.is_empty() {
+            ui.label(egui::RichText::new(t::named_none()).small().weak());
+        } else {
+            egui::ScrollArea::vertical()
+                .id_salt(regions.names)
+                .max_height(120.0)
+                .show(ui, |ui| {
+                    for (i, dest) in names.iter().enumerate() {
+                        let on = self.name == dest.label;
+                        let r = ui.selectable_label(on, t::named_row(&dest.label, dest.page));
+                        crate::diag::ui_rect(&format!("{}.{i}", regions.names), r.rect);
+                        if r.clicked() {
+                            self.name.clone_from(&dest.label);
+                            self.picked = Some(dest.key.clone());
+                        }
+                    }
+                });
+        }
+        ui.label(egui::RichText::new(t::named_note()).small().weak());
     }
 
     /// **Draw the border controls.** Returns whether anything changed.
