@@ -643,6 +643,11 @@ pub fn left_because(reason: &SkipReason) -> String {
         }
         SkipReason::ImageUnsupported(why) => super::compact_images::picture_left_because(why),
         SkipReason::Content(why) => content_left_because(why),
+        SkipReason::AboveCompatibility {
+            what,
+            needs,
+            target,
+        } => super::compact_version::above_target(what, needs, target),
         other => other.to_string(),
     }
 }

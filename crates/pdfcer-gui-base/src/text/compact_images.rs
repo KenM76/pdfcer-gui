@@ -384,6 +384,13 @@ pub fn picture_left_because(why: &ImageSkip) -> String {
         ImageSkip::VersionTooLow { .. } => {
             "the document is an older PDF version than that storage needs"
         }
+        ImageSkip::AboveCompatibility {
+            encode,
+            needs,
+            target,
+        } => {
+            return super::compact_version::above_target(&encode.to_string(), needs, target);
+        }
         _ => return format!("they are pictures that cannot be rewritten ({why})"),
     };
     s.to_owned()

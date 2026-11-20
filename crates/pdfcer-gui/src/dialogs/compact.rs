@@ -134,6 +134,8 @@ impl CompactDialog {
                 content: true,
                 round: None,
                 linearize: false,
+                brotli: false,
+                compatibility: None,
                 preset,
                 budget,
             },
@@ -368,17 +370,18 @@ impl CompactDialog {
         let mut toggled = self
             .profile
             .row(ui, || crate::dialogs::recompress::settings_for(choices));
-        toggled |= if self.profile.settings().is_some() {
-            self.fonts_switch(ui)
-        } else {
-            self.switches(ui)
-        };
+        if self.profile.settings().is_none() {
+            toggled |= self.switches(ui);
+        }
         if toggled {
             self.recompress = Recompress::Off;
             self.lowering = Lowering::Off;
             self.space = None;
         }
         if compact_version::row(ui, &mut self.version) {
+            // The plan skips what the version cannot carry, so it runs again.
+            self.choices.compatibility = self.version;
+            self.recompress = Recompress::Off;
             self.lowering = Lowering::Off;
             self.space = None;
         }
@@ -422,6 +425,9 @@ impl CompactDialog {
         .fold(false, |any, (on, label, tip)| {
             ui.checkbox(on, label).on_hover_text(tip).changed() || any
         });
+        let toggled =
+            crate::dialogs::compact_streams::brotli_switch(ui, c.recompress, &mut c.brotli)
+                || toggled;
         let toggled = self.fonts_switch(ui) || toggled;
         let c = &mut self.choices;
         let content = ui
@@ -439,7 +445,7 @@ impl CompactDialog {
         compact_images::switches(ui, &mut c.pictures, &mut c.classes) || toggled || aimed
     }
 
-    /// The fonts switch, which a settings file cannot carry.
+    /// The fonts switch.
     fn fonts_switch(&mut self, ui: &mut Ui) -> bool {
         let fonts = ui
             .checkbox(&mut self.choices.fonts, t::fonts_toggle())

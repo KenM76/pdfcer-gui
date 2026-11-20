@@ -492,6 +492,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(compact_profile::CompactSettingsFilesLoadAndSave),
         Box::new(compact_profile_fonts::ACompactSettingsFileCutsFonts),
         Box::new(compact_version::ACompactedCopyIsMadeCompatibleWithAnOlderVersion),
+        Box::new(compact_brotli::ACompactedCopyIsPackedWithBrotli),
+        Box::new(compact_brotli::AnOlderTargetLeavesBrotliOutAndListsWhatTheCopyUses),
         Box::new(compact_classes::ACompactedCopyTreatsEachKindOfPictureSeparately),
         Box::new(compact_closeness::AClosenessTargetPicksEachPicturesQuality),
         Box::new(compact_compare::ACompactedCopyListsEachPictureBeforeAndAfter),
