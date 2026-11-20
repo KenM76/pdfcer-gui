@@ -126,10 +126,13 @@ fn drive(
     session.settle(40);
     let applied = step!(after(session, APPLIED, mark, "Delete was pressed"));
     report.note(format!("`{}`", applied.raw));
-    if applied.get("deleted") != Some("4/4") || applied.get("one_step") != Some("true") {
+    if applied.get("deleted") != Some("4/4")
+        || applied.get("one_step") != Some("true")
+        || applied.get("engine") != Some("delete_widgets")
+    {
         return Ok(Some(format!(
-            "Delete over four selected boxes traced `{}`: four deleted as one undo step was \
-             wanted.",
+            "Delete over four selected boxes traced `{}`: four deleted as one undo step by \
+             one delete_widgets call was wanted.",
             applied.raw
         )));
     }

@@ -4,27 +4,25 @@
 //! Align and Distribute raise when the selection holds form fields or
 //! annotations, parts of several placed drawings, or parts beside page
 //! objects, or leaves something selected out. The engine moves several objects
-//! in one command, the parts of one drawing in another, but a widget or an
-//! annotation only one at a time, so this is one `move_objects_each` (when
-//! there is content), one `move_objects_each_in_form` per drawing, one
-//! `move_widget` per widget, one
-//! `move_annotation` per markup or link and one `place_dimension` per ce
-//! dimension, then `coalesce_last` over every command pushed. Filed as G189
-//! (widgets) and G190 (annotations); batch verbs retire it.
+//! in one command per kind: one `move_objects_each` (when there is content),
+//! one `move_objects_each_in_form` per drawing, one `move_widgets_each` for
+//! every widget and one `move_annotations_each` for every markup, link and ce
+//! dimension, then `coalesce_last` over the commands pushed.
 //!
-//! A ce dimension is placed by the rule a pointer drag uses
-//! (`canvas::dimdrag::placed`), so it stays on what it measures: only its line
-//! and value move, and its box may land short of where Align aimed it.
+//! The engine re-places a ce dimension by the rule a pointer drag uses, so it
+//! stays on what it measures: only its line and value move, and its box may
+//! land short of where Align aimed it.
 //!
-//! ## A refusal does not roll the others back
+//! ## A refusal does not roll the other kinds back
 //!
-//! What was applied stays applied and is folded into one undo step (see
-//! [`super::foldeach`]); the status line says how many moved and why the rest
-//! did not. A move of more commands than one undo step folds is refused
-//! before anything moves.
+//! Each batch verb is all-or-nothing within its kind. A kind that refused
+//! moved nothing; what the other kinds applied stays applied and is folded
+//! into one undo step, and the status line says which kind did not move and
+//! why. A move of more commands than one undo step folds is refused before
+//! anything moves.
 
-use pdfcer_core::edit::{CommandKind, EditError, EditSession};
-use pdfcer_gui_base::annotkind::AnnotKind;
+use pdfcer_core::edit::{AnnotationBatchMove, CommandKind, EditError, EditSession};
+use pdfcer_core::object::ObjId;
 use pdfcer_gui_base::annotselection::AnnotTarget;
 use pdfcer_gui_base::docidentity::SelectedField;
 
@@ -72,7 +70,7 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, moves: &Moves<'_>, gesture: 
     super::apply::vector_edit_on_page(doc, "move-mixed", page, n, |session| {
         let (said, done) = commit(session, page, moves)?;
         report = done;
-        Ok::<_, Refused>(said)
+        Ok::<_, EditError>(said)
     });
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
@@ -118,30 +116,26 @@ struct Report {
     folded: bool,
 }
 
-/// Why nothing at all moved: the engine's refusal, or the shell's.
-enum Refused {
-    Engine(EditError),
-    Said(String),
+/// What one batch verb did: how many targets moved, its disclosures, and
+/// the refusal that kept some or all of that kind where they were.
+#[derive(Default)]
+struct Batch {
+    moved: usize,
+    told: Vec<String>,
+    failure: Option<EditError>,
 }
 
-impl From<EditError> for Refused {
-    fn from(e: EditError) -> Self {
-        Self::Engine(e)
+impl Batch {
+    /// Commands the batch left on the undo stack: one, or none.
+    fn pushed(&self) -> usize {
+        usize::from(self.moved > 0)
     }
-}
 
-impl std::fmt::Display for Refused {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Engine(e) => e.fmt(f),
-            Self::Said(s) => f.write_str(s),
+    fn refused(e: EditError) -> Self {
+        Self {
+            failure: Some(e),
+            ..Self::default()
         }
-    }
-}
-
-impl crate::app::unlock::Refusal for Refused {
-    fn encrypted(&self) -> bool {
-        matches!(self, Self::Engine(e) if crate::app::unlock::Refusal::encrypted(e))
     }
 }
 
@@ -149,8 +143,8 @@ impl crate::app::unlock::Refusal for Refused {
 struct Runs {
     drawings: Run<EditError>,
     parts: usize,
-    widgets: Run<EditError>,
-    annots: Run<Refused>,
+    widgets: Batch,
+    annots: Batch,
     placed_dimension: bool,
 }
 
@@ -159,13 +153,12 @@ fn commit(
     session: &mut EditSession,
     page: usize,
     moves: &Moves<'_>,
-) -> Result<(Vec<String>, Report), Refused> {
-    within_undo_depth(
-        usize::from(!moves.objects.is_empty())
-            + moves.leaves.len()
-            + moves.widgets.len()
-            + moves.annots.len(),
-    )?;
+) -> Result<(Vec<String>, Report), EditError> {
+    let commands = usize::from(!moves.objects.is_empty())
+        + moves.leaves.len()
+        + usize::from(!moves.widgets.is_empty())
+        + usize::from(!moves.annots.is_empty());
+    within_undo_depth(commands.max(moves.widgets.len()).max(moves.annots.len()))?;
     let mut said = moves.notes.to_vec();
     if !moves.objects.is_empty() {
         said.extend(session.move_objects_each(page, moves.objects)?);
@@ -173,11 +166,11 @@ fn commit(
     let mut runs = run_each(session, page, moves);
     let pushed = usize::from(!moves.objects.is_empty())
         + runs.drawings.pushed
-        + runs.widgets.pushed
-        + runs.annots.pushed;
+        + runs.widgets.pushed()
+        + runs.annots.pushed();
     if pushed == 0 {
-        let first = (runs.drawings.failure.take().map(Refused::Engine))
-            .or_else(|| runs.widgets.failure.take().map(Refused::Engine))
+        let first = (runs.drawings.failure.take())
+            .or_else(|| runs.widgets.failure.take())
             .or_else(|| runs.annots.failure.take());
         if let Some(e) = first {
             return Err(e);
@@ -185,7 +178,7 @@ fn commit(
     }
     let kind = if !moves.objects.is_empty() || runs.drawings.pushed > 0 {
         CommandKind::MoveObject
-    } else if runs.widgets.pushed > 0 {
+    } else if runs.widgets.moved > 0 {
         CommandKind::MoveWidget
     } else {
         CommandKind::MoveAnnotation
@@ -199,15 +192,15 @@ fn commit(
         objects: moves.objects.len(),
         parts: runs.parts,
         drawings: runs.drawings.pushed,
-        widgets: runs.widgets.pushed,
-        annots: runs.annots.pushed,
+        widgets: runs.widgets.moved,
+        annots: runs.annots.moved,
         folded,
     };
     Ok((said, report))
 }
 
-/// One command per drawing, per widget and per annotation, each kind tried
-/// to the end whatever the others refuse.
+/// One command per drawing, one `move_widgets_each` and one
+/// `move_annotations_each`, each kind tried whatever the others refuse.
 fn run_each(session: &mut EditSession, page: usize, moves: &Moves<'_>) -> Runs {
     let mut parts = 0_usize;
     let drawings = each(session, moves.leaves, OnRefusal::Continue, |s, group| {
@@ -215,37 +208,8 @@ fn run_each(session: &mut EditSession, page: usize, moves: &Moves<'_>) -> Runs {
         parts += group.len();
         Ok::<_, EditError>(Some(outcome.disclosures))
     });
-    let widgets = each(
-        session,
-        moves.widgets,
-        OnRefusal::Continue,
-        |s, (field, dx, dy)| {
-            let outcome = s.move_widget(&field.field, field.widget, *dx, *dy)?;
-            let left = outcome.siblings_left_behind;
-            Ok::<_, EditError>(Some(
-                (left > 0)
-                    .then(|| crate::text::forms::widget_siblings_unmoved(left))
-                    .into_iter()
-                    .collect(),
-            ))
-        },
-    );
-    let mut placed_dimension = false;
-    let annots = each(
-        session,
-        moves.annots,
-        OnRefusal::Continue,
-        |s, (target, dx, dy)| {
-            let popup_left = move_annot(s, target, *dx, *dy)?;
-            placed_dimension |= target.kind == AnnotKind::CeDimension;
-            Ok::<_, Refused>(Some(
-                popup_left
-                    .then(crate::text::markup::popup_left_behind)
-                    .into_iter()
-                    .collect(),
-            ))
-        },
-    );
+    let widgets = move_widgets(session, moves.widgets);
+    let (annots, placed_dimension) = move_annots(session, moves.annots);
     Runs {
         drawings,
         parts,
@@ -255,8 +219,88 @@ fn run_each(session: &mut EditSession, page: usize, moves: &Moves<'_>) -> Runs {
     }
 }
 
+/// Every widget by one `move_widgets_each`.
+fn move_widgets(session: &mut EditSession, widgets: &[(SelectedField, f64, f64)]) -> Batch {
+    if widgets.is_empty() {
+        return Batch::default();
+    }
+    let list: Vec<(&str, usize, f64, f64)> = widgets
+        .iter()
+        .map(|(f, dx, dy)| (f.field.as_str(), f.widget, *dx, *dy))
+        .collect();
+    match session.move_widgets_each(&list) {
+        Ok(done) => {
+            let left: usize = done.iter().map(|m| m.siblings_left_behind).sum();
+            Batch {
+                moved: done.len(),
+                told: (left > 0)
+                    .then(|| crate::text::forms::widget_siblings_unmoved(left))
+                    .into_iter()
+                    .collect(),
+                failure: None,
+            }
+        }
+        Err(e) => Batch::refused(e),
+    }
+}
+
+/// Every unlocked markup, link and ce dimension by one
+/// `move_annotations_each`; the engine re-places a ce dimension by the drag
+/// rule. The flag is whether a ce dimension was among those moved.
+///
+/// A locked one is kept out of the batch, which is all-or-nothing and would
+/// refuse the rest for it, and is named by the engine's own refusal.
+fn move_annots(session: &mut EditSession, annots: &[(AnnotTarget, f64, f64)]) -> (Batch, bool) {
+    let locked =
+        annots
+            .iter()
+            .find(|(a, ..)| a.locked)
+            .map(|(a, ..)| EditError::AnnotationLocked {
+                id: a.id,
+                subtype: a.subtype.clone(),
+            });
+    let list: Vec<(ObjId, f64, f64)> = annots
+        .iter()
+        .filter(|(a, ..)| !a.locked)
+        .map(|(a, dx, dy)| (a.id, *dx, *dy))
+        .collect();
+    if list.is_empty() {
+        return (locked.map_or_else(Batch::default, Batch::refused), false);
+    }
+    let (mut batch, dimension) = move_unlocked(session, &list);
+    if batch.failure.is_none() {
+        batch.failure = locked;
+    }
+    (batch, dimension)
+}
+
+/// [`move_annots`]'s one engine call.
+fn move_unlocked(session: &mut EditSession, list: &[(ObjId, f64, f64)]) -> (Batch, bool) {
+    match session.move_annotations_each(list) {
+        Ok(done) => {
+            let popup_left = done.iter().any(|m| {
+                matches!(m, AnnotationBatchMove::Annotation(a) if a.popup_left_behind.is_some())
+            });
+            let dimension = done
+                .iter()
+                .any(|m| matches!(m, AnnotationBatchMove::Dimension { .. }));
+            let told = popup_left
+                .then(crate::text::markup::popup_left_behind)
+                .into_iter()
+                .collect();
+            let batch = Batch {
+                moved: done.len(),
+                told,
+                failure: None,
+            };
+            (batch, dimension)
+        }
+        Err(e) => (Batch::refused(e), false),
+    }
+}
+
 /// What the status line adds after the verbs' own disclosures: each kind
-/// that moved only partly, ce dimensions staying attached, an unfolded step.
+/// that did not move, ce dimensions staying attached, an unfolded step.
 fn words(runs: &Runs, moves: &Moves<'_>, folded: bool) -> Vec<String> {
     let mut said = Vec::new();
     if let Some(e) = &runs.drawings.failure {
@@ -268,14 +312,14 @@ fn words(runs: &Runs, moves: &Moves<'_>, folded: bool) -> Vec<String> {
     }
     if let Some(e) = &runs.widgets.failure {
         said.push(t::fields_partly_moved(
-            runs.widgets.pushed,
+            0,
             moves.widgets.len(),
             &e.to_string(),
         ));
     }
     if let Some(e) = &runs.annots.failure {
         said.push(t::annots_partly_moved(
-            runs.annots.pushed,
+            runs.annots.moved,
             moves.annots.len(),
             &e.to_string(),
         ));
@@ -287,40 +331,4 @@ fn words(runs: &Runs, moves: &Moves<'_>, folded: bool) -> Vec<String> {
         said.push(t::not_one_undo().to_owned());
     }
     said
-}
-
-/// Move one markup or link, or place one ce dimension. `Ok(true)` when a
-/// markup's pop-up note stayed where it was.
-fn move_annot(
-    session: &mut EditSession,
-    target: &AnnotTarget,
-    dx: f64,
-    dy: f64,
-) -> Result<bool, Refused> {
-    match target.kind {
-        AnnotKind::Markup => Ok(session
-            .move_annotation(target.id, dx, dy)?
-            .popup_left_behind
-            .is_some()),
-        AnnotKind::CeDimension => {
-            // `place_dimension` does not read the lock flag; `move_annotation`
-            // does, and both kinds must agree.
-            if target.locked {
-                return Err(Refused::Engine(EditError::AnnotationLocked {
-                    id: target.id,
-                    subtype: target.subtype.clone(),
-                }));
-            }
-            let model = session.dimension_model();
-            let record = model
-                .dimensions()
-                .iter()
-                .find(|r| r.annot == Some(target.id))
-                .ok_or_else(|| Refused::Said(t::dimension_not_found().to_owned()))?;
-            let (_, offset, text_along) = crate::canvas::dimdrag::placed(&record.kind, dx, dy)
-                .ok_or_else(|| Refused::Said(t::dimension_not_placeable().to_owned()))?;
-            session.place_dimension(record.id, offset, text_along)?;
-            Ok(false)
-        }
-    }
 }

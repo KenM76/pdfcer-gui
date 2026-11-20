@@ -274,8 +274,8 @@ fn nudge_annots(
             delta.dy
         )
     });
-    // One markup keeps the single verb. A ce dimension is placed by
-    // `dimdrag::placed`, as its pointer drag is, which `MoveMixed` does.
+    // One markup keeps the single verb. A ce dimension goes by `MoveMixed`,
+    // whose batch verb re-places it by the drag rule.
     if let [one] = annots
         && matches!(one.target.kind, AnnotKind::Markup)
     {

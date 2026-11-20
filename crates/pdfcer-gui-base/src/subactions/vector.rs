@@ -114,10 +114,9 @@ pub enum VectorAction {
     /// when one engine verb cannot cover the selection or something selected
     /// is left out, and what a group drag of fields or annotations commits.
     ///
-    /// The engine has no batch widget or annotation move (G189, G190), so the
-    /// commit is one `move_objects_each`, one `move_objects_each_in_form` per
-    /// drawing, one verb per widget or annotation, folded with
-    /// `coalesce_last`. Deltas are page space, Y up.
+    /// The commit is one `move_objects_each`, one `move_objects_each_in_form`
+    /// per drawing, one `move_widgets_each` and one `move_annotations_each`,
+    /// folded with `coalesce_last`. Deltas are page space, Y up.
     MoveMixed {
         /// The 0-based page.
         page: usize,

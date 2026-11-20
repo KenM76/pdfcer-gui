@@ -175,12 +175,6 @@ pub fn form_widgets_deleted(boxes: usize, fields_removed: usize) -> String {
     }
 }
 
-/// **A delete of several boxes stopped part-way**, and why.
-#[must_use]
-pub fn form_widgets_partly_deleted(deleted: usize, of: usize, reason: &str) -> String {
-    format!("Only {deleted} of the {of} boxes were deleted: {reason}")
-}
-
 /// **Several whole fields were deleted**, and how many boxes went with them.
 #[must_use]
 pub fn form_fields_deleted(fields: usize, boxes: usize) -> String {

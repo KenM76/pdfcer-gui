@@ -127,10 +127,11 @@ fn drive(
     if applied.get("deleted") != Some("3/3")
         || applied.get("kept_locked") != Some("1")
         || applied.get("one_step") != Some("true")
+        || applied.get("engine") != Some("delete_annotations")
     {
         return Ok(Some(format!(
             "Delete over four annotations, one locked, traced `{}`: three deleted, one kept \
-             and one undo step was wanted.",
+             and one undo step by one delete_annotations call was wanted.",
             applied.raw
         )));
     }

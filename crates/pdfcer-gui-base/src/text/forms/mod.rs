@@ -23,7 +23,6 @@ pub use authoring::{
     form_fields_actions_orphaned, form_fields_deleted, form_fields_partly_deleted,
     form_noun_check_box, form_noun_choice, form_noun_push_button, form_noun_radio, form_noun_text,
     form_widget_deleted, form_widget_deleted_last, form_widgets_deleted,
-    form_widgets_partly_deleted,
 };
 
 pub use groups::*;
