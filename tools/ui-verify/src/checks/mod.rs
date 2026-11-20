@@ -965,6 +965,7 @@ pub mod model_lamp_cut;
 pub mod model_lamp_tiles;
 pub mod model_light;
 pub mod model_lighting;
+pub mod model_meter_card;
 pub mod model_picture_size;
 pub mod model_render_mode;
 pub mod model_shadow_extra;

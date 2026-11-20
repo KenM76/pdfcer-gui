@@ -16,7 +16,7 @@ use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::vec3::{add, cross, normalize, scale};
 use pdfcer_3d::{
     AssembledModel, Camera, GlowLight, Hit, Illuminance, IlluminanceError, IlluminanceQuery,
-    IlluminanceUnit, LightMeter, MeterSettings, PreparedModel,
+    IlluminanceUnit, MeterSettings, PreparedModel,
 };
 
 use super::ModelView;
@@ -134,6 +134,8 @@ struct Job {
     options: ModelRenderOptions,
     query: IlluminanceQuery,
     glow: GlowLight,
+    /// Where the meter's bounce is built on the card, when it can be.
+    card: Option<super::gpu_bounce_card::CardQueue>,
 }
 
 /// Work out `job`'s reading: a circle with as many samples as the engine's
@@ -141,14 +143,14 @@ struct Job {
 fn read(job: &Job) -> Answer {
     let mut settings = MeterSettings::default();
     settings.glow = job.glow;
-    let meter = LightMeter::new(
+    let meter = super::gpu_meter::light_meter(
         &job.model,
         &job.prepared,
         &job.camera,
         &job.options,
         &settings,
-    )
-    .map_err(|e| e.to_string())?;
+        job.card.as_ref(),
+    )?;
     let tries = if job.query.radius > 0.0 {
         &SAMPLES[..]
     } else {
@@ -242,6 +244,7 @@ impl ModelView {
             options,
             query,
             glow,
+            card: self.gpu.meter_card(),
         };
         let (tx, rx) = channel();
         std::thread::spawn(move || {

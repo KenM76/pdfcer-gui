@@ -263,6 +263,12 @@ impl Gpu {
         self.declined
     }
 
+    /// The queue a light meter's bounce is built through: only while the
+    /// card draws the picture, since a paint is what advances it.
+    pub(super) fn meter_card(&mut self) -> Option<super::gpu_bounce_card::CardQueue> {
+        (self.live() && self.declined.is_none()).then(|| self.bounce.card())
+    }
+
     /// The model was replaced: rebuild everything from it.
     pub(super) fn forget_model(&mut self) {
         self.prepared = None;

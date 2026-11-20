@@ -39,6 +39,7 @@ mod gpu;
 mod gpu_bounce;
 mod gpu_bounce_card;
 mod gpu_lens;
+mod gpu_meter;
 mod gpu_paint;
 mod gpu_uniforms;
 mod immersive;

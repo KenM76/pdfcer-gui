@@ -3,8 +3,9 @@
 //! passes in the paint callback, and the finished atlas read back into the
 //! same [`FrameBounce`] the processor's build gives.
 //!
-//! The worker packs the scene and hands a [`CardJob`] over; each paint
-//! advances it by row bands within [`BUDGET`], so no single draw comes near
+//! The worker packs the scene and hands a [`CardJob`] to its [`Slot`]: the
+//! frame's bounce, or the light meter's (`super::gpu_meter`); each paint
+//! advances one job by row bands within [`BUDGET`], the meter's first, so no single draw comes near
 //! the driver's watchdog and the window keeps drawing. The finished bounce
 //! goes down the build's own channel, so [`super::gpu_bounce::Bounces`]
 //! cannot tell a card build from a processor one. A card that cannot run it
@@ -49,9 +50,33 @@ const REDUCE_PASS: usize = 1;
 #[derive(Clone, Default)]
 pub(super) struct CardQueue(Arc<Inner>);
 
+/// Which build a job is: each slot holds one, a newer one superseding it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Slot {
+    /// The viewer's frame bounce.
+    Frame,
+    /// The light meter's bounce, which a reading waits on.
+    Meter,
+}
+
+impl Slot {
+    /// The order the paint advances slots in: a reading is a click waited
+    /// on, while the frame keeps its old bounce meanwhile.
+    const ORDER: [Self; 2] = [Self::Meter, Self::Frame];
+
+    /// The trace event a job in this slot reports under.
+    const fn event(self) -> &'static str {
+        match self {
+            Self::Frame => "model-view-bounce", // ui-text-exempt: a trace event name
+            Self::Meter => "model-light-meter-bounce", // ui-text-exempt: a trace event name
+        }
+    }
+}
+
 #[derive(Default)]
 struct Inner {
-    job: Mutex<Option<CardJob>>,
+    /// Indexed by `Slot as usize`.
+    jobs: Mutex<[Option<CardJob>; 2]>,
     /// 0 not yet known, 1 the card renders into float targets, 2 it cannot.
     support: AtomicU8,
 }
@@ -59,7 +84,7 @@ struct Inner {
 impl CardQueue {
     /// A build is queued or part-way through on the card.
     pub(super) fn busy(&self) -> bool {
-        self.lock().is_some()
+        self.lock().iter().any(Option::is_some)
     }
 
     /// Whether a build should be packed for the card.
@@ -78,22 +103,23 @@ impl CardQueue {
         );
     }
 
-    /// Queue `job`, dropping any job it supersedes.
-    pub(super) fn hand(&self, job: CardJob) {
-        if let Some(old) = self.lock().replace(job) {
+    /// Queue `job` in `slot`, dropping any job it supersedes.
+    pub(super) fn hand(&self, slot: Slot, mut job: CardJob) {
+        job.event = slot.event();
+        if let Some(old) = self.lock()[slot as usize].replace(job) {
             old.abandon();
         }
     }
 
-    /// Drop the job, for a viewer closing outside a paint.
+    /// Drop every job, for a viewer closing outside a paint.
     pub(super) fn close(&self) {
-        if let Some(job) = self.lock().take() {
+        for job in self.lock().iter_mut().filter_map(Option::take) {
             job.abandon();
         }
     }
 
-    fn lock(&self) -> std::sync::MutexGuard<'_, Option<CardJob>> {
-        self.0.job.lock().unwrap_or_else(PoisonError::into_inner)
+    fn lock(&self) -> std::sync::MutexGuard<'_, [Option<CardJob>; 2]> {
+        self.0.jobs.lock().unwrap_or_else(PoisonError::into_inner)
     }
 }
 
@@ -101,6 +127,8 @@ impl CardQueue {
 pub(super) struct CardJob {
     build: GpuBounceBuild,
     tx: Sender<Built>,
+    /// The trace event, set by the slot it is handed to.
+    event: &'static str,
     fallback: Option<Fallback>,
     /// Alive while the build is still the one wanted.
     alive: Weak<()>,
@@ -131,6 +159,7 @@ impl CardJob {
             build,
             tx,
             fallback: Some(fallback),
+            event: Slot::Frame.event(),
             alive,
             compute: None,
             step: Step::Trace { bounce: 0, row: 0 },
@@ -150,7 +179,8 @@ impl CardJob {
     /// The processor's build of this bounce, on a thread, down the channel.
     fn hand_to_processor(mut self, gl: &glow::Context, why: &str) {
         // ui-text-exempt: diagnostic trace, never displayed
-        crate::diag::trace(|| format!("model-view-bounce built=processor reason={why:?}"));
+        let event = self.event;
+        crate::diag::trace(|| format!("{event} built=processor reason={why:?}"));
         if let Some(c) = self.compute.take() {
             c.destroy(gl);
         }
@@ -183,7 +213,15 @@ pub(super) fn advance(gl: &glow::Context, queue: &CardQueue) {
     {
         c.destroy(gl);
     }
-    let mut slot = queue.lock();
+    let mut jobs = queue.lock();
+    let Some(index) = Slot::ORDER
+        .into_iter()
+        .map(|s| s as usize)
+        .find(|&i| jobs[i].is_some())
+    else {
+        return;
+    };
+    let slot = &mut jobs[index];
     let Some(job) = slot.as_mut() else { return };
     if job.alive.strong_count() == 0 {
         if let Some(c) = job.compute.take() {
@@ -375,11 +413,11 @@ fn finish(gl: &glow::Context, mut job: CardJob) {
     compute.destroy(gl);
     let mut bounce = job.build.bounce;
     bounce.atlas = atlas;
-    let (ms, bands) = (job.started.elapsed().as_millis(), job.bands);
+    let (ms, bands, event) = (job.started.elapsed().as_millis(), job.bands, job.event);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
         format!(
-            "model-view-bounce built=card ms={ms} bands={bands} irradiance={:.6}",
+            "{event} built=card ms={ms} bands={bands} irradiance={:.6}",
             irradiance(&bounce)
         )
     });

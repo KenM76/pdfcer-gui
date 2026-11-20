@@ -72,6 +72,21 @@ impl Check for TheViewerReadsTheLight {
     }
 }
 
+/// Choose the meter in `drive`'s open viewer and read across the picture
+/// until a point a lamp shines on straight: its reading, or the sentence for
+/// none.
+pub(crate) fn first_lit_reading(drive: &Drive) -> Result<std::result::Result<TraceLine, String>> {
+    let meter = Meter(drive);
+    if !meter.press(SWITCH)? {
+        return Ok(Err(format!("the viewer drew no `{SWITCH}`.")));
+    }
+    if !meter.press(LIGHT)? {
+        return Ok(Err(format!("★★★ the Measure tab drew no `{LIGHT}`.")));
+    }
+    close(drive.session, drive.pointer, ui_rect(drive.ctx)?)?;
+    Ok(meter.first()?.map(|(_, line)| line))
+}
+
 /// A reading line's number under `key`.
 pub(crate) fn number(line: &TraceLine, key: &str) -> f64 {
     line.get(key)

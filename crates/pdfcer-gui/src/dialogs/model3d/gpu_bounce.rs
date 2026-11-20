@@ -23,7 +23,7 @@ use native_mesh::Value;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{AssembledModel, Camera, Exposure, FrameBounce, LampCut, PreparedModel};
 
-use super::gpu_bounce_card::{CardJob, CardQueue};
+use super::gpu_bounce_card::{CardJob, CardQueue, Slot};
 use super::gpu_uniforms::Uniforms;
 
 /// What one build depends on.
@@ -241,7 +241,7 @@ fn build(
             Ok(Some(packed)) => {
                 let fallback =
                     Box::new(move || on_processor(lit, &prepared, &model, &camera, &options));
-                card.hand(CardJob::new(packed, tx, alive, fallback));
+                card.hand(Slot::Frame, CardJob::new(packed, tx, alive, fallback));
                 return;
             }
             Ok(None) => {}
