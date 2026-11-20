@@ -28,6 +28,9 @@ pub const NO_UNIT: &str = "The file states no unit, so lengths are in the model'
 /// Said when the file separates no faces, so a face is the whole part.
 pub const WHOLE_PART: &str =
     "This file does not separate the part into faces, so a face's figures are the whole part's.";
+/// Said when the file gives the picked face only as part of a larger one, so
+/// the figures are the flat patch round the click.
+pub const GROWN_FACE: &str = "The file does not give this face on its own, so these are the figures of the flat patch at the click.";
 /// Said of a face that is neither flat nor a cylinder.
 pub const UNFITTED_FACE: &str = "Neither flat nor a cylinder.";
 /// Said of an edge that is neither straight nor a circle.

@@ -9,7 +9,7 @@ added, so a user who never turns it on never reads about it.
   `why` is one of the reason strings below, so the user learns *what* on the
   page kept it off the card, not that "something failed".
 - One reason per `pdfcer_render::GpuRefusal` variant the shell names
-  (picture, smooth shading, soft mask or blend mode, curves, size), one for a
+  (picture, shading, soft mask or blend mode, curves, size), one for a
   page the engine cannot record, one for a window with no GL context, and
   `card_failed(driver)` for a drawer that failed, quoting the driver's words.
 

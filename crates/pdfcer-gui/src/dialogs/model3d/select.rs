@@ -13,8 +13,8 @@
 use egui::{RichText, Ui};
 use pdfcer_3d::{
     DEFAULT_CORNER_DEGREES, DEFAULT_FLAT_DEGREES, EdgeFigures, EdgeShape, EntityDistance,
-    FaceFigures, FaceShape, Hit, MeasureEntity, Selection, SurfacePick, TriangleMesh, edge_at,
-    entity_distance, face_figures, vertex_at,
+    FaceFigures, FaceShape, FaceSource, Hit, MeasureEntity, Selection, SurfacePick, TriangleMesh,
+    edge_at, entity_distance, face_figures, vertex_at,
 };
 
 use super::ModelView;
@@ -44,13 +44,9 @@ const BLANK: &str = " "; // ui-text-exempt: an empty row, no words
 enum Figures {
     Corner([f64; 3]),
     Edge(EdgeFigures),
-    /// `whole` when the file does not divide the part into faces, so the
-    /// figures are the whole part's: it separates none, or gives one face
-    /// for all its triangles (reported to the engine: G312).
-    Face {
-        figures: FaceFigures,
-        whole: bool,
-    },
+    /// Where the figures came from is `figures.source`, said under them when
+    /// it is not the file's own face.
+    Face(FaceFigures),
 }
 
 /// One pick and what the engine made of it.
@@ -153,15 +149,17 @@ fn figures_of(meshes: &[TriangleMesh], s: &Selection) -> Result<Figures, String>
             DEFAULT_CORNER_DEGREES,
         )
         .map(Figures::Edge),
-        _ => face_figures(meshes, &s.pick, DEFAULT_FLAT_DEGREES).map(|figures| {
-            let one = meshes.get(figures.mesh).is_none_or(|m| m.faces.len() <= 1);
-            Figures::Face {
-                whole: figures.face.is_none() || one,
-                figures,
-            }
-        }),
+        _ => face_figures(meshes, &s.pick, DEFAULT_FLAT_DEGREES).map(Figures::Face),
     };
     figures.map_err(|e| e.to_string())
+}
+
+fn source_word(s: FaceSource) -> &'static str {
+    match s {
+        FaceSource::File => "file",
+        FaceSource::Grown => "grown",
+        _ => "whole-mesh",
+    }
 }
 
 fn entity_word(e: MeasureEntity) -> &'static str {
@@ -203,17 +201,17 @@ fn trace_figures(f: &Figures) -> String {
                 u8::from(e.closed)
             )
         }
-        Figures::Face { figures: f, whole } => {
+        Figures::Face(f) => {
             let (shape, radius) = match f.shape {
                 FaceShape::Plane { .. } => ("plane", String::from("-")),
                 FaceShape::Cylinder { radius, .. } => ("cylinder", format!("{radius:.6}")),
                 _ => ("unfitted", String::from("-")),
             };
             format!(
-                "area={:.6} perimeter={:.6} shape={shape} radius={radius} whole={} triangles={}", // ui-text-exempt: diagnostic trace, never displayed
+                "area={:.6} perimeter={:.6} shape={shape} radius={radius} source={} triangles={}", // ui-text-exempt: diagnostic trace, never displayed
                 f.area,
                 f.perimeter,
-                u8::from(*whole),
+                source_word(f.source),
                 f.triangles
             )
         }
@@ -261,7 +259,7 @@ fn figure_lines(f: &Figures, unit: &str) -> Vec<String> {
             lines.push(t::edge_chord(e.chord, e.closed, unit));
             lines
         }
-        Figures::Face { figures: f, whole } => {
+        Figures::Face(f) => {
             let mut lines = vec![t::face_area(f.area, unit), t::perimeter(f.perimeter, unit)];
             match f.shape {
                 FaceShape::Plane {
@@ -279,8 +277,10 @@ fn figure_lines(f: &Figures, unit: &str) -> Vec<String> {
                 }
                 _ => lines.push(t::UNFITTED_FACE.to_owned()),
             }
-            if *whole {
-                lines.push(t::WHOLE_PART.to_owned());
+            match f.source {
+                FaceSource::File => {}
+                FaceSource::Grown => lines.push(t::GROWN_FACE.to_owned()),
+                _ => lines.push(t::WHOLE_PART.to_owned()),
             }
             lines
         }

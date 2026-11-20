@@ -9,8 +9,8 @@ distances between two picks.
 
 `fixtures/glow-room.prc` (`fixtures/glow-room.PROVENANCE.py`): a 4 by 4 floor
 at height 0, a unit box, a bulb and two tubes, every face flat. The file
-separates no faces, so a face pick is the whole part it lands on and says so
-(`whole=1`). The viewer's frame is z-up: the file's y is the viewer's height
+separates no faces, so the engine grows a face pick into the flat patch
+round the click and says so (`source=grown`). The viewer's frame is z-up: the file's y is the viewer's height
 `z`, and the file's z the viewer's `-y`. Opened with *View…* under `--no-input` with a `ScriptedPointer`.
 
 1. Drag across `model3d.image` to bring side faces into view. Press
@@ -21,7 +21,7 @@ separates no faces, so a face pick is the whole part it lands on and says so
    landed at (`at`).
 3. A spot at height `z` 0 is on the floor: its line must read `shape=plane`,
    `area` 16 and `perimeter` 16, within 0.0001. A spot on the box must read
-   `area` 6 with `whole=1`, or 1 with `whole=0`.
+   `source=grown` and `area` 1: one unit side, not the box's 6.
 4. Press *Start again*, click a spot on the box and one on `tube-b` (x -1.0
    to -0.8; the grid is too coarse to land on the thinner pair). Both must be
    whole parts. The `model-select-distance` line must read `minimum` 0.3 and

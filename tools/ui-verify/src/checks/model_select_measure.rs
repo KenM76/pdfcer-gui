@@ -41,7 +41,6 @@ const BOX_TO_TUBE_NEAREST: f64 = 0.3;
 const BOX_TO_TUBE_FARTHEST: f64 = 2.692_582_404;
 /// The box's six unit squares.
 const BOX_SIDE_AREA: f64 = 1.0;
-const BOX_AREA: f64 = 6.0;
 
 /// See the module documentation.
 pub struct TheViewerMeasuresFacesEdgesCorners;
@@ -198,8 +197,8 @@ impl Selecting<'_> {
         self.edge_and_corner(report, floor)
     }
 
-    /// The floor's face is its 4 by 4 square; a box face is a unit square, or
-    /// the whole box's six when the file separates no faces and says so.
+    /// The floor's face is its 4 by 4 square; a box face, which the file gives
+    /// only as the whole box, is the unit square of flat patch at the click.
     fn faces(&self, report: &mut CheckReport, landed: &[Landed]) -> Option<String> {
         let floor = landed.iter().find(|l| l.on_floor())?;
         report.note(format!("floor face: {}", floor.line.raw));
@@ -216,13 +215,12 @@ impl Selecting<'_> {
         }
         let boxed = landed.iter().find(|l| l.on_box())?;
         report.note(format!("box face: {}", boxed.line.raw));
-        let whole = boxed.line.get("whole") == Some("1");
-        let want = if whole { BOX_AREA } else { BOX_SIDE_AREA };
-        (!near(&boxed.line, "area", want)).then(|| {
+        let right =
+            near(&boxed.line, "area", BOX_SIDE_AREA) && boxed.line.get("source") == Some("grown");
+        (!right).then(|| {
             format!(
-                "★★★ a face pick on the box traced `{}`; with whole={} it must have area {want}.",
-                boxed.line.raw,
-                u8::from(whole)
+                "★★★ a face pick on the box traced `{}`; it must be the grown flat patch,                  source=grown, of area {BOX_SIDE_AREA}.",
+                boxed.line.raw
             )
         })
     }
@@ -256,7 +254,9 @@ impl Selecting<'_> {
             ));
         };
         report.note(format!("box to tube-b: {}", line.raw));
-        let whole = [a, b].iter().all(|l| l.line.get("whole") == Some("1"));
+        // `entity_distance` measures the file's face, which in this file is the
+        // whole part whether the figures were grown or not.
+        let whole = [a, b].iter().all(|l| l.line.get("source") != Some("file"));
         if !whole {
             return Ok(Some(format!(
                 "the box and tube-b picked as faces that are not their whole parts: the check's \
