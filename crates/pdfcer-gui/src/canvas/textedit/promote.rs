@@ -108,6 +108,9 @@ pub fn sync(ctx: &egui::Context, on: bool) {
 /// `llx, lly, urx, ury`) and its text either side of the run.
 struct Paragraph {
     block: usize,
+    /// `point` when `block_at_point` named the block, `run` when it is the
+    /// run's own.
+    by: &'static str,
     run: usize,
     bbox: (f64, f64, f64, f64),
     lines: usize,
@@ -192,7 +195,7 @@ pub fn open(
             why: EnterRefusal::Recognised,
             token: "recognised-word",
         })
-        .and_then(|()| paragraph(doc, draft.page, run, original))
+        .and_then(|()| paragraph(doc, draft.page, run, original, None))
         .and_then(|p| {
             let promoted = promoted(draft, &p);
             preflight(doc, draft.page, p.block, &promoted)?;
@@ -243,11 +246,16 @@ pub fn open(
 /// The note owed to the operator when the paragraph exists and could not be
 /// opened whole; `Err(None)` when the run is all there is or its paragraph
 /// answers no: its own answer ([`here`]) when it has one, else `default`.
+///
+/// `at` is the click (PDF user space): the paragraph opened is the one
+/// `EditSession::block_at_point` names there, and the draft stays a run
+/// draft when the run is not in it. `None` opens the run's own paragraph.
 pub fn widen(
     ctx: &egui::Context,
     doc: &OpenDoc,
     draft: &mut Draft,
     default: bool,
+    at: Option<(f64, f64)>,
 ) -> Result<LineEndSource, Option<DraftNote>> {
     let Anchor::Run { run, original } = &draft.anchor else {
         return Err(None);
@@ -259,7 +267,7 @@ pub fn widen(
         return recognised::widen(ctx, doc, draft);
     }
     let started = std::time::Instant::now();
-    let result = paragraph(doc, draft.page, run, original).and_then(|p| {
+    let result = paragraph(doc, draft.page, run, original, at).and_then(|p| {
         if p.lines < 2 {
             return Err(Declined::no_paragraph("one-line"));
         }
@@ -277,10 +285,11 @@ pub fn widen(
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "text-edit-widened page={} run={run} block={} lines={} breaks={} len={} \
-                     source={} ms={ms} looks={}",
+                    "text-edit-widened page={} run={run} block={} by={} lines={} breaks={} \
+                     len={} source={} ms={ms} looks={}",
                     draft.page,
                     p.block,
+                    p.by,
                     p.lines,
                     p.breaks,
                     draft.text.chars().count(),
@@ -336,7 +345,7 @@ fn opening_box(
     if recognised(doc, page, run).is_err() {
         return recognised::bbox(doc, page, run, original).map_err(|d| d.token);
     }
-    match paragraph(doc, page, run, original) {
+    match paragraph(doc, page, run, original, None) {
         Ok(p) if p.lines >= 2 => Ok(p.bbox),
         Ok(_) => Err("one-line"),
         Err(d) => Err(d.token),
@@ -396,14 +405,17 @@ fn rewrite(doc: &OpenDoc, page: usize, block: usize, text: &str) -> Result<(), D
         })
 }
 
-/// The paragraph `run` sits in, numbered as `edit_block_text` reads it, and
+/// The paragraph `run` sits in (the one `block_at_point` names at `at`, when
+/// given), numbered as `edit_block_text` reads it, and
 /// the text either side of the run, its lines joined as the engine's
-/// `line_ends` reads them: a break as `\n`, a wrap as a space.
+/// `line_gaps` reads them: a break as `\n`, one more per blank line after
+/// it, a wrap as a space (`line_ends` where the breaks were inferred).
 fn paragraph(
     doc: &OpenDoc,
     page: usize,
     run: usize,
     original: &str,
+    at: Option<(f64, f64)>,
 ) -> Result<Paragraph, Declined> {
     let text = doc
         .provenance_page_text(page)
@@ -411,9 +423,16 @@ fn paragraph(
     let view = doc.session.view();
     let model = super::engine_model::recognise(&text, &view, page)
         .ok_or(Declined::no_paragraph("no-cells"))?;
-    let block = model
-        .block_at(TextPosition::new(run, 0))
-        .ok_or(Declined::no_paragraph("no-paragraph"))?;
+    let hit = at.and_then(|(x, y)| doc.session.block_at_point(page, x, y).ok().flatten());
+    let (block, by) = match hit {
+        Some(hit) => (hit.block_index, "point"),
+        None => (
+            model
+                .block_at(TextPosition::new(run, 0))
+                .ok_or(Declined::no_paragraph("no-paragraph"))?,
+            "run",
+        ),
+    };
     let b = model
         .blocks()
         .get(block)
@@ -427,6 +446,7 @@ fn paragraph(
     }
     Ok(Paragraph {
         block,
+        by,
         run,
         bbox: (b.bbox.llx, b.bbox.lly, b.bbox.urx, b.bbox.ury),
         lines: b.line_indices.len(),
@@ -445,7 +465,7 @@ struct Walk {
     joined: String,
     span: Option<(usize, usize)>,
     looks: usize,
-    /// Line ends read as typed breaks.
+    /// Line breaks between its lines, one more per blank line.
     breaks: usize,
     places: Vec<Place>,
 }
@@ -508,6 +528,7 @@ impl Walk {
             .filter_map(|&li| model.lines().get(li))
             .collect();
         let ends = model.line_ends(b);
+        let gaps = model.line_gaps(b);
         let mut joined = String::new();
         let mut span: Option<(usize, usize)> = None;
         let mut closed = false;
@@ -516,9 +537,14 @@ impl Walk {
         let mut places = Vec::new();
         for (i, line) in lines.iter().enumerate() {
             if i > 0 {
-                let typed = ends.get(i - 1) == Some(&LineEnd::Break);
-                breaks += usize::from(typed);
-                joined.push(if typed { '\n' } else { ' ' });
+                let n = gaps.as_ref().and_then(|g| g.get(i - 1).copied());
+                let n = n.unwrap_or(usize::from(ends.get(i - 1) == Some(&LineEnd::Break)));
+                breaks += n;
+                if n == 0 {
+                    joined.push(' ');
+                } else {
+                    joined.push_str(&"\n".repeat(n));
+                }
                 closed |= span.is_some();
             }
             for &g in &line.glyphs {

@@ -112,7 +112,7 @@ pub fn toggle(ctx: &egui::Context, doc: &OpenDoc) {
                     on: true,
                 },
             );
-            let widened = widen(ctx, doc, &mut draft, true).is_ok();
+            let widened = widen(ctx, doc, &mut draft, true, None).is_ok();
             store(ctx, draft);
             trace(true, page, llx, ury, widened);
         }

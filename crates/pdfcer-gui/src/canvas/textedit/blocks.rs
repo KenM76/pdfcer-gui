@@ -76,11 +76,7 @@ fn model_of<'t>(doc: &OpenDoc, text: &'t PageText) -> Option<EditableTextModel<'
 }
 
 /// A character index into run `run`, as a byte offset.
-fn byte_offset(
-    text: &PageText,
-    run: usize,
-    caret: usize,
-) -> Option<usize> {
+fn byte_offset(text: &PageText, run: usize, caret: usize) -> Option<usize> {
     let s = &text.runs.get(run)?.text;
     Some(
         s.char_indices()
@@ -90,11 +86,7 @@ fn byte_offset(
 }
 
 /// A byte offset into run `run`, as a character index.
-fn char_offset(
-    text: &PageText,
-    run: usize,
-    byte_offset: usize,
-) -> Option<usize> {
+fn char_offset(text: &PageText, run: usize, byte_offset: usize) -> Option<usize> {
     let s = &text.runs.get(run)?.text;
     let clamped = byte_offset.min(s.len());
     Some(s[..clamped].chars().count())

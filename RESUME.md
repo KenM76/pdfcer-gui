@@ -258,7 +258,7 @@ a_snapshot_copy_is_cropped_at_the_set_dpi`; S6–S7, the cut page on the
 clipboard as `application/pdf` and pasted back, is
 `clippaste::drawing` and `dispatch::ospaste::drawing`: `ui-verify --check
 a_snapshot_pastes_back_as_a_drawing`). In Review the paste is a stamp; in
-Edit it is drawn into the page's content. G078 is wired at the keystroke, preview and commit; G076 is wired for Enter.
+Edit it is drawn into the page's content. G078 is wired at the keystroke, preview and commit; G076 is wired for Enter and for the paragraph a click opens.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

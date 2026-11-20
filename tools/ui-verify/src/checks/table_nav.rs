@@ -63,7 +63,9 @@ fn launch(ctx: &CheckContext) -> Result<(Session, ScriptedPointer, std::path::Pa
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let pdf = crate::fixture::workspace_root().join("fixtures").join(FIXTURE);
+    let pdf = crate::fixture::workspace_root()
+        .join("fixtures")
+        .join(FIXTURE);
     if !pdf.is_file() {
         return Err(Error::new(format!(
             "the fixture is not at {}; it is committed, so this is a broken checkout.",
@@ -111,7 +113,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     )?;
     session.settle(25);
     let trace = session.trace()?;
-    let caret = trace.events(CARET).filter(|l| l.get("run").is_some()).last();
+    let caret = trace
+        .events(CARET)
+        .filter(|l| l.get("run").is_some())
+        .last();
     let Some(caret) = caret else {
         return Ok(Some(format!(
             "a click inside \"Nut\" placed no caret in a run. The text tool is armed and the \

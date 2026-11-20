@@ -29,7 +29,10 @@ pub(super) fn apply(
             let o = s.set_object_stroke_style_in_form(page, objects, &style)?;
             (o.paint, o.reach.map(|r| r.disclosures).unwrap_or_default())
         } else {
-            (s.set_object_stroke_style(page, objects, &style)?, Vec::new())
+            (
+                s.set_object_stroke_style(page, objects, &style)?,
+                Vec::new(),
+            )
         };
         let (changed, refused) = (outcome.changed.len(), outcome.refused.len());
         let mut notes = vec![if refused == 0 {

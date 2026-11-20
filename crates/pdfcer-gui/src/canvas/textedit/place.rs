@@ -186,7 +186,7 @@ pub fn click(
     // operator has switched Paragraphs off.
     let on = super::promote::enabled_on(ctx, click.doc.serial, click.page_index);
     let widened = if on || super::promote::here::any(ctx, click.doc.serial, click.page_index) {
-        super::promote::widen(ctx, click.doc, &mut draft, on)
+        super::promote::widen(ctx, click.doc, &mut draft, on, click_point(click))
     } else {
         Err(None)
     };
@@ -315,6 +315,13 @@ pub fn run_under(doc: &OpenDoc, page_index: usize, canvas_point: Pos2) -> bool {
 /// `Some(false)`, or `None` when the question could not be asked.
 fn has_no_anchor(c: &Click<'_>, run: usize) -> Option<bool> {
     c.doc.run_has_no_anchor(run)
+}
+
+/// The click in PDF user space, or `None` off the page.
+fn click_point(c: &Click<'_>) -> Option<(f64, f64)> {
+    let page = c.doc.pages.get(c.page_index)?;
+    let pdf = crate::viewer::canvas_to_pdf_space(c.canvas_point, page)?;
+    Some((f64::from(pdf.x), f64::from(pdf.y)))
 }
 
 /// **Which character boundary a click landed on, inside `run`**: the
