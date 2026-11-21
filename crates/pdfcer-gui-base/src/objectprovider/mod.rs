@@ -29,11 +29,14 @@ mod node_rung;
 /// Hidden-layer content, dropped from every hit test.
 mod unseen;
 
+/// Image masks, so a click passes through an image's clear pixels.
+mod alpha;
+
 use egui::{Pos2, Rect};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::{
     Bounds, FormMarquee, HitTarget, MarqueeMode, Matrix, PageObjects, Point, VectorObject,
-    decompose_page, hit_test_point_deep, hit_test_rect_deep,
+    decompose_page, hit_test_rect_deep,
 };
 use pdfcer_core::view::DocumentView;
 
@@ -142,6 +145,8 @@ pub struct ObjectModelProvider {
     recent_hits: std::sync::Mutex<Vec<(HitKey, Vec<TargetId>)>>,
     /// The targets the current layer state hides.
     unseen: std::sync::Mutex<unseen::Unseen>,
+    /// The page's decoded image masks, for point hits.
+    alpha: alpha::PageAlpha,
 }
 
 /// How many [`ObjectModelProvider::recent_hits`] are kept.
@@ -221,6 +226,7 @@ impl ObjectModelProvider {
             summaries: unfilled(&objects),
             recent_hits: std::sync::Mutex::new(Vec::new()),
             unseen: std::sync::Mutex::default(),
+            alpha: alpha::PageAlpha::filled(view, &objects, page_index),
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
@@ -245,6 +251,7 @@ impl ObjectModelProvider {
             summaries: unfilled(&objects),
             recent_hits: std::sync::Mutex::new(Vec::new()),
             unseen: std::sync::Mutex::default(),
+            alpha: alpha::PageAlpha::default(),
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
@@ -459,7 +466,9 @@ impl ObjectModelProvider {
             return Vec::new();
         };
         let started = std::time::Instant::now();
-        let answer: Vec<TargetId> = hit_test_point_deep(&self.objects, pdf, resolve(tolerance))
+        let answer: Vec<TargetId> = self
+            .alpha
+            .hits(&self.objects, pdf, resolve(tolerance))
             .into_iter()
             .map(|hit| match hit {
                 HitTarget::Object(i) => TargetId::Object(i as u64),

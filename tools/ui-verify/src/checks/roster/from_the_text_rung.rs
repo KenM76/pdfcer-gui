@@ -40,6 +40,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(security_passwords::SecurityNotesSayOldPasswordsAreKept),
         Box::new(object_disagreements::ObjectsPanelSaysWhereTheListAndPageDisagree),
         Box::new(placed_drawings::ObjectsPanelSaysWhereAPlacedDrawingIsDrawn),
+        Box::new(clear_pixels::AClickOnAClearPixelPicksTheInkBeneath),
         Box::new(page_boxes::DocumentPropertiesSayWhichPageBoxesWereNotUsedAsWritten),
         Box::new(box_sizes::DocumentPropertiesListPageBoxSizes),
         Box::new(pdfx_claim::DocumentPropertiesSayWhichPdfxLevelTheFileClaims),

@@ -468,6 +468,8 @@ pub mod box_sizes;
 pub mod check_mark;
 /// Give a multi-select list several default choices from Properties.
 pub mod choice_defaults;
+/// A click passes through an image's fully clear pixels to the ink beneath.
+pub mod clear_pixels;
 /// A selection copied in one window pastes as objects in another.
 pub mod cross_window_paste;
 /// Create a self-signed digital ID in the Sign window and sign with it.

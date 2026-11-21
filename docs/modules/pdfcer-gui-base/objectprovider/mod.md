@@ -44,6 +44,20 @@ content in a visible inner group nested in a hidden outer group stays
 selectable. Annotations follow the same rule in
 `canvas::selection::annot::selectable_on`.
 
+## A click passes through an image's clear pixels
+
+`alpha.rs`: point hits go through `pdfcer_core::vector::hit_test_point_deep_with`
+with an engine `ImageAlphaCache`, so a fully clear mask sample does not pick
+the image and the ink beneath is picked instead. The cache's resolver needs a
+`DocumentView` at query time and `CanvasTargetProvider` holds none, so
+`PageAlpha::filled` decodes every page and leaf image's mask from the view in
+`build_or_reason`, tracing `image-alpha-filled page= images= decoded= ms=`.
+Queries read the filled cache through a view of an empty document; an image
+the build missed decodes to nothing there and counts as opaque. The provider
+is rebuilt whenever the page's content changes, which is the cache's
+validity contract. `from_parts` leaves the cache empty, so test providers
+hit images as opaque. Rectangle hits are unchanged.
+
 ## [`TargetId`] encoding
 
 A [`TargetId`] is the object's index into
@@ -407,7 +421,8 @@ a loop over none of them is exactly the right amount of work.
 
 A thin adapter, as the module docs promise: convert canvas space to
 PDF user space, resolve the tolerance, and hand both to
-[`pdfcer_core::vector::hit_test_point_deep`], which owns the geometry
+[`pdfcer_core::vector::hit_test_point_deep_with`] with the page's image
+masks, which owns the geometry
 and the ordering.
 
 The list is what click-through cycling steps through. Without it, an
