@@ -4,14 +4,15 @@
 
 use crate::checks::driving;
 use crate::checks::raster_wall::panic_was_converted;
+use crate::checks::scripteddrive::{offscreen, shot};
 use crate::checks::{Check, CheckContext, CheckReport};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowFrame, WindowPoint};
 use crate::error::{Error, Result};
 use crate::geom::{LRect, Pt};
 use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
-const VK_CONTROL: u16 = 0x11;
 const CANVAS_REGION: &str = "canvas-viewport";
 const CANVAS_EVENT: &str = "canvas";
 const POS_EVENT: &str = "canvas-pos";
@@ -107,18 +108,18 @@ pub(super) fn page_under(
     )))
 }
 
+/// Photograph the window's own frame and answer whether the patch under the
+/// pointer is blank.
 fn patch_uniform(
     ctx: &CheckContext,
-    session: &Session,
-    frame: &crate::coords::WindowFrame,
-    patch: LRect,
+    rig: &Held,
     report: &mut CheckReport,
     label: &str,
 ) -> Result<bool> {
     let path = ctx.out(&format!("notch-walk-{label}.png"));
-    let image = crate::capture::window_to_png(session, &path)?;
+    let image = shot(&rig.session, &rig.pointer, &path)?;
     report.artifact(path);
-    Ok(blank(&image, frame, patch))
+    Ok(blank(&image, &rig.frame, rig.patch))
 }
 
 /// Luminance above which a uniform patch is paper, not ink.
@@ -206,44 +207,27 @@ pub(super) fn region_misses_view(trace: &crate::trace::Trace, canvas: LRect) -> 
     None
 }
 
-#[allow(clippy::too_many_arguments)]
+/// Turn the wheel one Ctrl notch at the held point, photograph the patch early
+/// and settled, and read the page point under the pointer.
 fn notch(
     ctx: &CheckContext,
-    session: &Session,
-    driver: &Driver,
-    frame: &crate::coords::WindowFrame,
-    at: crate::coords::ScreenPoint,
-    aim: (f64, f64),
-    canvas: LRect,
-    patch: LRect,
+    rig: &Held,
     direction: i32,
     n: usize,
     report: &mut CheckReport,
 ) -> Result<Step> {
-    driver.scroll_at_held(at, &[VK_CONTROL], direction, 1)?;
+    let session = &rig.session;
+    rig.pointer.wheel(session, rig.at, direction as f32, true)?;
     session.settle(EARLY_FRAMES);
     let zoom = zoom_now(session)?;
     let dir = if direction > 0 { "in" } else { "out" };
     let label = format!("{dir}-{n:03}-{:.0}pct", zoom * 100.0);
-    let early_uniform = patch_uniform(
-        ctx,
-        session,
-        frame,
-        patch,
-        report,
-        &format!("{label}-early"),
-    )?;
+    let early_uniform = patch_uniform(ctx, rig, report, &format!("{label}-early"))?;
     session.settle(SETTLED_FRAMES);
     let zoom = zoom_now(session)?;
-    let settled_uniform = patch_uniform(
-        ctx,
-        session,
-        frame,
-        patch,
-        report,
-        &format!("{label}-settled"),
-    )?;
-    let under = page_under(session, canvas, aim)?.filter(|(x, y)| x.is_finite() && y.is_finite());
+    let settled_uniform = patch_uniform(ctx, rig, report, &format!("{label}-settled"))?;
+    let under =
+        page_under(session, rig.canvas, rig.aim)?.filter(|(x, y)| x.is_finite() && y.is_finite());
     report.note(format!(
         "{dir} {n:03}: zoom {:.1}% under pointer {} early {} settled {}",
         zoom * 100.0,
@@ -260,22 +244,31 @@ fn notch(
 }
 
 /// A launched session with the pointer held over `--doc-point`, shared by the
-/// zoom checks that photograph the patch under the pointer.
+/// zoom checks that photograph the patch under the pointer through the OS.
 pub(super) struct Rig {
     pub session: Session,
     pub driver: Driver,
-    pub frame: crate::coords::WindowFrame,
+    pub frame: WindowFrame,
     pub canvas: LRect,
     /// The pointer, in window logical points.
     pub aim: (f64, f64),
     pub at: crate::coords::ScreenPoint,
-    /// [`PATCH`] either side of the pointer.
-    pub patch: LRect,
 }
 
-/// Launch on `--pdf`, find the canvas, and park the pointer over `--doc-point`.
-pub(super) fn rig(ctx: &CheckContext, report: &mut CheckReport, trace: &str) -> Result<Rig> {
-    let vocab = &ctx.profile.vocab;
+/// [`Rig`]'s off-desktop twin: the window is placed off the desktop and the
+/// pointer is the scripted one, so nothing here touches the operator's input.
+struct Held {
+    session: Session,
+    pointer: ScriptedPointer,
+    frame: WindowFrame,
+    canvas: LRect,
+    aim: (f64, f64),
+    at: WindowPoint,
+    patch: LRect,
+}
+
+/// What both launches need: the spec on `--pdf`, its page and `--doc-point`.
+fn rig_spec(ctx: &CheckContext, trace: &str) -> Result<(LaunchSpec, PageGeometry, DocPoint)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -286,14 +279,6 @@ pub(super) fn rig(ctx: &CheckContext, report: &mut CheckReport, trace: &str) -> 
     let target = ctx.target.ok_or_else(|| {
         Error::new("no --doc-point. This check needs a detail to hold under the pointer.")
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check zooms the canvas. SKIPPED, not passed.",
-        ));
-    }
-    let ui_rect = vocab
-        .ui_rect_event
-        .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     let page: PageGeometry = match ctx.page_size {
         Some((w, h)) => PageGeometry {
             width_pt: w,
@@ -302,7 +287,6 @@ pub(super) fn rig(ctx: &CheckContext, report: &mut CheckReport, trace: &str) -> 
         None => crate::fixture::page_geometry(&pdf)
             .ok_or_else(|| Error::new("cannot read a page size. Pass --page-size WxH."))?,
     };
-
     let mut spec = LaunchSpec::new(&exe, ctx.out(trace));
     spec.pdf = Some(pdf);
     spec.env.push((
@@ -311,57 +295,100 @@ pub(super) fn rig(ctx: &CheckContext, report: &mut CheckReport, trace: &str) -> 
     ));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    Ok((spec, page, target))
+}
 
-    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
-    session.expect_thread_panic();
-    report.artifact(session.trace_path().to_path_buf());
-    session.settle(60);
-    let driver = Driver::new(session.window());
-
+/// The canvas, the window point over `target` and the patch around it.
+fn hold_point(
+    ctx: &CheckContext,
+    session: &Session,
+    page: PageGeometry,
+    target: DocPoint,
+    report: &mut CheckReport,
+) -> Result<(LRect, WindowPoint, LRect)> {
+    let vocab = &ctx.profile.vocab;
+    let ui_rect = vocab
+        .ui_rect_event
+        .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     let trace = session.trace()?;
     let canvas = driving::declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
-    let frame = session.frame()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let wp = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let aim = (f64::from(wp.x()), f64::from(wp.y()));
-    let at = frame.to_screen(wp);
-    driver.move_to(at)?;
     let patch = LRect::new(
         Pt::new(wp.x() - PATCH, wp.y() - PATCH),
         Pt::new(wp.x() + PATCH, wp.y() + PATCH),
     );
     report.note(format!(
         "pointer held at window ({:.1}, {:.1}) over page {} ({}, {})",
-        aim.0, aim.1, target.page, target.x, target.y
+        wp.x(),
+        wp.y(),
+        target.page,
+        target.x,
+        target.y
     ));
+    Ok((canvas, wp, patch))
+}
+
+/// Launch on `--pdf`, find the canvas, and park the OS pointer over
+/// `--doc-point`.
+pub(super) fn rig(ctx: &CheckContext, report: &mut CheckReport, trace: &str) -> Result<Rig> {
+    let (spec, page, target) = rig_spec(ctx, trace)?;
+    if !ctx.allow_input {
+        return Err(Error::new(
+            "input is disabled (--no-input). This check zooms the canvas. SKIPPED, not passed.",
+        ));
+    }
+    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    session.expect_thread_panic();
+    report.artifact(session.trace_path().to_path_buf());
+    session.settle(60);
+    let driver = Driver::new(session.window());
+    let (canvas, wp, _patch) = hold_point(ctx, &session, page, target, report)?;
+    let frame = session.frame()?;
+    let at = frame.to_screen(wp);
+    driver.move_to(at)?;
     Ok(Rig {
         session,
         driver,
         frame,
         canvas,
-        aim,
+        aim: (f64::from(wp.x()), f64::from(wp.y())),
+        at,
+    })
+}
+
+/// Launch off the desktop on `--pdf`, find the canvas, and hover the scripted
+/// pointer over `--doc-point`.
+fn held(ctx: &CheckContext, report: &mut CheckReport, stem: &str) -> Result<Held> {
+    let (mut spec, page, target) = rig_spec(ctx, &format!("{stem}.trace.txt"))?;
+    let pointer = offscreen(ctx, &mut spec, stem)?;
+    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    session.expect_thread_panic();
+    report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
+    let (canvas, at, patch) = hold_point(ctx, &session, page, target, report)?;
+    let frame = session.frame()?;
+    pointer.hover(&session, at)?;
+    Ok(Held {
+        session,
+        pointer,
+        frame,
+        canvas,
+        aim: (f64::from(at.x()), f64::from(at.y())),
         at,
         patch,
     })
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let Rig {
-        session,
-        driver,
-        frame,
-        canvas,
-        aim,
-        at,
-        patch,
-    } = rig(ctx, report, "notch-walk.trace.txt")?;
+    let rig = held(ctx, report, "notch-walk")?;
+    let (session, canvas) = (&rig.session, rig.canvas);
 
     let mut inward = Vec::new();
     for n in 0..MAX_NOTCHES {
-        let step = notch(
-            ctx, &session, &driver, &frame, at, aim, canvas, patch, 1, n, report,
-        )?;
+        let step = notch(ctx, &rig, 1, n, report)?;
         let top = step.zoom;
         inward.push(step);
         if top >= CEILING {
@@ -371,9 +398,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut outward = Vec::new();
     let floor = inward.first().map_or(1.0, |s| s.zoom);
     for n in 0..MAX_NOTCHES {
-        let step = notch(
-            ctx, &session, &driver, &frame, at, aim, canvas, patch, -1, n, report,
-        )?;
+        let step = notch(ctx, &rig, -1, n, report)?;
         let bottom = step.zoom;
         outward.push(step);
         if bottom <= floor {
@@ -381,7 +406,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
-    if let Some(bad) = panic_was_converted(&session)? {
+    rig.pointer.gone(session)?;
+    if let Some(bad) = panic_was_converted(session)? {
         return Ok(Some(bad));
     }
 

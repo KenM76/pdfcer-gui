@@ -173,3 +173,5 @@ the chooser emits — `font_size: None` compiles and means *"work it out
 from the box"* — and `12` is what a build that adopted
 `StampStyle::default()` emits. A check pressing either would be green on
 the broken build it was written to catch.
+
+The window is placed off the desktop and every click and drag comes from the scripted pointer, aimed in the viewport that declared the control (`scripteddrive::ClickNamed`), so the check runs under `--no-input`.

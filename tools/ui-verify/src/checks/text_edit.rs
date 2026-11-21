@@ -9,12 +9,13 @@ use std::path::Path;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
 use crate::checks::save_copy::{FILE_TAB, SAVE, click_command, click_tab};
+use crate::checks::scripteddrive::{aim, offscreen};
 
 /// The mode this check has to be in.
 const MODE: &str = "edit";
@@ -78,21 +79,22 @@ impl Check for TextEditPinsAnAlignedTail {
     }
 }
 
-/// Launch the binary on `pdf`, with the three seams set.
+/// Launch the binary on `pdf` off the desktop, with the three seams set, and
+/// attach the scripted pointer. `stem` names the trace and the pointer log.
 fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
     pdf: &Path,
     target: Option<&Path>,
-    trace_name: &str,
-) -> Result<Session> {
+    stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
             ctx.profile.default_exe
         ))
     })?;
-    let mut spec = LaunchSpec::new(exe, ctx.out(trace_name));
+    let mut spec = LaunchSpec::new(exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(pdf.to_path_buf());
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -111,6 +113,7 @@ fn launch(
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = offscreen(ctx, &mut spec, stem)?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched on {} as pid {}",
@@ -118,7 +121,8 @@ fn launch(
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
     if !session.trace()?.started(ctx.profile.vocab.start_event) {
         return Err(Error::new(format!(
             "the process launched and never traced `{}`. Nothing below can be attributed to the \
@@ -127,7 +131,7 @@ fn launch(
             session.trace_path().display()
         )));
     }
-    Ok(session)
+    Ok((session, pointer))
 }
 
 /// Whether `hay` holds `needle`.
@@ -138,12 +142,6 @@ fn holds(hay: &[u8], needle: &str) -> bool {
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is six clicks across two processes. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     // NOT `ctx.pdf`. This check's verdict is a byte scan for a `Tm` this
     // repository's own generator placed, so it is meaningless against any other
     // document — and a check that silently measured whatever `--pdf` named would
@@ -177,8 +175,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The authoring process. Scoped, so it is gone before the second launches.
     // =======================================================================
     {
-        let session = launch(ctx, report, &pdf, Some(&target), "text_edit.trace.txt")?;
-        let driver = Driver::new(session.window());
+        let (session, pointer) = launch(ctx, report, &pdf, Some(&target), "text_edit")?;
+        let driver = &pointer;
 
         // --- PHASE A: Edit mode --------------------------------------------
         let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
@@ -188,12 +186,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ctx.profile.name
             ))
         })?;
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, driver, ui_rect, MODE)?;
         session.settle(16);
 
         // --- PHASE B: arm the caret tool from the ribbon --------------------
-        click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
-        click_command(&session, &driver, ui_rect, EDIT_TEXT, 16)?;
+        click_tab(&session, driver, ui_rect, EDIT_TAB)?;
+        click_command(&session, driver, ui_rect, EDIT_TEXT, 16)?;
         let trace = session.trace()?;
         if !trace
             .events("text-edit-tool")
@@ -214,19 +212,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // With Paragraphs on, the click opens the whole right-aligned block and
         // the draft (which the seam replaces outright) is the paragraph, so the
         // line this check watches would be deleted rather than left alone.
-        if let Some(failure) = driving::paragraphs_off(&session, &driver, ui_rect)? {
+        if let Some(failure) = driving::paragraphs_off(&session, driver, ui_rect)? {
             return Ok(Some(failure));
         }
         report.note("Edit ▸ Paragraphs is off: a click opens one line".to_owned());
 
         // --- PHASE C: click the right-aligned line's first word -------------
-        let at = crate::checks::text_selection::aim(
+        let at = aim(
             ctx,
             &session,
             page,
             DocPoint::new(0, AIM.0 * page.width_pt, AIM.1 * page.height_pt),
         )?;
-        driver.click_at(at)?;
+        driver.click(&session, at)?;
         session.settle(20);
         let trace = session.trace()?;
         let Some(caret) = trace.last("text-edit-caret") else {
@@ -251,13 +249,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- PHASE D: click elsewhere, which commits ------------------------
-        let away = crate::checks::text_selection::aim(
+        let away = aim(
             ctx,
             &session,
             page,
             DocPoint::new(0, ELSEWHERE.0 * page.width_pt, ELSEWHERE.1 * page.height_pt),
         )?;
-        driver.click_at(away)?;
+        driver.click(&session, away)?;
         session.settle(24);
         let trace = session.trace()?;
         let Some(plan) = trace.last("text-edit-plan") else {
@@ -295,8 +293,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- PHASE E: save a copy -------------------------------------------
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
-        click_command(&session, &driver, ui_rect, SAVE, 40)?;
+        click_tab(&session, driver, ui_rect, FILE_TAB)?;
+        click_command(&session, driver, ui_rect, SAVE, 40)?;
+        driver.gone(&session)?;
         if session.trace()?.events("save-copy").count() == 0 {
             return Ok(Some(format!(
                 "SAVE A COPY WROTE NOTHING. The command was invoked and no `save-copy` line \
@@ -354,7 +353,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // --- PHASE H: a second process reads it back ---------------------------
-    let second = launch(ctx, report, &target, None, "text_edit.reopen.trace.txt")?;
+    let (second, _pointer) = launch(ctx, report, &target, None, "text_edit.reopen")?;
     let trace = second.trace()?;
     if trace.events(ctx.profile.vocab.canvas_event).count() == 0 {
         return Ok(Some(format!(

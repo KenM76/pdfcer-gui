@@ -5,14 +5,12 @@
 
 use crate::checks::driving;
 use crate::checks::raster_wall::panic_was_converted;
+use crate::checks::scripteddrive::{at_fraction, offscreen, shot};
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
-
-/// `VK_CONTROL`, held while the wheel rolls to make it a zoom.
-const VK_CONTROL: u16 = 0x11;
 
 /// The canvas viewport, whose declared rect aims the pointer.
 const CANVAS_REGION: &str = "canvas-viewport";
@@ -182,6 +180,7 @@ fn last_ink(session: &Session) -> Result<Option<i64>> {
 fn photograph(
     ctx: &CheckContext,
     session: &Session,
+    pointer: &ScriptedPointer,
     frame: &crate::coords::WindowFrame,
     canvas: crate::geom::LRect,
     report: &mut CheckReport,
@@ -190,18 +189,16 @@ fn photograph(
     let zoom = zoom_now(session)?;
     let path = ctx.out(&format!("zoom-gallery-{label}.png"));
 
-    // `capture::window_to_png` refuses a near-uniform grab itself, with the
-    // three causes it has actually seen. Its refusal is an Error and therefore
-    // a SKIP — right for "the display is asleep", wrong for "the canvas is
-    // blank", so the uniformity verdict is re-stated as a FAILURE below rather
-    // than left to it.
-    let image = match crate::capture::window_to_png(session, &path) {
+    // The window's own rendered frame. A frame that cannot be written or read
+    // back is reported as a FAILURE at this zoom rather than a SKIP: the
+    // capture runs inside the application, so its refusal is about the canvas.
+    let image = match shot(session, pointer, &path) {
         Ok(image) => image,
         Err(e) => {
             return Ok(Some(format!(
-                "at {:.0}% the window capture was rejected: {e}\n\nIf the display is awake and \
-                 the window was raised, this is the answer to the question — the canvas is not \
-                 drawing anything at this zoom.",
+                "at {:.0}% the window's own frame could not be captured: {e}\n\nThe capture \
+                 runs inside the application, so this is the answer to the question — the \
+                 canvas is not drawing anything at this zoom.",
                 zoom * 100.0
             )));
         }
@@ -210,15 +207,9 @@ fn photograph(
 
     // UNIFORMITY IS ASKED OF THE CANVAS, NOT OF THE WINDOW.
     //
-    // `capture::window_to_png` refuses a near-uniform *window*, and a window
-    // always contains a ribbon, a status bar and two panels — so it is never
-    // uniform, and its guard can never fire for the reason this check cares
-    // about. The first run of this gallery passed a screenshot of blank white
-    // paper on exactly that technicality.
-    //
-    // Same shape as `deep_pan`'s `REGION_TIER_REQUIRED` and one hour older: an
-    // assertion aimed at the wrong surface reads as green and has measured
-    // nothing. The region is the declared canvas viewport, converted to capture
+    // A window always contains a ribbon, a status bar and two panels, so it is
+    // never uniform: an assertion aimed at the whole window reads as green over
+    // blank paper. The region is the declared canvas viewport, converted to capture
     // pixels, so what is sampled is the page and only the page.
     let region = frame.logical_to_capture_pixels(canvas);
     let uniformity = crate::pixels::region_not_uniform(&image, region);
@@ -343,12 +334,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              on that fixture is blank paper.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check zooms the canvas. Reported as SKIPPED \
-             rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -377,6 +362,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = offscreen(ctx, &mut spec, "zoom-gallery")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     // This check climbs deliberately past the scale at which tiny-skia's pipeline
     // refuses a slice. `pdfcer-render` catches that panic and converts it into a
@@ -386,8 +372,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // so a worker that genuinely died is still caught.
     session.expect_thread_panic();
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(60);
-    let driver = Driver::new(session.window());
 
     let trace = session.trace()?;
     let canvas = driving::declared(&trace, ui_rect, CANVAS_REGION)
@@ -400,9 +386,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // structure at every magnification and what removes any need to re-aim as
     // the mapping changes underneath.
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
-    let at =
-        frame.to_screen(mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?);
-    driver.move_to(at)?;
+    let at = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
+    pointer.hover(&session, at)?;
     report.note(format!(
         "aiming at page {} ({}, {})",
         target.page, target.x, target.y
@@ -421,7 +406,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 break;
             }
             let before = now;
-            driver.scroll_at_held(at, &[VK_CONTROL], 1, BATCH)?;
+            pointer.wheel(&session, at, BATCH as f32, true)?;
             session.settle(4);
             batches += 1;
             // Saturated below the tier: the operator's maximum-zoom setting is
@@ -465,15 +450,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 && wy > canvas.min.y + m
                 && wy < canvas.max.y - m
             {
-                // Expressed as fractions of the canvas rather than built as
-                // a `WindowPoint`. That type's fields are private on purpose —
-                // `coords`' whole enforcement mechanism is that a screen point
-                // can only come from a trace-derived mapping — and
-                // `declared_at` is the sanctioned way in.
+                // Expressed as fractions of the canvas: `at_fraction` is the
+                // sanctioned way to a `WindowPoint` inside a declared rect.
                 let fx = (wx - canvas.min.x) / (canvas.max.x - canvas.min.x);
                 let fy = (wy - canvas.min.y) / (canvas.max.y - canvas.min.y);
-                at = frame.declared_at(canvas, fx, fy);
-                driver.move_to(at)?;
+                at = at_fraction(canvas, fx, fy);
+                pointer.hover(&session, at)?;
             }
         }
 
@@ -486,7 +468,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         let now = zoom_now(&session)?;
         let label = format!("{:013.0}", now * 100.0);
-        if let Some(bad) = photograph(ctx, &session, &frame, canvas, report, &label)? {
+        if let Some(bad) = photograph(ctx, &session, &pointer, &frame, canvas, report, &label)? {
             return Ok(Some(bad));
         }
         if now < tier {
@@ -495,6 +477,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
+    pointer.gone(&session)?;
     if let Some(bad) = panic_was_converted(&session)? {
         return Ok(Some(bad));
     }

@@ -77,7 +77,7 @@ model chosen: select-then-press is two clicks and a drag.
 
 # Every way this reports SKIP, and why none of them is a pass
 
-* no binary, no `--pdf`, `--no-input` — the harness never began;
+* no binary or no `--pdf` — the harness never began;
 * the diagnostic switches did not reach the process;
 * the page size could not be read and no `--page-size` was given;
 * the mode segment, the Markup tab, or the Text markup group's controls were
@@ -155,3 +155,5 @@ The two traces differ only in which line is last, and that is the whole
 point: reading the last *non-empty* line instead of the last line is
 what made this check report a correctly-greyed control as a dead
 feature.
+
+The window is placed off the desktop, the clicks and sweeps come from the scripted pointer, and the screenshot is the window's own frame, so the check runs under `--no-input`.

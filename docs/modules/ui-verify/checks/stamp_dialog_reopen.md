@@ -122,3 +122,5 @@ both is how a fix gets aimed at the wrong one.
 # Errors
 
 If the canvas mapping cannot be read, or the pointer cannot be driven.
+
+The window is placed off the desktop and every click and drag comes from the scripted pointer, aimed in the viewport that declared the control (`scripteddrive::ClickNamed`), so the check runs under `--no-input`.

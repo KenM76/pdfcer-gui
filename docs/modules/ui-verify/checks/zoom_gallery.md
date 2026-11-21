@@ -27,7 +27,7 @@ a rendered screenshot. This check is that oracle for deep zoom.
 
 # What it does
 
-Opens the document, captures the window, then climbs by Ctrl+wheel with the
+Opens the document, captures the window's own frame, then climbs by Ctrl+wheel with the
 pointer parked on a target that is given in **document coordinates**, so the
 same run works whatever the window size. It captures again at each decade.
 
@@ -121,3 +121,5 @@ that were cancelled or failed carry `ink=-1` and are filtered out rather than
 read as a count: a cancelled render says nothing about what the page
 contains, and letting `-1` through would turn every mid-zoom cancellation
 into a spurious *"the engine drew nothing"*.
+
+The window is placed off the desktop, the Ctrl+wheel comes from the scripted pointer and each photograph is the window's own frame, so the check runs under `--no-input`.

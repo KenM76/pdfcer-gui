@@ -5,11 +5,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/text_render_mode.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -31,8 +32,8 @@ const SELECTION_EVENT: &str = "canvas-text-selection";
 const SWEEP_PT: f64 = 60.0;
 /// Scroll notches to spend looking for the control below the panel's fold.
 const SCROLL_ATTEMPTS: usize = 6;
-/// `T`, the text-sweep tool.
-const VK_T: u16 = 0x54;
+/// The key that arms the text-sweep tool.
+const SWEEP_KEY: &str = "T"; // ui-text-exempt: a key name sent to the scripted pointer
 
 /// One Properties › Text control to reach and press on swept text.
 pub(crate) struct Restyle {
@@ -117,25 +118,25 @@ pub(crate) fn drive(
             pdf.display()
         )));
     }
-    let (session, page, target) = launch(ctx, report, r)?;
+    let (session, pointer, page, target) = launch(ctx, report, r)?;
     let ui_rect = ctx
         .profile
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let driver = Driver::new(session.window());
-    let swept = sweep(ctx, &session, &driver, ui_rect, page, &target)?;
+    let driver = &pointer;
+    let swept = sweep(ctx, &session, driver, ui_rect, page, &target)?;
     report.note(format!("the sweep selected {swept} character(s)"));
-    let opener = match find_opener(&session, &driver, ui_rect, r, swept)? {
+    let opener = match find_opener(&session, driver, ui_rect, r, swept)? {
         Ok(rect) => rect,
         Err(failure) => return Ok(Some(failure)),
     };
-    driver.click_at(session.frame()?.declared_center(opener))?;
+    driver.click(&session, WindowPoint::centre_of(opener))?;
     session.settle(16);
     let trace = session.trace()?;
     let Some(entry) = driving::declared(&trace, ui_rect, r.entry) else {
         let shot = ctx.out(&format!("{}.no-entry.png", r.stem));
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if driver.screenshot(&session, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
@@ -146,18 +147,20 @@ pub(crate) fn drive(
             session.trace_path().display()
         )));
     };
-    driver.click_at(session.frame()?.declared_center(entry))?;
+    driver.click(&session, WindowPoint::centre_of(entry))?;
+    driver.gone(&session)?;
     let waited = wait_for_verdict(&session)?;
     report.note(format!("the restyle took {waited} ms"));
     verdict(&session, report, r)
 }
 
-/// Launch on the committed text fixture in Edit mode with Properties open.
+/// Launch off the desktop on the committed text fixture in Edit mode with
+/// Properties open, with the scripted pointer attached.
 fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
     r: &Restyle,
-) -> Result<(Session, PageGeometry, DocPoint)> {
+) -> Result<(Session, ScriptedPointer, PageGeometry, DocPoint)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -167,11 +170,6 @@ fn launch(
     // `--pdf` and `--doc-point` are ignored: the gesture needs a point IN
     // text, which `fixture::text_point_target` owns.
     let (pdf, target) = crate::fixture::text_point_target();
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check sweeps text and presses a control.",
-        ));
-    }
     let page: PageGeometry = match ctx.page_size {
         Some((w, h)) => PageGeometry {
             width_pt: w,
@@ -193,17 +191,19 @@ fn launch(
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, r.stem)?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    Ok((session, page, target))
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
+    Ok((session, pointer, page, target))
 }
 
 /// Edit mode, then sweep along the baseline; answer the characters selected.
 fn sweep(
     ctx: &CheckContext,
     session: &Session,
-    driver: &Driver,
+    driver: &ScriptedPointer,
     ui_rect: &str,
     page: PageGeometry,
     target: &DocPoint,
@@ -212,17 +212,11 @@ fn sweep(
     session.settle(20);
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let start =
-        frame.to_screen(mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?);
-    let end = frame.to_screen(mapping.doc_to_window(DocPoint::new(
-        target.page,
-        target.x + SWEEP_PT,
-        target.y,
-    ))?);
-    driver.press(VK_T)?;
+    let start = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
+    let end = mapping.doc_to_window(DocPoint::new(target.page, target.x + SWEEP_PT, target.y))?;
+    driver.key(session, None, SWEEP_KEY, None)?;
     session.settle(16);
-    driver.drag(start, end)?;
+    driver.drag(session, start, end, 8)?;
     session.settle(24);
     let swept = session
         .trace()?
@@ -243,7 +237,7 @@ fn sweep(
 /// Find the opener, scrolling Properties as an operator would.
 fn find_opener(
     session: &Session,
-    driver: &Driver,
+    driver: &ScriptedPointer,
     ui_rect: &str,
     r: &Restyle,
     swept: usize,
@@ -262,7 +256,7 @@ fn find_opener(
                 session.trace_path().display()
             )));
         };
-        driver.scroll_at(session.frame()?.declared_center(section), -1)?;
+        driver.wheel(session, WindowPoint::centre_of(section), -1.0, false)?;
         session.settle(12);
     }
     Ok(Err(format!(

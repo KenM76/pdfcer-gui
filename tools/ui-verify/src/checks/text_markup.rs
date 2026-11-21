@@ -7,11 +7,11 @@ use crate::checks::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
-use crate::checks::text_selection::{BANDS, aim, settled, settled_selection};
+use crate::checks::scripteddrive::{aim, offscreen};
+use crate::checks::text_selection::{BANDS, settled, settled_selection};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{DocPoint, PageGeometry};
+use crate::coords::{DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -108,13 +108,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              correctly greyed and the check would be measuring the gate rather than the feature.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is three clicks and a drag on a real \
-             canvas. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -157,6 +150,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = offscreen(ctx, &mut spec, "text_markup")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched {} as pid {} with {}={} and {}={}",
@@ -168,7 +162,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         SHELL_DIAG_ENV.1
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
 
     let trace = session.trace()?;
     if !trace.started(ctx.profile.vocab.start_event) {
@@ -181,17 +176,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
+    let driver = &pointer;
 
     // --- step 1: Review, which is the only mode this feature exists in ------
-    driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    driving::click_mode_segment(&session, driver, ui_rect, MODE)?;
     report.note(format!(
         "the {MODE} segment reported the click — the one mode that both selects text and authors \
          markup (see this check's MODE constant)"
     ));
 
     // --- step 2: the Markup tab --------------------------------------------
-    let frame = session.frame()?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, TAB).ok_or_else(|| {
         Error::new(format!(
@@ -202,7 +196,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(frame.declared_center(tab))?;
+    driver.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(12);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -257,7 +251,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `egui` control never reports itself invoked. See the module header on why
     // this is a better oracle here than a pixel differential.
     let before = invokes(&session)?;
-    driver.click_at(frame.declared_center(subject))?;
+    driver.click(&session, WindowPoint::centre_of(subject))?;
     session.settle(12);
     let after = invokes(&session)?;
     if after > before {
@@ -306,7 +300,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         };
         let before = settled(&session.trace()?).1;
-        driver.drag(from, to)?;
+        driver.drag(&session, from, to, 8)?;
         session.settle(16);
         let after = session.trace()?;
         // The line the gesture SETTLED on, read unfiltered — see
@@ -368,7 +362,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ==================================================================
     let invokes_before = invokes(&session)?;
     let applies_before = session.trace()?.events(APPLY_EVENT).count();
-    driver.click_at(frame.declared_center(subject))?;
+    driver.click(&session, WindowPoint::centre_of(subject))?;
     session.settle(24);
 
     if invokes(&session)? <= invokes_before {
@@ -488,7 +482,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // it is a behaviour difference from Acrobat — which keeps its selection —
     // and a change to it should be a decision rather than a side effect.
     let applies_before = applies.len();
-    driver.click_at(frame.declared_center(subject))?;
+    driver.click(&session, WindowPoint::centre_of(subject))?;
     session.settle(16);
     let trace = session.trace()?;
     if trace.events(APPLY_EVENT).count() > applies_before {
@@ -521,7 +515,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // in the wrong place, which is the failure this feature can actually
     // produce.
     let shot = ctx.out("text_markup.png");
-    match crate::capture::window_to_png(&session, &shot) {
+    driver.gone(&session)?;
+    match driver.screenshot(&session, &shot) {
         Ok(_) => {
             report.artifact(shot);
             report.note(

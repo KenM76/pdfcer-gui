@@ -115,3 +115,5 @@ The middle of `REVISION B`, which the generator reports as spanning
 x = 431.31…500.00 at y = 700 on a 612 x 792 page. Written as fractions
 because `crate::checks`' rules allow a check only `DocPoint` and `FracRect`
 literals — a screen coordinate would be a number about this machine.
+
+Both processes are placed off the desktop and the clicks come from the scripted pointer, so the check runs under `--no-input`.

@@ -4,12 +4,13 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/stamp_dialog_reopen.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
+    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive::{ClickNamed, offscreen};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -130,7 +131,7 @@ fn armed_tool(session: &Session) -> Result<Option<String>> {
 /// # Errors
 ///
 /// If the ribbon item is not on the tab, or the click armed nothing.
-fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn arm_stamp(session: &Session, driver: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     // Already armed? Then there is nothing to do, and doing it would undo it.
     if armed_tool(session)?.is_some_and(|t| t.starts_with(TOOL_TEXT_ANNOT)) {
         return Ok(());
@@ -144,7 +145,7 @@ fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
                     list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
                 ))
             })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    driver.click(session, WindowPoint::centre_of(item))?;
     session.settle(14);
     // And say so if the click did not arm it. Without this the failure
     // surfaces one step later, as "the dialog never opened", which reads as a
@@ -167,21 +168,20 @@ fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
 /// **Drag one stamp box.**
 fn place(
     session: &Session,
-    driver: &Driver,
+    driver: &ScriptedPointer,
     ctx: &CheckContext,
     page: PageGeometry,
     at: DocPoint,
 ) -> Result<()> {
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, at.page)?;
-    let frame = session.frame()?;
-    let from = frame.to_screen(mapping.doc_to_window(at)?);
-    let to = frame.to_screen(mapping.doc_to_window(DocPoint {
+    let from = mapping.doc_to_window(at)?;
+    let to = mapping.doc_to_window(DocPoint {
         page: at.page,
         x: at.x + BOX_PT,
         y: at.y + BOX_PT,
-    })?);
-    driver.drag(from, to)?;
+    })?;
+    driver.drag(session, from, to, 8)?;
     session.settle(24);
     Ok(())
 }
@@ -226,12 +226,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control, drags twice on \
-             the canvas and presses buttons in a dialog. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx
         .profile
         .vocab
@@ -268,6 +262,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = offscreen(ctx, &mut spec, "stamp_dialog_reopen")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched {} as pid {}",
@@ -275,11 +270,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    let driver = Driver::new(session.window());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
+    let driver = &pointer;
 
     // --- A: Review mode, the Markup tab, the stamp tool --------------------
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
+    crate::checks::driving::click_mode_segment(&session, driver, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.markup").ok_or_else(|| {
         Error::new(format!(
@@ -287,7 +283,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    driver.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -298,7 +294,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              mean anything.",
         ));
     }
-    arm_stamp(&session, &driver, ui_rect)?;
+    arm_stamp(&session, driver, ui_rect)?;
     if !session
         .trace()?
         .events("markup-tool")
@@ -313,7 +309,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("Markup > Stamp armed the annotation tool");
 
     // --- B/C: the FIRST opening --------------------------------------------
-    place(&session, &driver, ctx, page, target)?;
+    place(&session, driver, ctx, page, target)?;
     let trace = session.trace()?;
     if trace.events("text-annot-open").next().is_none() {
         return Ok(Some(
@@ -343,14 +339,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("the first stamp dialog has both Add and Cancel on the screen");
 
     let shot = ctx.out("stamp-dialog-first.png");
-    if crate::capture::window_to_png(&session, &shot).is_ok() {
+    if driver.screenshot(&session, &shot).is_ok() {
         report.artifact(shot);
     }
 
     // --- D: press Add, which is what the operator did ----------------------
     let accept = declared(&trace, ui_rect, ACCEPT)
         .ok_or_else(|| Error::new("Add stopped being declared between two reads"))?;
-    driver.click_at(frame_of(&session, &trace, ui_rect, ACCEPT)?.declared_center(accept))?;
+    driver.click_named(&session, &trace, ui_rect, ACCEPT, accept)?;
     session.settle(24);
     if declared(&session.trace()?, ui_rect, BODY).is_some() {
         report.note(
@@ -360,41 +356,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- E: the SECOND stamp, which is the whole point ---------------------
-    //
-    //
-    // The raise itself is cheap and correct: the dialog owned the foreground a
-    // moment ago, and a check that drives the canvas immediately after a
-    // viewport closes should say which window it means. Keep it.
-    //
-    // What is worth recording is the diagnosis it was added for, because that
-    // diagnosis was confidently written into this file and was false. The
-    // driven run showed `canvas-gesture started=0 dragging=0 stopped=0
-    // clicked=0 pos=1` followed by `pos=0` — the pointer appeared over the
-    // canvas once and then left, and no button event was ever seen. The
-    // conclusion drawn was *"a viewport closing is a foreground change, and a
-    // synthetic press during a foreground change is swallowed"*. Plausible,
-    // general-sounding, and it survived one round of fixing because adding the
-    // raise did not change the outcome — which should have killed it and did
-    // not.
-    //
-    // The instrument that settled it was three `eprintln!`s inside [`place`],
-    // printing the doc point, the window point, the desktop point and the
-    // frame. They said the aim was **exactly right**: doc (1700, 620) → window
-    // (619.7, 500.2) → desktop (1408, 571), against a client at (788, 71).
-    // The press was delivered to the pixel it was aimed at. Something else
-    // owned that pixel: an Outlook *"Internet Email"* dialog covering the
-    // right-hand half of the target window, which the sibling check
-    // `stamp_size_reaches_the_engine` named by SKIPPING in the same minute.
-    //
-    //
-    // The standing lesson, earning yet another instance: **a driven failure
-    // is a claim about the check too**, and the way to test that claim is to
-    // print what the check actually did rather than to reason about what it
-    // probably did. Two hypotheses were written into this file before one
-    // `eprintln!` disproved both in a single run.
-    session.raise();
-    session.settle(12);
-    arm_stamp(&session, &driver, ui_rect)?;
+    arm_stamp(&session, driver, ui_rect)?;
     let second = second_point(target, page);
     report.note(format!(
         "placing a second stamp {SECOND_OFFSET_PT:.0} pt away from the first at \
@@ -402,16 +364,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          stamp would be read as grabbing it",
         second.x, second.y
     ));
-    place(&session, &driver, ctx, page, second)?;
+    place(&session, driver, ctx, page, second)?;
     let trace = session.trace()?;
     if trace.events("text-annot-open").count() < 2 {
         return Ok(Some(
             "the second drag traced no further `text-annot-open` line, so the dialog never \
              opened a second time.\n\n★ Read the trace before believing any of the obvious \
-             causes. On 2026-09-11 this exact sentence was produced by a foreign window \
-             covering the target, with the tool still armed and the two boxes nowhere near \
-             each other; `input::Driver::drag` now refuses that case by name, so it should \
-             not recur. What remains: the tool did not re-arm (look for a second \
+             causes: the tool did not re-arm (look for a second \
              `markup-tool` line retiring it), or the drag landed on the first stamp (compare \
              the two boxes), or the press was delivered and the canvas ignored it (look for \
              `canvas-gesture started=1`)."
@@ -425,7 +384,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let shot = ctx.out("stamp-dialog-second.png");
-    if crate::capture::window_to_png(&session, &shot).is_ok() {
+    if driver.screenshot(&session, &shot).is_ok() {
         report.artifact(shot);
     }
 
@@ -438,7 +397,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- G: leave by the route that authors nothing further ----------------
     let cancel = declared(&trace, ui_rect, CANCEL)
         .ok_or_else(|| Error::new("Cancel stopped being declared between two reads"))?;
-    driver.click_at(frame_of(&session, &trace, ui_rect, CANCEL)?.declared_center(cancel))?;
+    driver.click_named(&session, &trace, ui_rect, CANCEL, cancel)?;
     session.settle(16);
+    driver.gone(&session)?;
     Ok(None)
 }
