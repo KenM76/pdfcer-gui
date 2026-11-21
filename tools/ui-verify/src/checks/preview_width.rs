@@ -9,13 +9,12 @@ use crate::checks::driving::{
     self, SHELL_DIAG_ENV, arm_select_from_ribbon, click_mode_segment, declared,
     declared_or_in_overflow, list,
 };
-use crate::checks::scale_aim::zoom_to;
+use crate::checks::scripteddrive::{offscreen, offset, zoom_to};
 use crate::checks::{Check, CheckContext, CheckReport};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
-use crate::sys::vk;
 use crate::trace::Trace;
 
 /// The mode segment to press. A move is an edit.
@@ -147,19 +146,18 @@ fn painted_since(trace: &Trace, mark: usize) -> Option<Painted> {
 /// Press, pull, and report what the painter drew on the way.
 fn drag_and_read(
     session: &Session,
-    driver: &Driver,
-    aim: crate::coords::ScreenPoint,
+    pointer: &ScriptedPointer,
+    aim: WindowPoint,
 ) -> Result<Option<Painted>> {
     let mark = session.trace()?.mark();
-    let frame = session.frame()?;
-    driver.drag(aim, frame.offset_from(aim, DRAG_PX, DRAG_PX))?;
+    pointer.drag(session, aim, offset(aim, DRAG_PX, DRAG_PX), 8)?;
     session.settle(30);
     Ok(painted_since(&session.trace()?, mark))
 }
 
 /// Ctrl+Z, and wait for it to land.
-fn undo(session: &Session, driver: &Driver) -> Result<()> {
-    driver.press_chord(&[vk::CONTROL], vk::Z)?;
+fn undo(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
+    pointer.key(session, None, "Z", Some("ctrl"))?;
     session.settle(24);
     Ok(())
 }
@@ -167,12 +165,6 @@ fn undo(session: &Session, driver: &Driver) -> Result<()> {
 #[allow(clippy::too_many_lines, reason = "three driven phases, each explained")]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check selects an object, drags it, zooms in \
-             and drags it again. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -240,18 +232,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "preview-width")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
     // Without this there is no select tool armed and the press becomes a
     // rubber band, which draws no shape preview at all — the check would then
     // report "nothing was painted" about a feature it never reached.
-    if !arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
+    if !arm_select_from_ribbon(&session, &pointer, ui_rect, report)? {
         return Err(Error::new(
             "the select tool could not be armed from the ribbon, so a press on the object would \
              have started a marquee rather than a move. Nothing about the preview was measured.",
@@ -264,7 +257,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let mut aim = session.frame()?.to_screen(window_point);
+    let mut aim = window_point;
     // The same point in canvas space — Y-down from the page's top-left, which
     // is the space `canvas-pointer` reports in and what the closed-loop re-aim
     // in `scale_aim` steers towards.
@@ -273,7 +266,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let viewport = driving::declared(&trace, ui_rect, VIEWPORT_REGION);
 
     // ---- phase A: the opening zoom ----------------------------------------
-    driver.click_at(aim)?;
+    pointer.click(&session, aim)?;
     session.settle(20);
     if selection_count(&session)? == 0 {
         return Err(Error::new(format!(
@@ -287,7 +280,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     let zoom_a_reported = zoom_now(&session)?;
-    let Some(shallow) = drag_and_read(&session, &driver, aim)? else {
+    let Some(shallow) = drag_and_read(&session, &pointer, aim)? else {
         return Err(Error::new(format!(
             "the object was selected and dragged and the painter never wrote a `{DRAWN}` line \
              carrying `shapes>0`. Either the aim is on an object with no stroked geometry (an \
@@ -303,19 +296,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          {:.2} px, canvas zoom {:.3} (the canvas itself reported {:.3}), real widths {}",
         shallow.frames, shallow.widest, shallow.zoom, zoom_a_reported, shallow.real_widths
     ));
-    undo(&session, &driver)?;
+    undo(&session, &pointer)?;
 
     // ---- phase B: the same drag, nine times magnified ----------------------
     let reached = zoom_to(
         &session,
-        &driver,
+        &pointer,
         &mut aim,
         target_canvas,
         DEEP_ZOOM,
         viewport,
     )?;
     report.note(format!("climbed to {:.0} %", reached * 100.0));
-    driver.click_at(aim)?;
+    pointer.click(&session, aim)?;
     session.settle(20);
     if selection_count(&session)? == 0 {
         return Err(Error::new(format!(
@@ -328,7 +321,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let Some(deep) = drag_and_read(&session, &driver, aim)? else {
+    let Some(deep) = drag_and_read(&session, &pointer, aim)? else {
         return Err(Error::new(format!(
             "the deep drag produced no `{DRAWN}` line with shapes, although the shallow one \
              did. The object is selected and the press is on it, so the likeliest cause is that \
@@ -347,7 +340,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         deep.widest,
         deep.zoom
     ));
-    undo(&session, &driver)?;
+    undo(&session, &pointer)?;
 
     // ---- the guard against a pass nobody earned ---------------------------
     //
@@ -441,9 +434,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&driving::declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
-    let item = declared_or_in_overflow(&session, &driver, ui_rect, ITEM)?.ok_or_else(|| {
+    let item = declared_or_in_overflow(&session, &pointer, ui_rect, ITEM)?.ok_or_else(|| {
         Error::new(format!(
             "no `{ITEM}` on the View tab or in its overflow, so the second half of O184 could \
              not be driven. `line_weights` is the check that owns that control's reachability \
@@ -455,14 +448,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(&session, WindowPoint::centre_of(item))?;
     session.settle(40);
 
     // Re-select: clicking the ribbon did not clear the selection, but the
     // canvas has had two undos and a tab change since, and asserting on a
     // selection nobody re-established is how a check ends up measuring the
     // frame before the one it meant to.
-    driver.click_at(aim)?;
+    pointer.click(&session, aim)?;
     session.settle(20);
     if selection_count(&session)? == 0 {
         return Err(Error::new(format!(
@@ -471,7 +464,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let Some(hairline) = drag_and_read(&session, &driver, aim)? else {
+    let Some(hairline) = drag_and_read(&session, &pointer, aim)? else {
         return Err(Error::new(format!(
             "with line weights off the drag produced no `{DRAWN}` line with shapes, although \
              the same drag produced one twice with them on. SKIPPED: no width measured. \
@@ -479,7 +472,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    undo(&session, &driver)?;
+    undo(&session, &pointer)?;
 
     if hairline.real_widths {
         return Err(Error::new(format!(
@@ -517,6 +510,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          {:.2} — the preview answers to the same setting the page does",
         hairline.widest, shallow.widest
     ));
-
+    pointer.gone(&session)?;
     Ok(None)
 }

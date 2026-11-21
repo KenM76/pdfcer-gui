@@ -4,15 +4,8 @@
 reports three facts and never merges them, and `not checked` says so.**
 
 
-Said here, in the module's own words, rather than left for an absent result
-to imply. The operator may be at his keyboard, and this harness drives a
-real cursor and a real keyboard over the whole desktop — a run while he is
-working is a run whose verdict is noise that looks like a finding.
-
-`export_text` and `copy_as_vector` carry the same disclosure for the same
-reason. **An unrun check is not a passing check**, and this project's
-standing rule is that no UI change is done until it has been verified by
-driving the running binary. This one has not been.
+It drives the binary through the scripted pointer, in a window placed off
+the desktop, so a run never touches the operator's cursor or keyboard.
 
 # What it detects, and why nothing else can
 

@@ -4,11 +4,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/unembed_fonts.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, declared, declared_names, frame_of, list, stable_rect,
+    SHELL_DIAG_ENV, declared, declared_in, declared_names, list, stable_rect,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -53,13 +54,6 @@ impl Check for RemovingEmbeddedFontsReachesTheDocument {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check's subject is a click on the Remove \
-             button. The window opening proves nothing on its own — a document with nothing \
-             removable draws the same window with its button greyed, which is correct.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -91,16 +85,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "unembed-fonts")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
     session.settle(60);
-    let driver = Driver::new(session.window());
 
     let trace = session.trace()?;
 
@@ -166,13 +161,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // `frame_of`, never `session.frame()`. This window is a child viewport
-    // and its coordinates are its own; asking the main window yields a point on
-    // the ribbon, and the click lands somewhere plausible and wrong.
+    // Sent to the window's own viewport: its coordinates are its own, and the
+    // same point in the main viewport lands on the ribbon, plausibly and wrong.
     let trace = session.trace()?;
-    let frame = frame_of(&session, &trace, ui_rect, BUTTON)?;
-    driver.click_at(frame.declared_center(button))?;
+    let viewport = declared_in(&trace, ui_rect, BUTTON).and_then(|(_, v)| v);
+    pointer.click_in(
+        &session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(button),
+    )?;
     session.settle(50);
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
     let Some(requested) = trace.events(REQUESTED).last() else {

@@ -8,9 +8,10 @@ use std::path::PathBuf;
 use crate::checks::driving::{
     SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, declared_or_in_overflow, list,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::Click;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -63,13 +64,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, a ribbon control \
-             and a dock tab. Reported as SKIPPED rather than passed: a check that did not run \
-             has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -96,16 +90,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "trust-store")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // Read is where the application starts; say so anyway, or this stops
     // testing Read the day the default moves.
-    click_mode_segment(&session, &driver, ui_rect, "read")?;
-    if !show_signatures(&session, &driver, ui_rect)? {
+    click_mode_segment(&session, &pointer, ui_rect, "read")?;
+    let shown = show_signatures(&session, &pointer, ui_rect)?;
+    pointer.gone(&session)?;
+    if !shown {
         let trace = session.trace()?;
         return Err(Error::new(format!(
             "the Signatures panel is not showing — no `{PANEL_DOCK_BODY}` region — so this run \
@@ -272,7 +269,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 /// The ribbon control is a toggle, so it is pressed only when neither the
 /// dock tab nor the rail button exists — pressing it over an open panel
 /// closes the thing under test.
-pub(crate) fn show_signatures(session: &Session, driver: &Driver, ui_rect: &str) -> Result<bool> {
+pub(crate) fn show_signatures(
+    session: &Session,
+    driver: &impl Click,
+    ui_rect: &str,
+) -> Result<bool> {
     let open = |t: &_| declared(t, ui_rect, PANEL_TAB).or_else(|| declared(t, ui_rect, PANEL_RAIL));
     if declared(&session.trace()?, ui_rect, PANEL_DOCK_BODY).is_some() {
         return Ok(true);
@@ -283,14 +284,14 @@ pub(crate) fn show_signatures(session: &Session, driver: &Driver, ui_rect: &str)
     if declared(&session.trace()?, ui_rect, PANEL_DOCK_BODY).is_none()
         && let Some(switch) = open(&session.trace()?)
     {
-        driver.click_at(session.frame()?.declared_center(switch))?;
+        driver.click_rect(session, switch)?;
         session.settle(25);
     }
     Ok(declared(&session.trace()?, ui_rect, PANEL_DOCK_BODY).is_some())
 }
 
 /// Show the Signatures panel from the View tab.
-fn open_signatures(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn open_signatures(session: &Session, driver: &impl Click, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.view").ok_or_else(|| {
         Error::new(format!(
@@ -298,7 +299,7 @@ fn open_signatures(session: &Session, driver: &Driver, ui_rect: &str) -> Result<
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    driver.click_rect(session, tab)?;
     session.settle(14);
     let item = declared_or_in_overflow(session, driver, ui_rect, PANEL_ITEM)?.ok_or_else(|| {
         Error::new(format!(
@@ -310,7 +311,7 @@ fn open_signatures(session: &Session, driver: &Driver, ui_rect: &str) -> Result<
             ))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    driver.click_rect(session, item)?;
     session.settle(20);
     Ok(())
 }

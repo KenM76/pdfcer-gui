@@ -6,11 +6,13 @@
 use std::path::{Path, PathBuf};
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, declared, declared_names, declared_or_in_overflow, frame_of, list,
+    SHELL_DIAG_ENV, declared, declared_in, declared_names, declared_or_in_overflow, list,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -96,16 +98,9 @@ impl Check for AStampCollectionDisclosesItself {
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let exe = resolve_exe(ctx)?;
     let ui_rect = ui_rect_event(ctx)?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, the File tab and \
-             the Document properties item, twice. Reported as SKIPPED rather than passed: a \
-             check that did not run has learned nothing.",
-        ));
-    }
 
     // --- 1: the collection, panel open -------------------------------------
-    let session = launch(
+    let (session, pointer) = launch(
         ctx,
         &exe,
         COLLECTION,
@@ -118,14 +113,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
-    // last two groups fold away entirely and a check reports a lost command.
-    // `about.rs` holds the measurement; four checks now share it.
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_properties(&session, &driver, ui_rect)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_properties(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     if trace.last(STATUS_LINE).is_none() {
@@ -170,6 +159,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "{STAMPS} stamp rows are drawn, matching the {STAMPS} entries the fixture's name tree \
          holds"
     ));
+    pointer.gone(&session)?;
     drop(session);
 
     // --- 2: the control, with the panel OPEN ----------------------------
@@ -178,18 +168,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // declared, so the panel is provably up, and the stamp section is still not
     // in it. That distinguishes "the section is document-driven" from "the
     // surface it lives on was never opened".
-    let session = launch(ctx, &exe, PLAIN, "stamp_collection.plain.trace.txt")?;
+    let (session, pointer) = launch(ctx, &exe, PLAIN, "stamp_collection.plain.trace.txt")?;
     report.note(format!(
         "control launch on fixtures/{PLAIN} as pid {}",
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_properties(&session, &driver, ui_rect)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_properties(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     if declared(&trace, ui_rect, PANEL_OPEN_WITNESS).is_none() {
@@ -267,7 +254,7 @@ fn launch_on(
     pdf: &Path,
     trace_name: &str,
     extra_env: &[(&str, String)],
-) -> Result<Session> {
+) -> Result<(Session, ScriptedPointer)> {
     let mut spec = LaunchSpec::new(exe, ctx.out(trace_name));
     spec.pdf = Some(pdf.to_path_buf());
     spec.env.push((
@@ -281,20 +268,27 @@ fn launch_on(
     }
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    Session::launch(&spec, ctx.profile.trace_prefix)
+    let stem = trace_name.trim_end_matches(".trace.txt");
+    let pointer = offscreen(ctx, &mut spec, stem)?;
+    Ok((Session::launch(&spec, ctx.profile.trace_prefix)?, pointer))
 }
 
 /// [`launch_on`], for one of this file's two pinned fixtures and no extra seams.
-fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Result<Session> {
+fn launch(
+    ctx: &CheckContext,
+    exe: &Path,
+    fixture: &str,
+    trace_name: &str,
+) -> Result<(Session, ScriptedPointer)> {
     launch_on(ctx, exe, &repo_fixture(fixture)?, trace_name, &[])
 }
 
 /// Bring the Document properties panel to the front, if it is not already.
-fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn open_properties(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     if declared(&session.trace()?, ui_rect, PANEL_OPEN_WITNESS).is_some() {
         return Ok(());
     }
-    crate::checks::properties_metadata::open_document_properties(session, driver, ui_rect)
+    crate::checks::scripteddrive::open_document_properties(session, pointer, ui_rect)
 }
 
 // ===========================================================================
@@ -337,13 +331,6 @@ impl Check for StampCollectionReachesTheEngine {
 fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let exe = resolve_exe(ctx)?;
     let ui_rect = ui_rect_event(ctx)?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, the File tab, a \
-             ribbon item and a Save button, then launches again. Reported as SKIPPED rather than \
-             passed: a check that did not run has learned nothing.",
-        ));
-    }
 
     // Cleared before the run, not merely named. A collection left behind by
     // an earlier run would let a build that writes NOTHING satisfy every
@@ -363,7 +350,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
 
     // --- 1: the source document --------------------------------------------
     let source = repo_fixture(PLAIN)?;
-    let session = launch_on(
+    let (session, pointer) = launch_on(
         ctx,
         &exe,
         &source,
@@ -378,13 +365,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    // Maximised for `about.rs`'s measured reason: at the harness's default
-    // 1,100 pt window the File tab's last groups fold away and a check reports
-    // a lost command that is merely off the band.
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
 
     let trace = session.trace()?;
     if trace.last(STATUS_LINE).is_none() {
@@ -400,11 +381,11 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
 
     // --- 2: the window ------------------------------------------------------
-    let Some(item) = declared_or_in_overflow(&session, &driver, ui_rect, RIBBON_ITEM)? else {
+    let Some(item) = declared_or_in_overflow(&session, &pointer, ui_rect, RIBBON_ITEM)? else {
         return Ok(Some(format!(
             "the File tab declares no `{RIBBON_ITEM}`, on the band or in the overflow — so the \
              capability is unreachable however well it works. ★ Under R8 a command's presence in \
@@ -417,7 +398,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
             ))
         )));
     };
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(&session, WindowPoint::centre_of(item))?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -490,12 +471,15 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
             list(&declared_names(&trace, ui_rect, "stamp-collection"))
         )));
     };
-    // ⚠ `frame_of`, never `session.frame()`. This window is its own viewport
-    // and therefore its own OS window; the main frame's origin would put the
-    // click somewhere on the document. That mistake has been made in this
-    // harness before and it lands silently — a click at a plausible coordinate
-    // on the wrong window is not an error, it is a marquee drag.
-    driver.click_at(frame_of(&session, &trace, ui_rect, DIALOG_SAVE)?.declared_center(button))?;
+    // ⚠ The window is its own viewport, so the click is sent to that viewport:
+    // its rects are relative to its own origin, and the same point in the main
+    // viewport lands on the document as a marquee drag, silently.
+    let viewport = declared_in(&trace, ui_rect, DIALOG_SAVE).and_then(|(_, v)| v);
+    pointer.click_in(
+        &session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(button),
+    )?;
     session.settle(40);
 
     // --- 5: what was requested, and what was written ------------------------
@@ -608,6 +592,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         )));
     }
     report.note(format!("{} bytes on disk, beginning %PDF", bytes.len()));
+    pointer.gone(&session)?;
     drop(session);
 
     // --- 7: THE ROUND TRIP ----------------------------------------------
@@ -617,7 +602,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     // the planned size. This is the only assertion in the file that asks the
     // question Acrobat asks: not "are the names in the bytes" but "are they
     // reachable from the catalog's `/Names` → `/Pages` tree".
-    let session = launch_on(
+    let (session, pointer) = launch_on(
         ctx,
         &exe,
         &target,
@@ -630,11 +615,8 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_properties(&session, &driver, ui_rect)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_properties(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     if trace.last(STATUS_LINE).is_none() {
@@ -678,6 +660,7 @@ fn drive_author(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         "the file pdfcer wrote reopens as a stamp collection of {SOURCE_PAGES} stamps — the \
          plan, the receipt and the bytes all agree"
     ));
+    pointer.gone(&session)?;
 
     Ok(None)
 }

@@ -194,7 +194,7 @@ edge rather than the backdrop, and the dominant colour it reports would be a
 blend of the two — a measurement that moves for reasons that have nothing to
 do with the preset. 16 points is comfortably more than any edge treatment in
 this shell and comfortably less than the ≈ 140-point margin a fit-page view
-leaves above an A-size sheet in a maximised window.
+leaves above an A-size sheet in the harness window.
 
 A run with no band this thick **SKIPS**: see [`backdrop_band`].
 
@@ -337,7 +337,7 @@ and Dark-only coverage structurally cannot see it.
 | the fixture's page is not white paper | measured under the light preset FIRST and SKIPPED, naming the file |
 | the clicks never landed | the surround must move per preset, else SKIP |
 | the sheet fills the viewport, so there is no surround | [`backdrop_band`] returns `None` and the check SKIPS |
-| a capture of the wrong window | the page is read from the APPLICATION's frame, re-raised per preset |
+| a capture of the wrong window | the page is read from the root viewport's own rendered frame, which the Settings window never covers |
 | a stale rect after Airy re-flows the layout | every rect is re-read from the trace after every click |
 
 That last row is not hypothetical. Airy is the one preset that changes

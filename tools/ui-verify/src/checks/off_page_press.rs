@@ -6,10 +6,10 @@
 use crate::checks::driving::{
     SHELL_DIAG_ENV, arm_select_from_ribbon, click_mode_segment, declared, declared_names, list,
 };
+use crate::checks::scripteddrive::{offscreen, shot};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -105,13 +105,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check presses in the grey margin and drags. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so this check cannot reach the \
@@ -140,6 +133,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "off-page-press")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -149,11 +143,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         pdf.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    // Maximising widens the grey this check presses into, and a collapsed
-    // ribbon group publishes no item rects — `checks::ocr`'s repair.
-    session.maximize();
-    session.settle(16);
 
     let trace = session.trace()?;
     if !trace.started(ctx.profile.vocab.start_event) {
@@ -164,8 +155,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, RIBBON_MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, RIBBON_MODE)?;
     session.settle(12);
 
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
@@ -174,7 +164,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&session.trace()?, ui_rect, "page"))
         )));
     }
-    if !arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
+    if !arm_select_from_ribbon(&session, &pointer, ui_rect, report)? {
         return Err(Error::new(
             "the select tool could not be armed from the ribbon, so no rubber band could be \
              started. Nothing about pressing in the margin was measured.",
@@ -189,7 +179,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // has no point on the paper at all.
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, FIXTURE_PAGE, 0)?;
-    let frame = session.frame()?;
     let viewport = declared(&trace, ui_rect, VIEWPORT_REGION).ok_or_else(|| {
         Error::new(format!(
             "the application declared no `{VIEWPORT_REGION}` region, so this check has no bound \
@@ -197,19 +186,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              every point this check aims at is outside that by construction."
         ))
     })?;
-    let from = frame.to_screen(
-        mapping.doc_to_window_off_page(DocPoint::new(0, BAND_FROM.0, BAND_FROM.1), viewport)?,
-    );
-    let to = frame.to_screen(
-        mapping.doc_to_window_off_page(DocPoint::new(0, BAND_TO.0, BAND_TO.1), viewport)?,
-    );
+    let from =
+        mapping.doc_to_window_off_page(DocPoint::new(0, BAND_FROM.0, BAND_FROM.1), viewport)?;
+    let to = mapping.doc_to_window_off_page(DocPoint::new(0, BAND_TO.0, BAND_TO.1), viewport)?;
     report.note(format!(
         "band ({:.0}, {:.0}) → ({:.0}, {:.0}) in page points — NEITHER corner is on the sheet, \
          and the press begins {:.0} pt left of its edge",
         BAND_FROM.0, BAND_FROM.1, BAND_TO.0, BAND_TO.1, -BAND_FROM.0
     ));
 
-    driver.drag(from, to)?;
+    pointer.drag(&session, from, to, 8)?;
     session.settle(40);
 
     // --- read ----------------------------------------------------------------
@@ -329,10 +315,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         list(&surfaces)
     ));
 
-    let shot = ctx.out("off-page-press.png");
-    if crate::capture::window_to_png(&session, &shot).is_ok() {
-        report.artifact(shot);
+    let png = ctx.out("off-page-press.png");
+    if shot(&session, &pointer, &png).is_ok() {
+        report.artifact(png);
     }
+    pointer.gone(&session)?;
     Ok(None)
 }
 

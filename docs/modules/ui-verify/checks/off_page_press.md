@@ -105,7 +105,7 @@ to enable it"*.
 
 # Every way this reports SKIP
 
-No binary, `--no-input`, no diagnostic channel, no page on screen, the Select
+No binary, no diagnostic channel, no page on screen, the Select
 tool unreachable from the ribbon, or **not enough grey margin on screen to
 reach x = −100** — a property of the window size on the day, reported as a
 skip that names the geometry and never as a pass.
