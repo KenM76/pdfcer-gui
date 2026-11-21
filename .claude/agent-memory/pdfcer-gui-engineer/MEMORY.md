@@ -190,3 +190,4 @@
 - [The PC bugchecks, even idle](project_machine_bugchecks_under_load.md) — 6 since 11-06, one 0x12B (RAM); fsck after a reset.
 - [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".
+- [Maximise left the off-screen desktop](feedback_maximize_leaves_off_desktop.md) — it photographed his screen; grow in place, judge the app's own frame.
