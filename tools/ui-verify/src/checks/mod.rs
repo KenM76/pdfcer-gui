@@ -486,6 +486,7 @@ pub mod form_fill;
 pub mod form_fillable;
 pub mod form_pages;
 pub mod form_preview;
+pub mod form_preview_choices;
 pub mod form_widgets;
 pub mod forms_spotlight;
 /// Forms ▸ Style's width reaches the next placed field.

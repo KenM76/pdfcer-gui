@@ -186,61 +186,6 @@ pub fn merge_warning(kind: MergeWarningKind, count: usize) -> String {
     format!("{count} × {unfollowed}, drawn with their default value")
 }
 
-/// The heading over the choices XFA leaves open.
-#[must_use]
-pub fn choices_heading() -> &'static str {
-    "Reading choices"
-}
-
-/// What the choices are, under their heading.
-#[must_use]
-pub fn choices_caveat() -> &'static str {
-    "Where the XFA standard leaves a choice open. The first answer of each follows \
-     the standard's own text; changing one redraws the form."
-}
-
-/// The five choices the XFA standard leaves open.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChoiceKey {
-    /// `MergeOptions::scope_search`.
-    ScopeSearch,
-    /// `MergeOptions::bare_ref`.
-    BareRef,
-    /// `MergeOptions::data_attributes`.
-    DataAttributes,
-    /// `PaintOptions::three_d_stroke`.
-    ThreeDStroke,
-    /// `PaintOptions::check_caption`.
-    CheckCaption,
-}
-
-/// One open choice: its label and its two answers, the default first.
-#[must_use]
-pub fn choice(key: ChoiceKey) -> (&'static str, [&'static str; 2]) {
-    match key {
-        ChoiceKey::ScopeSearch => (
-            "A short data name is looked for",
-            [
-                "In its group, then each enclosing one",
-                "In its own group only",
-            ],
-        ),
-        ChoiceKey::BareRef => (
-            "A binding with a reference but no match",
-            ["Is ignored", "Is followed as a data reference"],
-        ),
-        ChoiceKey::DataAttributes => (
-            "Attributes in the form's data",
-            ["Are values", "Are not data"],
-        ),
-        ChoiceKey::ThreeDStroke => ("3-D borders", ["Bevelled", "Plain lines"]),
-        ChoiceKey::CheckCaption => (
-            "A check box caption with no set width",
-            ["Fits its text", "Takes everything but the box"],
-        ),
-    }
-}
-
 /// The Close button.
 #[must_use]
 pub fn close() -> &'static str {

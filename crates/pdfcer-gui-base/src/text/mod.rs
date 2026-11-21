@@ -305,6 +305,8 @@ pub mod tool;
 /// see on the canvas.
 pub mod unembed;
 pub mod workaround;
+/// The Form preview window's Reading choices.
+pub mod xfachoices;
 /// A dynamic XFA form: its open-time sentence and the form preview window.
 pub mod xfapreview;
 

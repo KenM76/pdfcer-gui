@@ -8,7 +8,7 @@
 //! and `form-preview pages=1 warnings=1 values=2 merge_warnings=1
 //! approximated=0` for the fixture's one-page template, whose data fills two
 //! fields and lacks the third's. Clicking "3-D borders: Plain lines" must
-//! redraw with `approximated=1 choices=00010`: the lowered `tenant` border is
+//! redraw with `approximated=1 choices=three-d-stroke:1`: the lowered `tenant` border is
 //! drawn plain and disclosed, so a choice the window shows but the draw
 //! ignores is caught.
 //!
@@ -30,8 +30,10 @@ const METHOD: &str = "Rebuild it with `python fixtures/dynamic-xfa.PROVENANCE.py
 const DISCLOSED: &str = "xfa-dynamic-disclosed";
 const DRAWN: &str = "form-preview";
 const REGION: &str = "dialog:form-preview";
-/// "3-D borders: Plain lines" (`dialogs::xfa_preview::choices_ui`, choice 3, answer 1).
-const PLAIN: &str = "form-preview.choice.3.1";
+/// "3-D borders: Plain lines" (`dialogs::xfa_preview::choices::show`).
+const PLAIN: &str = "form-preview.choice.three-d-stroke.1";
+/// The trace's spelling of [`PLAIN`] chosen.
+const PLAIN_CODE: &str = "three-d-stroke:1";
 
 /// See the module documentation.
 pub struct FormPreviewDrawsADynamicForm;
@@ -78,8 +80,38 @@ impl Check for ADynamicFormOpensOnItsOwnPages {
     }
 }
 
+/// A launched form, the pointer that drives it, and the profile's ui-rect
+/// trace event.
+pub(super) struct Launched {
+    pub(super) session: Session,
+    pub(super) pointer: ScriptedPointer,
+    pub(super) ui_rect: &'static str,
+}
+
 /// Open the fixture, ringing `view.form_preview` only when `invoke`.
 fn drive(ctx: &CheckContext, report: &mut CheckReport, invoke: bool) -> Result<Option<String>> {
+    let stem = if invoke {
+        "form_preview"
+    } else {
+        "form_preview_on_open"
+    };
+    let l = launch(ctx, report, FIXTURE, METHOD, stem, invoke)?;
+    if let Some(failure) = first_draw(l.ui_rect, &l.session, report, invoke)? {
+        return Ok(Some(failure));
+    }
+    plain_borders(l.ui_rect, &l.session, &l.pointer)
+}
+
+/// Copy `fixture` to `<stem>.pdf`, open it off the desktop with a scripted
+/// pointer, and let it settle. `view.form_preview` is rung when `invoke`.
+pub(super) fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixture: &str,
+    method: &str,
+    stem: &str,
+    invoke: bool,
+) -> Result<Launched> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -94,14 +126,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, invoke: bool) -> Result<O
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let stem = if invoke {
-        "form_preview"
-    } else {
-        "form_preview_on_open"
-    };
     let doc = ctx.out(&format!("{stem}.pdf"));
-    std::fs::copy(repo_fixture(FIXTURE, METHOD)?, &doc)
-        .map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
+    std::fs::copy(repo_fixture(fixture, method)?, &doc)
+        .map_err(|e| Error::new(format!("copying {fixture}: {e}")))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
@@ -124,10 +151,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, invoke: bool) -> Result<O
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     session.settle(90);
-    if let Some(failure) = first_draw(ui_rect, &session, report, invoke)? {
-        return Ok(Some(failure));
-    }
-    plain_borders(ui_rect, &session, &pointer)
+    Ok(Launched {
+        session,
+        pointer,
+        ui_rect,
+    })
 }
 
 /// The open was disclosed, the form drawn with the fixture's figures, and the
@@ -160,7 +188,8 @@ fn first_draw(
         ("values", "2"),
         ("merge_warnings", "1"),
         ("approximated", "0"),
-        ("choices", "00000"),
+        ("choices", "default"),
+        ("excluded", "0"),
     ];
     if let Some((k, v)) = expect.iter().find(|(k, v)| line.get(k) != Some(*v)) {
         return Ok(Some(format!(
@@ -198,9 +227,9 @@ fn plain_borders(
             "★★★ clicking `{PLAIN}` drew nothing new: the choice never reached the draw."
         )));
     };
-    if line.get("approximated") != Some("1") || line.get("choices") != Some("00010") {
+    if line.get("approximated") != Some("1") || line.get("choices") != Some(PLAIN_CODE) {
         return Ok(Some(format!(
-            "★★★ `{}` after choosing plain 3-D borders must carry approximated=1 choices=00010: the lowered tenant border is drawn plain and that is disclosed.",
+            "★★★ `{}` after choosing plain 3-D borders must carry approximated=1 choices={PLAIN_CODE}: the lowered tenant border is drawn plain and that is disclosed.",
             line.raw
         )));
     }

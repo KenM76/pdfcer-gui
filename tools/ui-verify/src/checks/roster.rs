@@ -423,6 +423,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
         Box::new(form_preview::FormPreviewDrawsADynamicForm),
         Box::new(form_preview::ADynamicFormOpensOnItsOwnPages),
+        Box::new(form_preview_choices::FormPreviewReadingChoicesReachTheForm),
         Box::new(form_pages::UseThesePagesMakesTheFormTheDocument),
         Box::new(form_fill::TypingIntoAFormPreviewFieldFillsTheForm),
         Box::new(form_fill::AFieldWithNoDataValueYetFillsIn),
