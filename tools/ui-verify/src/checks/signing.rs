@@ -3,10 +3,13 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/signing.md`.
 
-use super::driving::{self, declared_names, list};
+use super::driving::{self, ITEM_PREFIX, declared_names, list};
+use super::scripteddrive::{
+    click, click_command, click_scrolled, click_tab, launch_with, type_into,
+};
 use super::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
@@ -29,6 +32,10 @@ const REGION_DIALOG: &str = "sign-dialog";
 /// The scrolling body's own viewport - what a control must be inside before it
 /// can be clicked. See [`click_scrolled`].
 const REGION_BODY: &str = "sign-body";
+/// How far [`click_scrolled`] looks down the Sign form: one scripted notch is
+/// one wheel line (about 40 pt), and the form's last rows sit about 360 pt
+/// below the body's fold.
+const NOTCHES: usize = 12;
 /// A refusal, declared only while one is on screen.
 const REGION_REFUSAL: &str = "sign-refusal";
 /// The file-picker button.
@@ -152,19 +159,40 @@ pub mod timestamp;
 pub mod typed_sign;
 
 use reaching::{
-    click, click_scrolled, click_tab, disclosed_appearance, drawn, engine_fixture, field_name_of,
-    last_refusal, launch, press, raise_signatures, repo_fixture,
+    disclosed_appearance, drawn, engine_fixture, field_name_of, last_refusal, repo_fixture,
 };
+
+/// `reaching::raise_signatures` has no caller left in this module; the binding
+/// keeps the shared file warning-free until its owner removes it.
+const _: fn(&Session, &crate::input::Driver, &str) -> Result<()> = reaching::raise_signatures;
+
+/// Press ribbon command `id` wherever it is, requiring the shell's invoke.
+fn press(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, id: &str) -> Result<()> {
+    click_command(
+        session,
+        pointer,
+        ui_rect,
+        (&format!("{ITEM_PREFIX}{id}"), id),
+        24,
+    )
+}
+
+/// Bring the Signatures panel to the front, mounting it from View if it is
+/// not there.
+fn raise_signatures(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
+    const PANEL: &str = "view.panel_signatures"; // ui-text-exempt: a command id, never displayed
+    if !super::reaching::raise_dock_tab(session, pointer, ui_rect, PANEL)? {
+        click(session, pointer, "ribbon.tab.view")?;
+        press(session, pointer, ui_rect, PANEL)?;
+        session.settle(24);
+        let _ = super::reaching::raise_dock_tab(session, pointer, ui_rect, PANEL)?;
+    }
+    session.settle(30);
+    Ok(())
+}
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is roughly twenty clicks across four \
-             processes. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -192,7 +220,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE A — the negative control: a document that SIGNS.
     // =======================================================================
     {
-        let session = launch(
+        let (session, pointer) = launch_with(
             ctx,
             report,
             &plain,
@@ -202,11 +230,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ("PDFCER_DIAG_SAVE_PATH", signed_out.clone()),
             ],
         )?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, SIGN)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, SIGN)?;
 
         let trace = session.trace()?;
         if !drawn(&trace, ui_rect, REGION_DIALOG) {
@@ -249,11 +276,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- choose, type, open --------------------------------------------
-        click(&session, &driver, ui_rect, REGION_CHOOSE)?;
-        click(&session, &driver, ui_rect, REGION_PASSPHRASE)?;
-        driver.type_ascii(PASSPHRASE)?;
+        click(&session, &pointer, REGION_CHOOSE)?;
+        type_into(&session, &pointer, REGION_PASSPHRASE, PASSPHRASE)?;
         session.settle(10);
-        click(&session, &driver, ui_rect, REGION_OPEN_CERT)?;
+        click(&session, &pointer, REGION_OPEN_CERT)?;
 
         let trace = session.trace()?;
         match trace.events(IDENTITY_EVENT).last() {
@@ -296,7 +322,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- sign -----------------------------------------------------------
-        click(&session, &driver, ui_rect, REGION_CONFIRM)?;
+        click(&session, &pointer, REGION_CONFIRM)?;
         session.settle(60);
         let trace = session.trace()?;
         match trace.events(WRITTEN_EVENT).last() {
@@ -349,18 +375,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE B — the ENCRYPTED refusal.
     // =======================================================================
     {
-        let session = launch(
+        let (session, pointer) = launch_with(
             ctx,
             report,
             &encrypted,
             "sign-encrypted.trace.txt",
             &[("PDFCER_DIAG_CERTIFICATE_PATH", certificate.clone())],
         )?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, SIGN)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, SIGN)?;
         let trace = session.trace()?;
 
         // The instrument still works: the window opened.
@@ -431,30 +456,29 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 staged_source.display()
             ))
         })?;
-        let session = launch(
+        let (session, pointer) = launch_with(
             ctx,
             report,
             &staged_source,
             "sign-redaction.trace.txt",
             &[("PDFCER_DIAG_CERTIFICATE_PATH", certificate.clone())],
         )?;
-        let driver = Driver::new(session.window());
         // Redaction is authoring, so it is reached from Edit.
-        driving::click_mode_segment(&session, &driver, ui_rect, EDIT_MODE)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, EDIT_MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, REDACT_CMD)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, REDACT_CMD)?;
         session.settle(20);
-        click(&session, &driver, ui_rect, REGION_WHOLE_PAGE)?;
-        press(&session, &driver, ui_rect, REDACT_APPLY_CMD)?;
+        click(&session, &pointer, REGION_WHOLE_PAGE)?;
+        press(&session, &pointer, ui_rect, REDACT_APPLY_CMD)?;
         session.settle(20);
-        click(&session, &driver, ui_rect, REGION_INTO_DOCUMENT)?;
-        click(&session, &driver, ui_rect, REGION_REDACT_ACK)?;
-        click(&session, &driver, ui_rect, REGION_REDACT_CONFIRM)?;
+        click(&session, &pointer, REGION_INTO_DOCUMENT)?;
+        click(&session, &pointer, REGION_REDACT_ACK)?;
+        click(&session, &pointer, REGION_REDACT_CONFIRM)?;
         session.settle(40);
 
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, SIGN)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, SIGN)?;
         let trace = session.trace()?;
 
         if !drawn(&trace, ui_rect, REGION_DIALOG) {
@@ -492,9 +516,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE D — THE VERDICT. A fresh process, reading the FILE.
     // =======================================================================
     {
-        let session = launch(ctx, report, &signed_out, "sign-verify.trace.txt", &[])?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        let (session, pointer) =
+            launch_with(ctx, report, &signed_out, "sign-verify.trace.txt", &[])?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
 
         // The panel must be brought to the FRONT before it is read: a docked
@@ -502,7 +526,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // indistinguishable from a panel with nothing to say. That was called a
         // defect once and was not one. `raise_signatures` carries the rest of
         // the reasoning, including why the fallback is not optional.
-        raise_signatures(&session, &driver, ui_rect)?;
+        raise_signatures(&session, &pointer, ui_rect)?;
 
         let trace = session.trace()?;
         let rows: Vec<_> = trace.events(ROW_EVENT).collect();
@@ -558,7 +582,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let field_out = ctx.out("signed-into-field-by-ui-verify.pdf");
     let _ = std::fs::remove_file(&field_out);
     {
-        let session = launch(
+        let (session, pointer) = launch_with(
             ctx,
             report,
             &field_doc,
@@ -568,11 +592,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ("PDFCER_DIAG_SAVE_PATH", field_out.clone()),
             ],
         )?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, SIGN)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, SIGN)?;
 
         let trace = session.trace()?;
         if !drawn(&trace, ui_rect, REGION_DIALOG) {
@@ -609,11 +632,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- open the identity, so the rest of the form exists --------------
-        click(&session, &driver, ui_rect, REGION_CHOOSE)?;
-        click(&session, &driver, ui_rect, REGION_PASSPHRASE)?;
-        driver.type_ascii(PASSPHRASE)?;
+        click(&session, &pointer, REGION_CHOOSE)?;
+        type_into(&session, &pointer, REGION_PASSPHRASE, PASSPHRASE)?;
         session.settle(10);
-        click(&session, &driver, ui_rect, REGION_OPEN_CERT)?;
+        click(&session, &pointer, REGION_OPEN_CERT)?;
         session.settle(16);
 
         if !drawn(&session.trace()?, ui_rect, REGION_EXISTING) {
@@ -633,7 +655,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // *draw a box*, measure `sign-box-where`; then select the field and
         // measure it again. Without the first measurement, a build that never
         // drew the control would pass the second one perfectly.
-        click_scrolled(&session, &driver, ui_rect, REGION_PLACE_BOX, report)?;
+        click_scrolled(
+            &session,
+            &pointer,
+            (REGION_PLACE_BOX, REGION_BODY),
+            NOTCHES,
+            report,
+        )?;
         let with_box = drawn(&session.trace()?, ui_rect, REGION_BOX_WHERE);
         if !with_box {
             findings.push(format!(
@@ -644,7 +672,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- choose the sender's box ---------------------------------------
-        click_scrolled(&session, &driver, ui_rect, REGION_EXISTING, report)?;
+        click_scrolled(
+            &session,
+            &pointer,
+            (REGION_EXISTING, REGION_BODY),
+            NOTCHES,
+            report,
+        )?;
         session.settle(14);
         let trace = session.trace()?;
         if !drawn(&trace, ui_rect, REGION_FIELD_0) {
@@ -655,7 +689,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 list(&declared_names(&trace, ui_rect, "sign-"))
             ));
         }
-        click_scrolled(&session, &driver, ui_rect, REGION_FIELD_0, report)?;
+        click_scrolled(
+            &session,
+            &pointer,
+            (REGION_FIELD_0, REGION_BODY),
+            NOTCHES,
+            report,
+        )?;
         session.settle(14);
 
         // THE RETIREMENT. Paired with the measurement above: together they
@@ -686,7 +726,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  chosen, so nothing can be signed and phase F has no file to read."
             )));
         }
-        click(&session, &driver, ui_rect, REGION_CONFIRM)?;
+        click(&session, &pointer, REGION_CONFIRM)?;
         session.settle(60);
         let after_confirm = session.trace()?;
         disclosed_appearance(&after_confirm, "phase E", report, &mut findings);
@@ -730,11 +770,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE F — THE SECOND VERDICT. A fresh process, reading the NAME.
     // =======================================================================
     {
-        let session = launch(ctx, report, &field_out, "sign-field-verify.trace.txt", &[])?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        let (session, pointer) =
+            launch_with(ctx, report, &field_out, "sign-field-verify.trace.txt", &[])?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        raise_signatures(&session, &driver, ui_rect)?;
+        raise_signatures(&session, &pointer, ui_rect)?;
 
         let trace = session.trace()?;
         let rows: Vec<_> = trace.events(ROW_EVENT).collect();
@@ -815,7 +855,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let certified_out = ctx.out("certified-by-ui-verify.pdf");
     let _ = std::fs::remove_file(&certified_out);
     {
-        let session = launch(
+        let (session, pointer) = launch_with(
             ctx,
             report,
             &plain,
@@ -825,11 +865,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ("PDFCER_DIAG_SAVE_PATH", certified_out.clone()),
             ],
         )?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, SIGN)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, SIGN)?;
 
         // THE DYNAMIC RANGE for phase H's absence assertion, taken on a
         // document that has never been signed. Without it, phase H's
@@ -846,11 +885,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )),
         }
 
-        click(&session, &driver, ui_rect, REGION_CHOOSE)?;
-        click(&session, &driver, ui_rect, REGION_PASSPHRASE)?;
-        driver.type_ascii(PASSPHRASE)?;
+        click(&session, &pointer, REGION_CHOOSE)?;
+        type_into(&session, &pointer, REGION_PASSPHRASE, PASSPHRASE)?;
         session.settle(10);
-        click(&session, &driver, ui_rect, REGION_OPEN_CERT)?;
+        click(&session, &pointer, REGION_OPEN_CERT)?;
         session.settle(16);
 
         if !drawn(&session.trace()?, ui_rect, REGION_CERTIFY) {
@@ -861,14 +899,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 list(&declared_names(&session.trace()?, ui_rect, "sign-"))
             ));
         }
-        click_scrolled(&session, &driver, ui_rect, REGION_CERTIFY, report)?;
+        click_scrolled(
+            &session,
+            &pointer,
+            (REGION_CERTIFY, REGION_BODY),
+            NOTCHES,
+            report,
+        )?;
         // Plain `click`, NOT `click_scrolled` — and the first run of this
         // phase is why. The confirm control lives in the window's FOOTER,
         // below the scroll area, so it is never inside `sign-body` and
         // `click_scrolled` waited eight notches for a containment that
         // cannot happen. ⇒ The two helpers are not interchangeable: one is
         // for the form, the other for the furniture around it.
-        click(&session, &driver, ui_rect, REGION_CONFIRM)?;
+        click(&session, &pointer, REGION_CONFIRM)?;
         session.settle(60);
         let after_confirm = session.trace()?;
         disclosed_appearance(&after_confirm, "phase G", report, &mut findings);
@@ -924,18 +968,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `certify` flag into a trace and no /DocMDP into the file produces
     // `certification=none` here.
     {
-        let session = launch(
+        let (session, pointer) = launch_with(
             ctx,
             report,
             &certified_out,
             "sign-certify-verify.trace.txt",
             &[],
         )?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, SIGN)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, SIGN)?;
         session.settle(20);
 
         match session.trace()?.events(OPENED_EVENT).last() {

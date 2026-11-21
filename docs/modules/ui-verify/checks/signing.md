@@ -3,6 +3,9 @@
 `checks::signing` — **a document is signed, and the signature is read back
 out of the file by a different subsystem in a different process**
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 
 # THE ONE THING THIS CHECK EXISTS FOR, AND WHY A TRACE LINE IS NOT IT
 

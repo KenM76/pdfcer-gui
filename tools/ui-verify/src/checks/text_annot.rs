@@ -4,15 +4,14 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/text_annot.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
+    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_in, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, PageGeometry};
+use crate::coords::{CanvasMapping, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// How wide and tall the placed box is, in PDF points.
 /// The sticky marker's square, in PDF points: the shell's `wordmarkup::STICKY_PT`,
@@ -55,12 +54,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control, clicks on the \
-             canvas and types into a dialog. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx
         .profile
         .vocab
@@ -96,8 +89,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text_annot")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
@@ -105,10 +100,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Review mode and the Markup tab ---------------------------------
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.markup").ok_or_else(|| {
         Error::new(format!(
@@ -116,7 +110,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -132,7 +126,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let item = crate::checks::driving::declared_or_in_overflow(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         "ribbon.item.markup.sticky_note",
     )?
@@ -142,7 +136,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(&session, WindowPoint::centre_of(item))?;
     session.settle(14);
     let trace = session.trace()?;
     if !trace
@@ -172,14 +166,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The sticky is click-placed (`TextAnnotKind::is_dragged` is false): a drag
     // with it armed places nothing, so a drag here measures the wrong gesture.
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let from = frame.to_screen(mapping.doc_to_window(target)?);
+    let from = mapping.doc_to_window(target)?;
     report.note(format!(
-        "clicking a {STICKY_PT:.0} pt sticky onto the page at screen ({}, {})",
+        "clicking a {STICKY_PT:.0} pt sticky onto the page at window ({:.1}, {:.1})",
         from.x(),
         from.y()
     ));
-    driver.click_at(from)?;
+    pointer.click(&session, from)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -216,15 +209,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // --- 5: type, accept, and assert the page gained one -------------------
-    let Some(field) = declared(&trace, ui_rect, "text-annot.text") else {
+    let Some((field, field_vp)) = declared_in(&trace, ui_rect, "text-annot.text") else {
         return Ok(Some(
             "the dialog is open and declared no `text-annot.text` region, so there is \
              nowhere to type the words it is asking for."
                 .to_owned(),
         ));
     };
-    driver
-        .click_at(frame_of(&session, &trace, ui_rect, "text-annot.text")?.declared_center(field))?;
+    let field_vp = field_vp.as_deref();
+    pointer.click_in(&session, field_vp, WindowPoint::centre_of(field))?;
     session.settle(8);
     //
     // > *"when I use the 'Text box' Markup tool, making new lines by pressing
@@ -253,19 +246,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // share of the route. The engine's half is asserted by the engine's own
     // tests, which its commit records as having failed on all four newline
     // cases before the fix.
-    for key in [vk::F, vk::ENTER, vk::DIGIT_2] {
-        driver.press(key)?;
-        session.settle(6);
-    }
+    pointer.type_text(&session, field_vp, "f")?;
+    session.settle(6);
+    pointer.key(&session, field_vp, "Enter", None)?;
+    session.settle(6);
+    pointer.type_text(&session, field_vp, "2")?;
+    session.settle(6);
 
     let trace = session.trace()?;
-    let Some(accept) = declared(&trace, ui_rect, "text-annot.accept") else {
+    let Some((accept, accept_vp)) = declared_in(&trace, ui_rect, "text-annot.accept") else {
         return Ok(Some(
             "the dialog declared no `text-annot.accept` region.".to_owned(),
         ));
     };
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "text-annot.accept")?.declared_center(accept),
+    pointer.click_in(
+        &session,
+        accept_vp.as_deref(),
+        WindowPoint::centre_of(accept),
     )?;
     session.settle(24);
 
@@ -281,6 +278,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!(
         "Accept authored: the page went from {after_drag} to {after_accept} annotation(s)"
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }
 

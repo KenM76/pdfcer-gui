@@ -3,6 +3,9 @@
 `run_width` — **select one line of text, type a width under Properties › Fit
 to width, and the file changes.**
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 ## What it guards
 
 The Fit to width field (`panels::properties::runwidth`) raises

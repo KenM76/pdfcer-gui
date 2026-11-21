@@ -4,6 +4,9 @@
 names its group, states the scale already set, and keeps what the operator
 typed when they step out to point at the page.
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # The three reports this is the oracle for
 
 
@@ -98,10 +101,8 @@ to account for a different number. See that module for why 400 pt.
 
 ### `const TYPED_REAL_LENGTH`
 
-No unit suffix and no punctuation. `Driver::type_ascii` sends key events
-and refuses punctuation, and this crate's own note on that is a finding
-rather than an excuse — so the value is chosen to be typeable rather than
-realistic. The group's display unit supplies the unit, which is the ordinary
+No unit suffix and no punctuation: the value is chosen to be typeable
+rather than realistic. The group's display unit supplies the unit, which is the ordinary
 behaviour of the field: an operator typing `100` into a metric group means
 a hundred metres.
 

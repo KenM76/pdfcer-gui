@@ -4,13 +4,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/run_width.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::{offscreen, shot};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// Edit mode, then the Properties panel, one per frame.
 const INVOKE: &str = "mode.edit,file.properties";
@@ -97,11 +96,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             pdf.display()
         )));
     }
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a line and types a width.",
-        ));
-    }
     let ui_rect = vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
@@ -124,22 +118,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "run_width")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Edit mode; the Points tool; click the line ---------------------
     // The Points tool is what lands a click on a text line at the Part rung;
     // the arrow tool selects the whole block.
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, 0)?;
-    let frame = session.frame()?;
-    driver.press(vk::A)?;
+    pointer.key(&session, None, "A", None)?;
     session.settle(10);
-    driver.click_at(frame.to_screen(mapping.doc_to_window(DocPoint::new(0, AIM.0, AIM.1))?))?;
+    pointer.click(
+        &session,
+        mapping.doc_to_window(DocPoint::new(0, AIM.0, AIM.1))?,
+    )?;
     session.settle(20);
     let trace = session.trace()?;
     let level = trace
@@ -158,20 +155,27 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut field = None;
     for _ in 0..SCROLL_ATTEMPTS {
         let trace = session.trace()?;
-        if let Some(rect) = driving::declared(&trace, ui_rect, FIELD_REGION) {
+        if let Some(rect) = driving::declared_in(&trace, ui_rect, FIELD_REGION) {
             field = Some(rect);
             break;
         }
-        let Some(body) = driving::declared(&trace, ui_rect, "dock.body.file.properties") else {
+        let Some((body, viewport)) =
+            driving::declared_in(&trace, ui_rect, "dock.body.file.properties")
+        else {
             break;
         };
-        driver.scroll_at(session.frame()?.declared_center(body), -1)?;
+        pointer.wheel_in(
+            &session,
+            viewport.as_deref(),
+            WindowPoint::centre_of(body),
+            -1.0,
+        )?;
         session.settle(12);
     }
-    let Some(field) = field else {
-        let shot = ctx.out("run_width.no-field.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+    let Some((field, field_viewport)) = field else {
+        let png = ctx.out("run_width.no-field.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
         return Ok(Some(format!(
             "one line is selected at the Part rung and no `{FIELD_REGION}` region is on \
@@ -183,20 +187,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- 3: type a width ---------------------------------------------------
     // A click on a DragValue without dragging opens it for typing; Enter
     // commits by losing focus.
-    driver.click_at(session.frame()?.declared_center(field))?;
+    let field_viewport = field_viewport.as_deref();
+    pointer.click_in(&session, field_viewport, WindowPoint::centre_of(field))?;
     session.settle(10);
-    driver.press_chord(&[vk::CONTROL], vk::A)?;
-    driver.type_ascii(TYPED)?;
-    driver.press(vk::ENTER)?;
+    pointer.key(&session, field_viewport, "A", Some("ctrl"))?;
+    pointer.type_text(&session, field_viewport, TYPED)?;
+    pointer.key(&session, field_viewport, "Enter", None)?;
     let waited = wait_for_verdict(&session)?;
     report.note(format!("typed {TYPED} pt; the verdict took {waited} ms"));
 
     // --- 4: the verdict ----------------------------------------------------
     let trace = session.trace()?;
     let Some(line) = verdict(&trace) else {
-        let shot = ctx.out("run_width.no-effect.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("run_width.no-effect.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
         return Ok(Some(format!(
             "a width was typed and Enter pressed, and no `{RESULT_EVENT}` line followed: the \
@@ -224,5 +229,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("the line was fitted to the typed width, through the engine");
+    pointer.gone(&session)?;
     Ok(None)
 }
