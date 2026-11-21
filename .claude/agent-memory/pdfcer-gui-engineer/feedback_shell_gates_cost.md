@@ -29,3 +29,10 @@ row **per batch** — exclude it by name (`$2 != "total"`), never by reading the
 last line (see [[a-count-command-can-be-wrong-not-just-its-quoted-answer]]).
 Handle exhaustion is the other side of this: see
 [[disk-is-tight-and-target-grows-unbounded]].
+
+A second instance: check-stale-blockers ran `head | grep` once per channel
+file, 1,600 files, which cost 90 s idle and far more under a sweep. One `awk`
+pass (`FNR > 12 { nextfile }` stands in for `head -12`) takes 7 s. Prove the
+rewrite by diffing its output set against the old loop's on the real input.
+Pass awk only files that exist: an unmatched glob stays literal and stops awk,
+which only the self-test's empty folder showed.
