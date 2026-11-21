@@ -6,7 +6,7 @@
 
 use super::dimdrive::{Fixture, launch_with, press, ui_rect_event};
 use crate::checks::driving::{declared, declared_in, declared_names, list};
-use crate::checks::scripteddrive::userdata;
+use crate::checks::scripteddrive::{setting_written, userdata};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
@@ -21,7 +21,6 @@ const PLAIN: Fixture = Fixture {
     },
 };
 const KEY: &str = "preserve_calibrated_cmyk"; // ui-text-exempt: a settings-file key
-const SETTINGS_FILE: &str = "settings.txt";
 const OPEN_SETTINGS: &str = "file.settings";
 const DIALOG: &str = "dialog:settings";
 const COLOUR_HEADING: &str = "settings.heading.colour";
@@ -56,19 +55,8 @@ impl Check for CalibratedCmykIsSaved {
     }
 }
 
-/// The key's value in the sandbox's settings file; `None` when absent.
-fn written(userdata: &std::path::Path) -> Option<String> {
-    let text = std::fs::read_to_string(userdata.join(SETTINGS_FILE)).ok()?;
-    text.lines()
-        .filter(|l| !l.trim_start().starts_with('#'))
-        .find_map(|l| {
-            let (k, v) = l.split_once('=')?;
-            (k.trim() == KEY).then(|| v.trim().to_owned())
-        })
-}
-
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let before = written(&userdata(ctx)?);
+    let before = setting_written(&userdata(ctx)?, KEY);
     report.note(format!("before: {KEY} = {before:?}"));
     if before.as_deref() == Some("true") {
         return Ok(Some(format!(
@@ -79,7 +67,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Some(failure) = switch_on(ctx, report)? {
         return Ok(Some(failure));
     }
-    let after = written(&userdata(ctx)?);
+    let after = setting_written(&userdata(ctx)?, KEY);
     report.note(format!(
         "after pressing the switch and Save: {KEY} = {after:?}"
     ));
