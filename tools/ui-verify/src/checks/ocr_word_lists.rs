@@ -17,6 +17,9 @@ use crate::error::{Error, Result};
 /// Regions.
 const NO_LISTS: &str = "ocr-no-word-lists"; // ui-text-exempt: a trace region name, never displayed
 const ADD_WORDS: &str = "ocr-add-words"; // ui-text-exempt: a trace region name, never displayed
+const LAYOUT: &str = "ocr-by-layout"; // ui-text-exempt: a trace region name, never displayed
+/// The engine's answer for the chosen model.
+const OFFER: &str = "ocr-reading-offer"; // ui-text-exempt: a trace event name, never displayed
 const RUN: &str = "ocr-run"; // ui-text-exempt: a trace region name, never displayed
 /// The seam answering the word-file picker.
 const WORDS_PATH: &str = "PDFCER_DIAG_WORDS_PATH";
@@ -73,6 +76,9 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
     let trace = session.trace()?;
+    if let Some(failure) = drawn_as_offered(&trace, ui_rect, "true", "true", "false") {
+        return Ok(Some(failure));
+    }
     for region in [NO_LISTS, ADD_WORDS] {
         if crate::checks::driving::declared(&trace, ui_rect, region).is_none() {
             return Ok(Some(format!(
@@ -119,4 +125,52 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
     Ok(None)
+}
+
+/// The engine's answer for the chosen model, `ocr-reading-offer`, names the
+/// choices `check_options` accepts; the window must draw exactly those.
+/// `None` when it does and the answer is the one wanted.
+pub(super) fn drawn_as_offered(
+    trace: &crate::trace::Trace,
+    ui_rect: &str,
+    drop_lists: &str,
+    word_files: &str,
+    layout: &str,
+) -> Option<String> {
+    let Some(offer) = trace.last(OFFER) else {
+        return Some(format!(
+            "the window traced no `{OFFER}`: the reading choices were not asked of the engine."
+        ));
+    };
+    let want = [
+        ("drop-lists", drop_lists),
+        ("word-files", word_files),
+        ("layout", layout),
+    ];
+    if offer.get("source") != Some("check_options")
+        || want.iter().any(|(k, v)| offer.get(k) != Some(*v))
+    {
+        return Some(format!(
+            "★ the engine's answer for this model should be {want:?} from `check_options`;              the window traced `{}`.",
+            offer.raw
+        ));
+    }
+    // Ever drawn: the window closes on Run, which retires its regions.
+    let drawn = |r: &str| {
+        trace
+            .lines
+            .iter()
+            .any(|l| l.event == ui_rect && l.get("name") == Some(r))
+    };
+    let pairs = [
+        (NO_LISTS, drop_lists),
+        (ADD_WORDS, word_files),
+        (LAYOUT, layout),
+    ];
+    pairs
+        .iter()
+        .find(|(r, v)| drawn(r) != (*v == "true"))
+        .map(|(r, v)| {
+            format!("★ `check_options` answered {v} for `{r}`, and the window drew otherwise.")
+        })
 }

@@ -5,16 +5,16 @@
 //! reads the page by layout, and hands both to `ocr::Request`.
 //!
 //! R9: a choice the chosen model cannot take renders nothing, and is not sent.
-//! "No word lists" is drawn when [`crate::ocr::can_drop_word_lists`], the word
-//! files when [`crate::ocr::takes_word_files`], "Read by layout" when
-//! [`crate::ocr::reads_by_layout`]; a model with none of them draws no group.
-//! A choice made for one model and hidden by switching to another stays held
-//! for switching back. Should the engine still refuse, its sentence
-//! (`RunnerError::DictionariesUnsupported`) is shown verbatim at Run.
+//! Which choices it takes is asked of the engine, one choice at a time
+//! ([`crate::ocr::reading_offer`], traced as `ocr-reading-offer`); a model that
+//! takes none of them draws no group. A choice made for one model and hidden by
+//! switching to another stays held for switching back. The whole choice is
+//! asked again ([`crate::ocr::check_reading`]) and a refusal is shown in the
+//! engine's sentence under the group, before Run.
 
 use std::path::PathBuf;
 
-use crate::ocr::Dictionaries;
+use crate::ocr::{Dictionaries, ReadingOffer};
 use pdfcer_core::ocr::addons::OcrModel;
 
 use crate::app::files::{Picked, from_env};
@@ -28,8 +28,14 @@ const REGION_NO_LISTS: &str = "ocr-no-word-lists"; // ui-text-exempt: trace regi
 const REGION_ADD_WORDS: &str = "ocr-add-words"; // ui-text-exempt: trace region name
 /// The read-by-layout checkbox.
 const REGION_LAYOUT: &str = "ocr-by-layout"; // ui-text-exempt: trace region name
+/// The engine's refusal of the whole choice.
+const REGION_REFUSED: &str = "ocr-reading-refused"; // ui-text-exempt: trace region name
 /// Answers the word-file picker in driven runs.
 const DIAG_WORDS_PATH: &str = "PDFCER_DIAG_WORDS_PATH"; // ui-text-exempt: an environment variable name
+
+/// One question put to the engine: the model's folder and name, the word
+/// lists and whether to read by layout.
+type Asked = (PathBuf, String, Dictionaries, bool);
 
 /// The operator's reading choices for one Recognise-text transaction.
 #[derive(Debug, Clone)]
@@ -41,6 +47,11 @@ pub(super) struct Reading {
     user_words: Vec<PathBuf>,
     /// Read the page by layout regions (vision model only).
     by_layout: bool,
+    /// The engine's answer for the last model drawn, keyed by its folder and
+    /// name, so the probe runs once per model rather than every frame.
+    offer: Option<(PathBuf, String, ReadingOffer)>,
+    /// The engine's answer to the whole choice last asked, with what was asked.
+    verdict: Option<(Asked, Result<(), String>)>,
 }
 
 impl Default for Reading {
@@ -49,6 +60,8 @@ impl Default for Reading {
             builtin: true,
             user_words: Vec::new(),
             by_layout: false,
+            offer: None,
+            verdict: None,
         }
     }
 }
@@ -57,12 +70,13 @@ impl Reading {
     /// The word lists the run asks of `model`: only the choices it was shown.
     #[must_use]
     pub(super) fn dictionaries(&self, model: &OcrModel) -> Dictionaries {
-        let base = if self.builtin || !crate::ocr::can_drop_word_lists(model) {
+        let offer = self.offer_of(model);
+        let base = if self.builtin || !offer.drop_lists {
             Dictionaries::builtin()
         } else {
             Dictionaries::none()
         };
-        if !crate::ocr::takes_word_files(model) {
+        if !offer.word_files {
             return base;
         }
         self.user_words
@@ -73,14 +87,42 @@ impl Reading {
     /// Whether the run reads by layout: only when asked AND the model can.
     #[must_use]
     pub(super) fn by_layout(&self, model: &OcrModel) -> bool {
-        self.by_layout && crate::ocr::reads_by_layout(model)
+        self.by_layout && self.offer_of(model).layout
+    }
+
+    /// The engine's answer for `model`: the held one when it is for `model`.
+    fn offer_of(&self, model: &OcrModel) -> ReadingOffer {
+        match &self.offer {
+            Some((folder, name, offer)) if *folder == model.folder && *name == model.name => *offer,
+            _ => crate::ocr::reading_offer(model),
+        }
+    }
+
+    /// Ask the engine afresh when the model changed, and trace its answer.
+    fn refresh_offer(&mut self, model: &OcrModel) -> ReadingOffer {
+        let held = self
+            .offer
+            .as_ref()
+            .is_some_and(|(f, n, _)| *f == model.folder && *n == model.name);
+        if !held {
+            let offer = crate::ocr::reading_offer(model);
+            crate::diag::trace(|| {
+                format!(
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    "ocr-reading-offer engine={} model={} drop-lists={} word-files={} layout={} source=check_options",
+                    model.engine, model.name, offer.drop_lists, offer.word_files, offer.layout
+                )
+            });
+            self.offer = Some((model.folder.clone(), model.name.clone(), offer));
+        }
+        self.offer_of(model)
     }
 
     /// Draw the group for the chosen model.
     pub(super) fn show(&mut self, ui: &mut egui::Ui, model: Option<&OcrModel>) {
         let Some(model) = model else { return };
-        let drop = crate::ocr::can_drop_word_lists(model);
-        let files = crate::ocr::takes_word_files(model);
+        let offer = self.refresh_offer(model);
+        let (drop, files) = (offer.drop_lists, offer.word_files);
         if drop || files {
             let group = ui.group(|ui| {
                 ui.label(t::word_lists_heading());
@@ -98,11 +140,34 @@ impl Reading {
             });
             crate::diag::ui_rect(REGION_WORDS, group.response.rect);
         }
-        if crate::ocr::reads_by_layout(model) {
+        if offer.layout {
             let layout = ui
                 .checkbox(&mut self.by_layout, t::by_layout())
                 .on_hover_text(t::by_layout_tooltip());
             crate::diag::ui_rect(REGION_LAYOUT, layout.rect);
+        }
+        if let Err(why) = self.verdict(model) {
+            let refusal = ui.colored_label(ui.visuals().warn_fg_color, why);
+            crate::diag::ui_rect(REGION_REFUSED, refusal.rect);
+        }
+    }
+
+    /// The engine's answer to the whole choice, asked again only when the
+    /// model or the choice changed.
+    fn verdict(&mut self, model: &OcrModel) -> Result<(), String> {
+        let asked = (
+            model.folder.clone(),
+            model.name.clone(),
+            self.dictionaries(model),
+            self.by_layout(model),
+        );
+        match &self.verdict {
+            Some((held, answer)) if *held == asked => answer.clone(),
+            _ => {
+                let answer = crate::ocr::check_reading(model, &asked.2, asked.3);
+                self.verdict = Some((asked, answer.clone()));
+                answer
+            }
         }
     }
 
@@ -172,6 +237,8 @@ mod tests {
             builtin: false,
             user_words: vec![PathBuf::from("a.txt"), PathBuf::from("b.txt")],
             by_layout: true,
+            offer: None,
+            verdict: None,
         }
     }
 

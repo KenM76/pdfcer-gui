@@ -66,6 +66,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("run: `{}`", started.raw));
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
+    if let Some(failure) =
+        crate::checks::ocr_word_lists::drawn_as_offered(&trace, ui_rect, "false", "false", "true")
+    {
+        return Ok(Some(format!("{failure} Trace: {path}.")));
+    }
     if let Some(r) = [NO_LISTS, ADD_WORDS]
         .into_iter()
         .find(|r| crate::checks::driving::declared(&trace, ui_rect, r).is_some())
