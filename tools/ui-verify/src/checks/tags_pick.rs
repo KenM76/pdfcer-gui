@@ -31,6 +31,16 @@ const UNTAGGED: Fixture = Fixture {
         height_pt: 792.0,
     },
 };
+const FIGURE: Fixture = Fixture {
+    file: "tags-figure.pdf",
+    method: "Rebuild it with `python fixtures/tags-figure.PROVENANCE.py`.",
+    page: PageGeometry {
+        width_pt: 612.0,
+        height_pt: 792.0,
+    },
+};
+/// The figure's filled square, `llx, lly, urx, ury`, which holds no text.
+const SQUARE: [f64; 4] = [100.0, 400.0, 300.0, 600.0];
 const OPEN: &str = "view.panel_tags";
 const ROW: &str = "tags.row."; // ui-text-exempt: a trace region name prefix
 const OUTLINE: &str = "canvas.tag-outline.1"; // ui-text-exempt: a trace region name
@@ -45,6 +55,23 @@ const B_X: f64 = 300.0;
 pub struct TheTagsPanelOutlinesThePickedElement;
 /// `the_tags_panel_says_a_file_is_untagged`.
 pub struct TheTagsPanelSaysAFileIsUntagged;
+/// `the_tags_panel_outlines_a_figure_with_no_text`.
+pub struct TheTagsPanelOutlinesAFigureWithNoText;
+
+impl Check for TheTagsPanelOutlinesAFigureWithNoText {
+    fn name(&self) -> &'static str {
+        "the_tags_panel_outlines_a_figure_with_no_text"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Picking a Figure that paints a fill and no text in the Tags panel draws no outline, \
+         or one that misses the fill"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        drive(self, ctx, &FIGURE, "tags-figure", figure_body)
+    }
+}
 
 impl Check for TheTagsPanelOutlinesThePickedElement {
     fn name(&self) -> &'static str {
@@ -214,6 +241,41 @@ fn pick_body(
         return Ok(Some(format!(
             "with the table picked no `{OUTLINE}` is drawn."
         )));
+    }
+    Ok(None)
+}
+
+fn figure_body(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    let state = step!(after(session, STATE, 0, "the Tags panel was opened"));
+    if state.get("state") != Some("read") {
+        return Ok(Some(format!("`{}`; expected `state=read`.", state.raw)));
+    }
+    let rows = declared_names(&session.trace()?, ui_rect_event(ctx)?, ROW);
+    let Some(figure) = rows.iter().find(|r| r.ends_with(".Figure")).cloned() else {
+        return Ok(Some(format!("the tree drew no Figure row: {rows:?}.")));
+    };
+    let mark = session.trace()?.mark();
+    let got = step!(pick(ctx, report, session, pointer, &figure));
+    let Some(b) = one_on_page_one(&got) else {
+        return Ok(Some(format!(
+            "★★★ the Figure, a grey square with no text, has {got:?}; expected one box on \
+             page 1. Its outline is read from text alone."
+        )));
+    };
+    let [llx, lly, urx, ury] = SQUARE;
+    let off = [b.llx - llx, b.lly - lly, b.urx - urx, b.ury - ury];
+    if off.iter().any(|d| d.abs() > 1.0) {
+        return Ok(Some(format!(
+            "the Figure's box {b:?} is not its square {SQUARE:?}."
+        )));
+    }
+    if declared_since(&session.trace()?, ui_rect_event(ctx)?, OUTLINE, mark).is_none() {
+        return Ok(Some(format!("picking the Figure drew no `{OUTLINE}`.")));
     }
     Ok(None)
 }
