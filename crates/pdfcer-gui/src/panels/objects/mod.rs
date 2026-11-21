@@ -8,6 +8,7 @@
 mod disagree;
 pub(crate) mod follow;
 mod layered;
+mod placed;
 mod rowclick;
 pub use pdfcer_gui_base::objectprovider as provider;
 #[cfg(test)]
@@ -118,6 +119,7 @@ pub fn body(
     ui.label(t::objects_dock_intro());
     ui.label(t::objects_dock_summary(census));
     disagree::lines(ui, page_index, diagnostics);
+    placed::lines(ui, doc, page_index, objects);
     ui.separator();
 
     let frame = ui.ctx().cumulative_frame_nr();

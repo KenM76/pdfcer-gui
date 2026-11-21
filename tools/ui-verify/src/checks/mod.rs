@@ -533,6 +533,8 @@ pub mod page_boxes_view;
 pub mod page_print_boxes;
 pub mod password_fill;
 pub mod pdfx_claim;
+/// The Objects panel says where each placed drawing on the page is drawn.
+pub mod placed_drawings;
 /// Batch print sends each picked file as its own job.
 pub mod print_batch;
 /// Print in grey or black only.
