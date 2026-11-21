@@ -15,10 +15,11 @@ pub mod annot_delete_gate;
 pub mod annot_rotate;
 
 pub mod blend_space;
+/// View ▸ Display ▸ Highlight fields tints every fillable field, canvas only.
+pub mod button_looks;
 pub mod calibrated_cmyk_setting;
 pub mod card_pages;
 pub mod export_keep_text;
-/// View ▸ Display ▸ Highlight fields tints every fillable field, canvas only.
 pub mod field_highlight;
 pub mod field_outline;
 pub mod fields_redrawn;

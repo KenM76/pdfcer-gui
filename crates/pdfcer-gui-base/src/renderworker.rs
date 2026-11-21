@@ -203,7 +203,7 @@ mod key;
 
 pub use background::BackgroundResult;
 
-pub use key::RenderKey;
+pub use key::{RenderKey, look_bits};
 
 /// A render currently running on a worker thread.
 struct InFlight {
@@ -312,6 +312,13 @@ pub struct RenderRequest {
     /// `view.highlight_fields`: the tint behind fillable fields, canvas only,
     /// like [`Self::overprint`]. Never on a print or export render.
     pub field_highlight: Option<pdfcer_render::FieldHighlight>,
+    /// The widget under the pointer drawn in its rollover or down look
+    /// (`RenderOptions::appearance_states`), canvas only, like
+    /// [`Self::overprint`]. Empty on every other render.
+    pub appearance_states: Vec<(
+        pdfcer_core::object::ObjId,
+        pdfcer_core::annot::AppearanceKind,
+    )>,
     /// The Output Preview panel's plates, canvas only, like [`Self::overprint`].
     pub separations: Option<pdfcer_render::SeparationPreview>,
     /// How a picture enlarged past its own pixels is drawn — the canvas's
@@ -622,6 +629,9 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     options.subpixel_culling = request.subpixel_culling;
     options.overprint_preview = request.overprint;
     options.field_highlight = request.field_highlight;
+    options
+        .appearance_states
+        .clone_from(&request.appearance_states);
     options.separation_preview = request.separations.clone();
     options.image_magnify = request.image_magnify;
     // Cloned rather than moved because the worker takes the request by

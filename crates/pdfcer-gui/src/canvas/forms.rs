@@ -29,6 +29,8 @@ mod tabbing;
 /// pick sends. Split out under R2; see its header, and in particular its on
 /// why the side is chosen before the constraint rather than after it.
 mod choosing;
+/// A button's rollover and down looks under the pointer.
+pub(crate) mod looks;
 mod sigadjust;
 mod sigtags;
 
@@ -423,6 +425,7 @@ pub(super) fn overlay(
     }
 
     let placed = placed(&ctx, doc);
+    looks::track(&ctx, doc, pages);
     let list = &placed.boxes;
     // FIRST, so the editor drawn below is the one Tab has just arrived at.
     // Asked before the empty-list return, so a press claimed on the frame an

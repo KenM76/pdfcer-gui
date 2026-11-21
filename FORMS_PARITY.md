@@ -370,6 +370,8 @@ there; the two surfaces still disagree on the other two.
 | PB | ❌ | ➖ action editor | ❌ | ⚠ `ASK` — should clicking a push button on the canvas *run* its action in Read mode? Acrobat does |
 | SG | ❌ | 🚫 blocked | ❌ | ✅ correct |
 
+**Hover and press looks.** A PB, CB or RB whose `/AP` carries `/R` or `/D` is drawn in that look under the pointer while filling (`canvas/forms/looks.rs`, through `RenderOptions::appearance_states` on the canvas render only). That is the look, not the action: whether a PB's click *runs* `/A` is still A2. Driven: `a_buttons_rollover_and_down_looks_are_drawn`.
+
 **What is left, and it is no longer the fork.** `BoxKind` now has four variants
 (`canvas/forms/boxes/mod.rs:88-210`) and `classify()` (`:461-549`) matches TX, CB, RB
 and CO/LB alike; PB and SG fall to `_ => Err(NotOffered)` at `:547`. **That omission
