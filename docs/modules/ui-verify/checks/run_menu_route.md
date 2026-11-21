@@ -3,6 +3,9 @@
 **The right-click route to one line inside a block of text** — O188(A),
 driven end to end on the real binary.
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 One check: `the_right_click_offers_the_line_you_clicked`.
 
 # The operator's report, and what it is actually about

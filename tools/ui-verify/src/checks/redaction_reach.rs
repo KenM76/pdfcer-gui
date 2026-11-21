@@ -5,18 +5,19 @@
 
 use std::path::{Path, PathBuf};
 
-use super::driving::{self, declared};
+use super::driving::{self, SHELL_DIAG_ENV, declared, declared_in};
 use super::redaction::{
     ACK_REGION, APPLY_REGION, CONFIRM_REGION, DESTINATION_NEW_FILE_REGION, MODE, PANEL_EVENT,
     PREPARED_EVENT, PROTECT_TAB, REDACT, REFUSED_EVENT, REGION_PREFIX, SECRET, SURVIVOR,
-    WRITE_FAILED_EVENT, WRITTEN_EVENT, census, click_command, click_region, click_tab, contains,
-    launch, region,
+    WRITE_FAILED_EVENT, WRITTEN_EVENT, census, contains, region,
 };
+use super::scripteddrive::{click_command, click_tab, offscreen};
 use super::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
-use crate::launch::Session;
+use crate::input::scripted::ScriptedPointer;
+use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The marking panel itself — the pane a wheel notch has to land in.
@@ -32,6 +33,9 @@ const SEARCH_REGION: &str = "redact-search";
 /// The dialog's **residual** acknowledgement, declared only while the report
 /// carries something the write will leave behind.
 const RESIDUAL_ACK_REGION: &str = "redact-apply-residual-ack";
+
+/// The variable naming the path the shell writes to instead of asking.
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
 /// The preference key, spelled as the shell's preference file parses it.
 const REACH_KEY: &str = "redaction_reach";
@@ -128,16 +132,21 @@ fn fixture_bytes() -> Vec<u8> {
 // ---------------------------------------------------------------------------
 
 /// **Scroll the marking panel until `name` is on screen, and return where.**
-fn reveal(session: &Session, driver: &Driver, ui_rect: &str, name: &str) -> Result<LRect> {
+fn reveal(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    name: &str,
+) -> Result<LRect> {
     /// Enough to rewind any panel this shell draws to its top.
-    const REWIND: i32 = 12;
+    const REWIND: f32 = 12.0;
     /// One notch at a time, so the control is found at the first position that
     /// shows it rather than scrolled past.
     const STEPS: usize = 16;
 
     let panel = region(&session.trace()?, ui_rect, PANEL_REGION, REGION_PREFIX)?;
-    let at = session.frame()?.declared_center(panel);
-    driver.scroll_at(at, REWIND)?;
+    let at = WindowPoint::centre_of(panel);
+    pointer.wheel(session, at, REWIND, false)?;
     session.settle(6);
     for _ in 0..STEPS {
         if let Some(rect) = declared(&session.trace()?, ui_rect, name)
@@ -145,7 +154,7 @@ fn reveal(session: &Session, driver: &Driver, ui_rect: &str, name: &str) -> Resu
         {
             return Ok(rect);
         }
-        driver.scroll_at(at, -1)?;
+        pointer.wheel(session, at, -1.0, false)?;
         session.settle(6);
     }
     Err(Error::new(format!(
@@ -154,6 +163,68 @@ fn reveal(session: &Session, driver: &Driver, ui_rect: &str, name: &str) -> Resu
          fold is unreachable and Mark whole page is the only way to make a mark — or the control \
          is not drawn in this state at all."
     )))
+}
+
+/// Launch `pdf` off the desktop with both diagnostic channels and the save
+/// seam pointed at `target`.
+fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    pdf: &Path,
+    target: &Path,
+    reach: &str,
+) -> Result<(Session, ScriptedPointer)> {
+    let exe = ctx
+        .resolve_exe()
+        .ok_or_else(|| Error::new("no binary to drive. Pass --exe."))?;
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("redaction-reach-{reach}.trace.txt")));
+    spec.pdf = Some(pdf.to_path_buf());
+    for (k, v) in [
+        (ctx.profile.diag_env.0, ctx.profile.diag_env.1.to_owned()),
+        (SHELL_DIAG_ENV.0, SHELL_DIAG_ENV.1.to_owned()),
+        (SAVE_PATH_ENV, target.display().to_string()),
+    ] {
+        spec.env.push((k.to_owned(), v));
+    }
+    spec.allow_stale = ctx.allow_stale;
+    spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, &format!("redaction-reach-{reach}"))?;
+    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.note(format!(
+        "launched {} on {} as pid {}",
+        exe.display(),
+        pdf.display(),
+        session.pid()
+    ));
+    report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(40);
+    if !session.trace()?.started(ctx.profile.vocab.start_event) {
+        return Err(Error::new(format!(
+            "the trace has no `{}` line, so the diagnostic switch did not reach the process. \
+             Trace: {}.",
+            ctx.profile.vocab.start_event,
+            session.trace_path().display()
+        )));
+    }
+    Ok((session, pointer))
+}
+
+/// Click a region the marking panel or its dialog published, in the viewport
+/// that declared it, refusing a degenerate one.
+fn click_region(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    name: &str,
+    settle: u32,
+) -> Result<()> {
+    let trace = session.trace()?;
+    let rect = region(&trace, ui_rect, name, REGION_PREFIX)?;
+    let viewport = declared_in(&trace, ui_rect, name).and_then(|(_, vp)| vp);
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
+    session.settle(settle);
+    Ok(())
 }
 
 /// What one launch produced.
@@ -200,19 +271,12 @@ fn run_once(
     report.note(format!("`{REACH_KEY} = {reach}` written into the profile"));
 
     let _ = std::fs::remove_file(target);
-    let session = launch(
-        ctx,
-        report,
-        fixture,
-        target,
-        &format!("redaction-reach-{reach}.trace.txt"),
-    )?;
-    let driver = Driver::new(session.window());
+    let (session, pointer) = launch(ctx, report, fixture, target, reach)?;
 
-    driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(16);
-    click_tab(&session, &driver, ui_rect, PROTECT_TAB)?;
-    click_command(&session, &driver, ui_rect, REDACT, 20)?;
+    click_tab(&session, &pointer, ui_rect, PROTECT_TAB)?;
+    click_command(&session, &pointer, ui_rect, REDACT, 20)?;
 
     // --- mark by search ---------------------------------------------------
     //
@@ -223,12 +287,12 @@ fn run_once(
     // Through `reveal` rather than `region`: the marking controls sit below the
     // fold of a side dock at this window size, and a rect read without scrolling
     // to them is a rect off the bottom of the screen that a click cannot reach.
-    reveal(&session, &driver, ui_rect, QUERY_REGION)?;
-    click_region(&session, &driver, ui_rect, QUERY_REGION, 10)?;
-    driver.type_ascii(SECRET)?;
+    reveal(&session, &pointer, ui_rect, QUERY_REGION)?;
+    click_region(&session, &pointer, ui_rect, QUERY_REGION, 10)?;
+    pointer.type_text(&session, None, SECRET)?;
     session.settle(10);
 
-    reveal(&session, &driver, ui_rect, SEARCH_REGION).map_err(|e| {
+    reveal(&session, &pointer, ui_rect, SEARCH_REGION).map_err(|e| {
         Error::new(format!(
             "{e}\n\
              A disabled control still declares its rect, so this is not the control being \
@@ -236,7 +300,7 @@ fn run_once(
              the query field."
         ))
     })?;
-    click_region(&session, &driver, ui_rect, SEARCH_REGION, 20)?;
+    click_region(&session, &pointer, ui_rect, SEARCH_REGION, 20)?;
     let trace = session.trace()?;
     let Some((marks, pages)) = census(&trace) else {
         return Err(Error::new(format!(
@@ -257,8 +321,8 @@ fn run_once(
     ));
 
     // --- the report -------------------------------------------------------
-    reveal(&session, &driver, ui_rect, APPLY_REGION)?;
-    click_region(&session, &driver, ui_rect, APPLY_REGION, 20)?;
+    reveal(&session, &pointer, ui_rect, APPLY_REGION)?;
+    click_region(&session, &pointer, ui_rect, APPLY_REGION, 20)?;
     let trace = session.trace()?;
     if trace.last(PREPARED_EVENT).is_none() {
         if let Some(refused) = trace.last(REFUSED_EVENT) {
@@ -285,9 +349,9 @@ fn run_once(
     // for the same reason.
     let residual_ack_offered = declared(&session.trace()?, ui_rect, RESIDUAL_ACK_REGION).is_some();
     if residual_ack_offered {
-        click_region(&session, &driver, ui_rect, RESIDUAL_ACK_REGION, 12)?;
+        click_region(&session, &pointer, ui_rect, RESIDUAL_ACK_REGION, 12)?;
     }
-    click_region(&session, &driver, ui_rect, ACK_REGION, 12)?;
+    click_region(&session, &pointer, ui_rect, ACK_REGION, 12)?;
 
     // --- write to a new file ----------------------------------------------
     //
@@ -295,7 +359,7 @@ fn run_once(
     // destination arms the next save and produces no file, and this check's
     // whole verdict is a file. Replacing the original would have the harness
     // overwrite its own fixture between the two runs.
-    click_region(&session, &driver, ui_rect, DESTINATION_NEW_FILE_REGION, 16)?;
+    click_region(&session, &pointer, ui_rect, DESTINATION_NEW_FILE_REGION, 16)?;
     region(&session.trace()?, ui_rect, CONFIRM_REGION, REGION_PREFIX).map_err(|e| {
         Error::new(format!(
             "{e}\n\
@@ -306,7 +370,7 @@ fn run_once(
              fold rather than left disabled."
         ))
     })?;
-    click_region(&session, &driver, ui_rect, CONFIRM_REGION, 24)?;
+    click_region(&session, &pointer, ui_rect, CONFIRM_REGION, 24)?;
 
     let trace = session.trace()?;
     if trace.last(WRITTEN_EVENT).is_none() {
@@ -322,6 +386,7 @@ fn run_once(
             session.trace_path().display()
         )));
     }
+    pointer.gone(&session)?;
     drop(session);
 
     let bytes = std::fs::read(target)
@@ -339,13 +404,6 @@ fn run_once(
 /// Run the sequence twice. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a
 /// pass.
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check types a query and clicks through two full \
-             redactions. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \

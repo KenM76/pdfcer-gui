@@ -1,6 +1,9 @@
 # `checks::redaction_reach` — the reach setting decides what survives the
 save, measured on the bytes, twice
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 ## The defect this exists to catch
 
 The preference exists, the settings window offers it, the enum maps onto

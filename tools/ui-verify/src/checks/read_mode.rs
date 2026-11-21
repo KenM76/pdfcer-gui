@@ -7,9 +7,8 @@
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry, ScreenPoint};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -92,7 +91,7 @@ fn aim(
     session: &Session,
     page: PageGeometry,
     at: DocPoint,
-) -> Result<ScreenPoint> {
+) -> Result<WindowPoint> {
     let trace = session.trace()?;
     let shown = trace
         .last(ctx.profile.vocab.canvas_event)
@@ -107,7 +106,7 @@ fn aim(
         )));
     }
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, at.page)?;
-    Ok(session.frame()?.to_screen(mapping.doc_to_window(at)?))
+    mapping.doc_to_window(at)
 }
 
 /// Run the sequence.
@@ -127,14 +126,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              page.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is a sequence of real clicks on real \
-             mode segments and a real canvas, and every one of them needs the pointer and the \
-             foreground. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -176,6 +167,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = super::scripteddrive::offscreen(ctx, &mut spec, "read_mode")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -188,6 +180,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         SHELL_DIAG_ENV.1
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     let trace = session.trace()?;
@@ -216,7 +209,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         frame.client_origin.1,
         frame.scale
     ));
-    let driver = Driver::new(session.window());
 
     // The candidate list: the operator's point first if they gave one, then
     // the ladder. See `CANDIDATES` for why this is a search rather than a
@@ -248,7 +240,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     for (n, at) in candidates.iter().enumerate() {
         // ---- phase A: the click Read must refuse -------------------------
-        driving::click_mode_segment(&session, &driver, ui_rect, READ)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, READ)?;
         let read_point = match aim(ctx, &session, page, *at) {
             Ok(p) => p,
             Err(e) => {
@@ -266,7 +258,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         };
         let before = selection_clicks(&session.trace()?).len();
-        driver.click_at(read_point)?;
+        pointer.click(&session, read_point)?;
         session.settle(12);
         let after_read = session.trace()?;
         let read_clicks = selection_clicks(&after_read);
@@ -298,7 +290,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
 
         // ---- phase B: the same click Edit must honour --------------------
-        driving::click_mode_segment(&session, &driver, ui_rect, EDIT)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, EDIT)?;
         let edit_point = match aim(ctx, &session, page, *at) {
             Ok(p) => p,
             Err(e) => {
@@ -312,7 +304,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         };
         let before = selection_clicks(&session.trace()?).len();
-        driver.click_at(edit_point)?;
+        pointer.click(&session, edit_point)?;
         session.settle(12);
         let after_edit = session.trace()?;
         let edit_clicks = selection_clicks(&after_edit);
@@ -378,7 +370,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // check that ran this phase on an empty selection would be asserting on
     // the absence of a line that is correctly absent.
     let before = session.trace()?.events(CAPABILITIES_EVENT).count();
-    driving::click_mode_segment(&session, &driver, ui_rect, READ)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, READ)?;
     let trace = session.trace()?;
     let lines: Vec<&crate::trace::TraceLine> = trace.events(CAPABILITIES_EVENT).collect();
     let Some(entry) = lines.get(before) else {
@@ -423,6 +415,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         point.y,
         point.page + 1
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }
 
