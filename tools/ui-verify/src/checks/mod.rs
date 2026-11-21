@@ -120,6 +120,7 @@ pub mod ribbonpress;
 pub mod ctxdrive;
 /// Helpers shared by checks that press through the scripted pointer.
 pub mod scripteddrive;
+pub mod scriptedmarks;
 
 pub mod drop_onto_thumbnails;
 
