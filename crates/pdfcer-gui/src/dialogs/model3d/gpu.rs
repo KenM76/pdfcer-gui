@@ -189,7 +189,7 @@ impl Default for Gpu {
             prepared: None,
             bounce,
             built: None,
-            forced_off: std::env::var_os("PDFCER_3D_CPU").is_some_and(|v| v == "1"),
+            forced_off: super::card::forced_by_environment(),
             told: false,
             card: super::card::CardParts::default(),
             facts: Facts::default(),
@@ -233,6 +233,11 @@ impl Gpu {
         !self.forced_off && self.card.picture && lock(&self.shared).failed.is_none()
     }
 
+    /// The widest point the card draws, pixels; 0 before the first paint.
+    pub(super) fn widest_point(&self) -> f32 {
+        lock(&self.shared).widest_point
+    }
+
     /// `PDFCER_3D_CPU=1` keeps the card off for the session.
     pub(super) fn forced_off(&self) -> bool {
         self.forced_off
@@ -241,6 +246,11 @@ impl Gpu {
     /// The operator switched the card off for the whole picture.
     pub(super) fn turned_off(&self) -> bool {
         !self.forced_off && !self.card.picture
+    }
+
+    /// The driver's words when the card failed.
+    pub(super) fn failure(&self) -> Option<String> {
+        lock(&self.shared).failed.clone()
     }
 
     /// Whether the card failed, so the processor draws every frame.
@@ -267,6 +277,32 @@ impl Gpu {
     /// card draws the picture, since a paint is what advances it.
     pub(super) fn meter_card(&mut self) -> Option<super::gpu_bounce_card::CardQueue> {
         (self.live() && self.declined.is_none()).then(|| self.bounce.card())
+    }
+
+    /// The queue a light map is measured through: while the card draws or
+    /// will try to, since a paint is what advances it ([`Self::paint_work`]
+    /// while the picture is the processor's).
+    pub(super) fn map_card(&self) -> Option<super::gpu_bounce_card::CardQueue> {
+        self.drawing().then(|| self.bounce.card())
+    }
+
+    /// While the processor's picture is shown and the card has work
+    /// queued, a paint that only advances that work.
+    pub(super) fn paint_work(&self, painter: &egui::Painter, rect: egui::Rect) {
+        if !self.bounce.card_busy() {
+            return;
+        }
+        let shared = Arc::clone(&self.shared);
+        let callback = egui_glow::CallbackFn::new(move |_info, painter| {
+            let gl = painter.gl();
+            let card = lock(&shared).card.clone();
+            card.set_supported(native_mesh::compute::Compute::supported(gl));
+            super::gpu_bounce_card::advance(gl, &card);
+        });
+        painter.add(egui::PaintCallback {
+            rect,
+            callback: Arc::new(callback),
+        });
     }
 
     /// The model was replaced: rebuild everything from it.

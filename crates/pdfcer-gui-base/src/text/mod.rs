@@ -61,6 +61,8 @@ pub mod bakeappear;
 pub mod bates;
 /// Tools ▸ Batch ▸ Bates number files…: its window.
 pub mod bates_batch;
+/// The graphics-card window's words.
+pub mod cardstatus;
 /// What a page copy did with the ce dimensions on its pages.
 pub mod cedimcopy;
 /// Every word of the compact window's picture options and their report.
@@ -82,6 +84,8 @@ pub mod compact_compare;
 pub mod compact_images;
 /// The compact window's settings files.
 pub mod compact_profile;
+/// The compact window's Brotli switch.
+pub mod compact_streams;
 /// The compact window's starting point and size target.
 pub mod compact_target;
 /// The compact window's *Make compatible with* list.
@@ -187,6 +191,8 @@ pub mod model3dlook;
 pub mod model3dmap;
 /// The 3D viewer's measure tool.
 pub mod model3dmeasure;
+/// How the 3D viewer's face, edge and corner measure says its figures.
+pub mod model3dreadout;
 /// The 3D viewer's face, edge and corner measure.
 pub mod model3dselect;
 pub mod model3dshot;

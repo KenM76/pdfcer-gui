@@ -51,6 +51,7 @@ pub mod comments_census;
 
 pub mod band_cmyk;
 pub mod bilevel_pictures;
+pub mod compact_brotli;
 pub mod compact_classes;
 pub mod compact_closeness;
 pub mod compact_compare;
@@ -58,6 +59,7 @@ pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;
 pub mod compact_profile;
+pub mod compact_profile_fonts;
 pub mod compact_reach;
 pub mod compact_round;
 pub mod compact_target;
@@ -997,12 +999,15 @@ pub mod button_icon_paste;
 /// window of its own.
 pub mod model_close_asks;
 pub mod model_light_map;
+pub mod model_light_map_card;
 /// The 3D viewer's Measure tab reads the light arriving on a surface.
 pub mod model_light_meter;
 /// The 3D viewer switches a model's lamps and glowing parts off and on.
 pub mod model_lights;
 /// The 3D viewer saves its named views into the file.
 pub mod model_measure;
+/// Insert 3D model's occlusion switch reaches the glTF conversion.
+pub mod model_occlusion;
 pub mod model_options;
 pub mod model_pick;
 /// A placed 3D model shows the engine's picture of it on the page.
@@ -1010,6 +1015,8 @@ pub mod model_poster;
 pub mod model_saved_view;
 /// The 3D viewer's Measure tab measures between two picked surfaces.
 pub mod model_select_measure;
+/// The 3D viewer's face, edge, corner measure converts, projects and reframes.
+pub mod model_select_readout;
 pub mod model_surface_measure;
 /// The 3D viewer draws at an exposure fixed in lux.
 pub mod model_true_light;
@@ -1043,6 +1050,9 @@ pub mod bookmark_dest;
 
 pub mod bookmark_edit;
 
+/// Every graphics-card switch is in one window beside its status.
+pub mod card_switches;
+pub mod settings_minify;
 pub mod settings_nav;
 /// A shortcut changed in Settings reaches the keys and survives a restart.
 pub mod shortcut_change;

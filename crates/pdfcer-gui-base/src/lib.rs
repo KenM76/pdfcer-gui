@@ -126,6 +126,8 @@ pub mod redact;
 /// How sharply a page is drawn, and how long zoom waits before drawing it.
 pub mod renderquality;
 
+/// What each graphics-card path last did on this machine.
+pub mod cardstatus;
 /// A canvas page drawn on the graphics card, and the reason when it is not.
 pub mod rendercard;
 

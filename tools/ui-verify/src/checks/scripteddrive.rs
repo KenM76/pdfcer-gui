@@ -757,3 +757,15 @@ pub fn click_command_traced(
     }
     Ok(())
 }
+
+/// `key`'s value in the sandbox's `settings.txt` under `userdata`; `None`
+/// when absent.
+pub fn setting_written(userdata: &std::path::Path, key: &str) -> Option<String> {
+    let text = std::fs::read_to_string(userdata.join("settings.txt")).ok()?;
+    text.lines()
+        .filter(|l| !l.trim_start().starts_with('#'))
+        .find_map(|l| {
+            let (k, v) = l.split_once('=')?;
+            (k.trim() == key).then(|| v.trim().to_owned())
+        })
+}

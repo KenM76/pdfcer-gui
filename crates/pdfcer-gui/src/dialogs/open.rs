@@ -681,6 +681,11 @@ impl DialogsState {
         Some(crate::text::embed::nothing_missing().to_owned())
     }
 
+    /// Open the Graphics card switches window. Needs no document.
+    pub fn open_card_switches(&mut self) {
+        self.card_switches.get_or_insert_with(Default::default);
+    }
+
     /// Open the Manage OCR models window. Needs no document.
     pub fn open_ocr_models(&mut self) {
         self.ocr_models.get_or_insert_with(Default::default);

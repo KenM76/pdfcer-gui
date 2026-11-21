@@ -25,6 +25,8 @@ mod animate;
 mod behind;
 mod bindings;
 mod card;
+pub(crate) use card::{CardParts, forced_by_environment as card_forced_by_environment};
+pub(crate) use memory::{card_keys, saved_card};
 mod closing;
 mod controls;
 mod drone;
@@ -39,6 +41,7 @@ mod gpu;
 mod gpu_bounce;
 mod gpu_bounce_card;
 mod gpu_lens;
+mod gpu_lightmap;
 mod gpu_meter;
 mod gpu_paint;
 mod gpu_uniforms;
@@ -64,6 +67,7 @@ mod parts;
 mod partstree;
 mod phone;
 mod picture;
+mod readout;
 mod rows;
 mod saved;
 mod select;
@@ -538,12 +542,14 @@ impl ModelView {
         if self.rendered != Some(wanted) {
             self.draw_picture(ui.ctx(), wanted, gpu);
         }
+        self.note_card_status(gpu);
         match (&self.texture, &self.failed) {
             (_, Some(said)) => {
                 ui.put(rect, egui::Label::new(said.as_str()));
             }
             _ if gpu && self.gpu.declined().is_none() => self.gpu.paint(ui.painter(), rect),
             (Some(texture), None) => {
+                self.gpu.paint_work(ui.painter(), rect);
                 ui.painter().image(
                     texture.id(),
                     rect,

@@ -103,3 +103,47 @@ pub fn failed(detail: &str) -> String {
 pub const fn stopped() -> &'static str {
     "Not lowered: the check stopped without an answer. The copy is saved at its own version."
 }
+
+/// The fold listing the features the copy uses.
+#[must_use]
+pub fn features_heading(count: usize, above: usize) -> String {
+    if above == 0 {
+        format!("What the copy uses ({count}), none newer than the version chosen")
+    } else {
+        format!("What the copy uses ({count}), {above} newer than the version chosen")
+    }
+}
+
+/// Hover on the fold.
+#[must_use]
+pub const fn features_tooltip() -> &'static str {
+    "Each feature of the PDF format the copy uses that an older version does not have, with \
+     the version it arrived in, how many parts use it and the first of them. A feature newer \
+     than the version chosen is why the copy cannot be lowered, or why a step was left out."
+}
+
+/// One feature the copy uses: `objects` parts, the first `example`
+/// (`None` for a feature of the whole file), and whether it is newer than
+/// the target.
+#[must_use]
+pub fn feature(
+    label: &str,
+    introduced: &PdfVersion,
+    objects: usize,
+    example: Option<u32>,
+    above: bool,
+) -> String {
+    let where_ = example.map_or_else(
+        || "the whole file".to_owned(),
+        |n| format!("{objects} part(s), first object {n}"),
+    );
+    let mark = if above { "newer than chosen: " } else { "" };
+    format!("{mark}{label}, PDF {introduced}, in {where_}.")
+}
+
+/// Parts left as stored because `what` needs a newer version than the one
+/// the copy is made compatible with.
+#[must_use]
+pub fn above_target(what: &str, needs: &PdfVersion, target: &PdfVersion) -> String {
+    format!("{what} needs PDF {needs}, newer than the PDF {target} chosen")
+}

@@ -352,7 +352,7 @@ fn page_body(
             ui.add_space(10.0);
             display::smooth_pictures(ui, prefs);
             ui.add_space(10.0);
-            display::graphics_card(ui, prefs);
+            display::graphics_card(ui, prefs, &mut draft.open_card_switches);
             ui.add_space(10.0);
             display::overprint_default(ui, prefs);
             ui.add_space(10.0);

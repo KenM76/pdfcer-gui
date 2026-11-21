@@ -13,6 +13,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/mod.md`.
 
 pub mod about;
+/// Every graphics-card switch beside its status on this machine.
+pub mod cardswitches;
 /// The *What pressing it does* chooser, drawn into the form-field placement
 /// dialog for a push button. Its own module because it is the only row group
 /// there that carries a disclosure obligation.
@@ -30,6 +32,8 @@ pub mod compact_compare;
 pub mod compact_images;
 /// The compact window's starting point and size target.
 pub mod compact_profile;
+/// The compact window's Brotli switch.
+pub mod compact_streams;
 pub mod compact_target;
 /// The compact window's *Make compatible with* list.
 pub mod compact_version;
@@ -521,6 +525,9 @@ pub struct DialogsState {
     /// models folder, not a document, so closing a document leaves it open
     /// and a running job finishes.
     ocr_models: Option<ocr_models::OcrModelsDialog>,
+    /// The Graphics card switches window. Application-scoped: its switches
+    /// are the program's, not a document's.
+    card_switches: Option<cardswitches::CardSwitchesDialog>,
 
     /// The Remove-fonts window, when one is open.
     ///
@@ -855,6 +862,15 @@ impl DialogsState {
         // document, and is wanted before the first document is opened.
         if self.ocr_models.as_mut().map(|d| d.show(ctx, prefs)) == Some(false) {
             self.ocr_models = None;
+        }
+        #[cfg(feature = "3d")]
+        let viewer = self.model3d.as_mut();
+        #[cfg(not(feature = "3d"))]
+        let viewer = None;
+        if let Some(d) = self.card_switches.as_mut()
+            && !d.show(ctx, prefs, viewer, actions)
+        {
+            self.card_switches = None;
         }
         // A batch print previews its own first file, so it is shown whether
         // or not a document is open, and closing one does not drop it.

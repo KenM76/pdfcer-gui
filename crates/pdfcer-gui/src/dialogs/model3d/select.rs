@@ -8,19 +8,24 @@
 //! figure is said with its fit, and a file that separates no faces is said to
 //! give the whole part's figures. Everything is said off the picture; the
 //! picture marks only the picks, the picked edge and the smallest span.
-//! Nothing is written to the file.
+//! Nothing is written to the file. The unit, the coordinate system and the
+//! projection the figures are said in are `readout`'s.
 
 use egui::{RichText, Ui};
+use pdfcer_3d::vec3::sub;
 use pdfcer_3d::{
-    DEFAULT_CORNER_DEGREES, DEFAULT_FLAT_DEGREES, EdgeFigures, EdgeShape, EntityDistance,
-    FaceFigures, FaceShape, FaceSource, Hit, MeasureEntity, Selection, SurfacePick, TriangleMesh,
-    edge_at, entity_distance, face_figures, vertex_at,
+    CoordinateFrame, DEFAULT_CORNER_DEGREES, DEFAULT_FLAT_DEGREES, EdgeFigures, EdgeShape,
+    EntityDistance, FaceFigures, FaceShape, FaceSource, Hit, MeasureEntity, ProjectedArea,
+    Selection, SurfacePick, TriangleMesh, edge_at, entity_distance, face_figures,
+    face_projected_area, vertex_at,
 };
 
 use super::ModelView;
-use super::measure::{SELECT, Said, units_word};
+use super::measure::{SELECT, Said};
 use super::measure_tab::REGION_START_AGAIN;
+use super::readout::{self, Change, Readout, triple};
 use super::surfaces::row;
+use crate::text::model3dreadout::{self as tr, Lengths};
 use crate::text::model3dselect as t;
 
 /// The measure's button in the kind row.
@@ -56,13 +61,29 @@ struct Picked {
     figures: Result<Figures, String>,
 }
 
-/// The measure's state; the choice of what a click picks outlives the picks.
+/// What the chosen projection made of the picks, and the plane's normal and
+/// the number of picks it was made for, so a turn or a pick remakes it.
+#[derive(Debug, Clone, Default)]
+struct Projected {
+    normal: Option<[f64; 3]>,
+    picks: usize,
+    /// The smallest span's projected length and the signed part removed.
+    minimum: Option<(f64, f64)>,
+    /// Each pick's projected area, for a face pick.
+    faces: Vec<Option<Result<ProjectedArea, String>>>,
+}
+
+/// The measure's state; the choice of what a click picks and the readout's
+/// choices outlive the picks.
 #[derive(Debug, Clone, Default)]
 pub(super) struct Selected {
     /// What a click picks, a place in [`ENTITIES`].
     pub entity: usize,
+    /// How the figures are said.
+    pub readout: Readout,
     picks: Vec<Picked>,
     distance: Option<Result<EntityDistance, String>>,
+    projected: Projected,
 }
 
 impl Selected {
@@ -70,6 +91,47 @@ impl Selected {
     pub(super) fn clear(&mut self) {
         self.picks.clear();
         self.distance = None;
+        self.projected = Projected::default();
+    }
+
+    /// The system two straight edge picks set, when they can.
+    fn frame_of_picks(&self) -> Option<CoordinateFrame> {
+        let (Some(Ok(d)), [a, b]) = (&self.distance, self.picks.as_slice()) else {
+            return None;
+        };
+        let (Ok(Figures::Edge(first)), Ok(Figures::Edge(second))) = (&a.figures, &b.figures) else {
+            return None;
+        };
+        readout::frame_from(first, second, &d.minimum)
+    }
+
+    /// Remake the projection when the plane or the picks changed.
+    fn project(&mut self, meshes: &[TriangleMesh], toward_eye: Option<[f64; 3]>) {
+        let normal = self.readout.normal(toward_eye);
+        if self.projected.normal == normal && self.projected.picks == self.picks.len() {
+            return;
+        }
+        let minimum = match (&self.distance, normal) {
+            (Some(Ok(d)), Some(n)) => Readout::flattened(&d.minimum, n),
+            _ => None,
+        };
+        let faces = self
+            .picks
+            .iter()
+            .map(|p| match (&p.figures, normal) {
+                (Ok(Figures::Face(_)), Some(n)) => Some(
+                    face_projected_area(meshes, &p.selection.pick, n).map_err(|e| e.to_string()),
+                ),
+                _ => None,
+            })
+            .collect();
+        self.projected = Projected {
+            normal,
+            picks: self.picks.len(),
+            minimum,
+            faces,
+        };
+        trace_projected(self.readout.plane_word(), &self.projected);
     }
 
     fn holds(&self) -> bool {
@@ -122,7 +184,7 @@ impl Selected {
         };
         let n = self.picks.len() + 1;
         let figures = figures_of(meshes, &selection);
-        trace_pick(n, &selection, &figures);
+        trace_pick(n, &selection, &figures, self.readout.frame.as_ref());
         self.picks.push(Picked { selection, figures });
         if let [a, b] = self.picks.as_slice() {
             let d = entity_distance(
@@ -170,8 +232,17 @@ fn entity_word(e: MeasureEntity) -> &'static str {
     }
 }
 
-fn trace_pick(n: usize, s: &Selection, figures: &Result<Figures, String>) {
+fn trace_pick(
+    n: usize,
+    s: &Selection,
+    figures: &Result<Figures, String>,
+    frame: Option<&CoordinateFrame>,
+) {
     let [x, y, z] = s.pick.point;
+    let local = match (figures, frame) {
+        (Ok(Figures::Corner(at)), Some(f)) => format!(" local={}", triple(f.point_to_local(*at))),
+        _ => String::new(),
+    };
     let head = format!(
         "n={n} entity={} mesh={} triangle={} at={x:.6},{y:.6},{z:.6}", // ui-text-exempt: diagnostic trace, never displayed
         entity_word(s.entity),
@@ -180,7 +251,7 @@ fn trace_pick(n: usize, s: &Selection, figures: &Result<Figures, String>) {
     );
     // ui-text-exempt: diagnostic trace, never displayed
     crate::diag::trace(|| match figures {
-        Ok(f) => format!("model-select-figures {head} {}", trace_figures(f)),
+        Ok(f) => format!("model-select-figures {head} {}{local}", trace_figures(f)),
         Err(why) => format!("model-select-refused {head} why={why}"),
     });
 }
@@ -236,10 +307,35 @@ fn trace_distance(d: &Result<EntityDistance, String>) {
     });
 }
 
-/// The lines one pick's figures are said in, headline first.
-fn figure_lines(f: &Figures, unit: &str) -> Vec<String> {
+fn trace_projected(plane: &str, p: &Projected) {
+    if p.minimum.is_none() && p.faces.iter().all(Option::is_none) {
+        return;
+    }
+    let (minimum, out) = p.minimum.map_or_else(
+        || ("-".to_owned(), "-".to_owned()),
+        |(m, o)| (format!("{m:.6}"), format!("{o:.6}")),
+    );
+    let faces: String = p
+        .faces
+        .iter()
+        .enumerate()
+        .map(|(i, f)| match f {
+            Some(Ok(a)) => format!(" face{}={:.6}/{:.6}", i + 1, a.toward, a.away),
+            Some(Err(_)) => format!(" face{}=refused", i + 1),
+            None => format!(" face{}=-", i + 1),
+        })
+        .collect();
+    // ui-text-exempt: diagnostic trace, never displayed
+    crate::diag::trace(|| {
+        format!("model-select-projected plane={plane} minimum={minimum} out={out}{faces}")
+    });
+}
+
+/// The lines one pick's figures are said in, headline first; a corner in
+/// `r`'s system.
+fn figure_lines(f: &Figures, unit: &Lengths<'_>, r: &Readout) -> Vec<String> {
     match f {
-        Figures::Corner(at) => vec![t::corner(*at)],
+        Figures::Corner(at) => vec![t::corner(r.point(*at), unit)],
         Figures::Edge(e) => {
             let mut lines = vec![t::edge_length(e.length, unit)];
             match e.shape {
@@ -287,22 +383,25 @@ fn figure_lines(f: &Figures, unit: &str) -> Vec<String> {
     }
 }
 
-fn pick_lines(p: &Picked, unit: &str) -> Vec<String> {
+fn pick_lines(p: &Picked, unit: &Lengths<'_>, r: &Readout) -> Vec<String> {
     match &p.figures {
-        Ok(f) => figure_lines(f, unit),
+        Ok(f) => figure_lines(f, unit, r),
         Err(why) => vec![t::refused(why)],
     }
 }
 
-fn distance_lines(d: &Result<EntityDistance, String>, unit: &str) -> Vec<String> {
+fn distance_lines(
+    d: &Result<EntityDistance, String>,
+    unit: &Lengths<'_>,
+    r: &Readout,
+) -> Vec<String> {
     let d = match d {
         Ok(d) => d,
         Err(why) => return vec![t::refused(why)],
     };
-    let [x, y, z] = d.minimum.delta();
     let mut lines = vec![
         t::minimum(d.minimum.length, unit),
-        crate::text::model3dmeasure::along_axes(x, y, z),
+        tr::deltas(unit, r.vector(d.minimum.delta())),
         t::maximum(d.maximum.length, unit),
     ];
     if let Some(c) = d.centres {
@@ -311,7 +410,95 @@ fn distance_lines(d: &Result<EntityDistance, String>, unit: &str) -> Vec<String>
     lines
 }
 
+/// What the projection made of the smallest span, said on `plane`.
+fn projected_distance_line(p: &Projected, plane: &str, unit: &Lengths<'_>) -> Option<String> {
+    let (length, out) = p.minimum?;
+    Some(tr::projected_distance(
+        plane,
+        &unit.length(length),
+        &unit.length(out.abs()),
+    ))
+}
+
+/// What the projection made of pick `i`'s face, if it is one.
+fn projected_face_lines(
+    p: &Projected,
+    i: usize,
+    plane: &str,
+    unit: &Lengths<'_>,
+    grown: bool,
+) -> Vec<String> {
+    let mut lines = match p.faces.get(i) {
+        Some(Some(Ok(a))) if a.toward.min(a.away) > 0.0 => vec![tr::projected_area_sides(
+            plane,
+            &unit.area(a.toward),
+            &unit.area(a.away),
+        )],
+        Some(Some(Ok(a))) => vec![tr::projected_area(plane, &unit.area(a.toward + a.away))],
+        Some(Some(Err(why))) => vec![tr::not_projected(why)],
+        _ => return Vec::new(),
+    };
+    if grown {
+        lines.push(tr::LARGER_FACE_PROJECTED.to_owned());
+    }
+    lines
+}
+
 impl ModelView {
+    /// The line from the view's target to its eye, the screen's normal.
+    fn toward_eye(&self) -> Option<[f64; 3]> {
+        self.view_camera(1.0).ok().map(|c| sub(c.eye, c.target))
+    }
+
+    /// The readout's rows, and what a change made.
+    fn readout_controls(&mut self, ui: &mut Ui) {
+        let units = self.model.drawn.units;
+        let stated = units.is_some_and(|u| u.from_cad_file);
+        let can_set = self.measure.select.frame_of_picks().is_some();
+        let s = &mut self.measure.select;
+        let Some(change) = readout::controls(ui, &mut s.readout, stated, can_set) else {
+            return;
+        };
+        if change == Change::SetFrame {
+            s.readout.frame = s.frame_of_picks();
+        }
+        let r = &s.readout;
+        let l = r.lengths(units);
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| match change {
+            Change::Unit | Change::Second => format!(
+                "model-select-unit unit={} second={} factor={:.6} shown={}",
+                r.unit.map_or("file", |u| u.symbol()),
+                r.second.map_or("none", |u| u.symbol()),
+                l.factor,
+                l.length(1.0).replace(' ', "_")
+            ),
+            Change::Decimals => format!("model-select-decimals n={}", l.decimals),
+            Change::Projection => format!("model-select-projection plane={}", r.plane_word()),
+            Change::SetFrame | Change::ModelFrame => match &r.frame {
+                Some(f) => {
+                    let [x, y, z] = f.axes();
+                    format!(
+                        "model-select-frame set=1 origin={} x={} y={} z={}",
+                        triple(f.origin()),
+                        triple(x),
+                        triple(y),
+                        triple(z)
+                    )
+                }
+                None => "model-select-frame set=0".to_owned(),
+            },
+        });
+    }
+
+    /// Remake the projection for this frame's view.
+    fn select_project(&mut self) {
+        let toward = self.toward_eye();
+        self.measure
+            .select
+            .project(&self.model.drawn.meshes, toward);
+    }
+
     /// A click on the model while this measure is chosen.
     pub(super) fn select_pick(&mut self, hit: &Hit) {
         self.measure.select.pick(&self.model.drawn.meshes, hit);
@@ -360,6 +547,8 @@ impl ModelView {
                 format!("model-select-entity entity={}", entity_word(ENTITIES[i]))
             });
         }
+        self.readout_controls(ui);
+        self.select_project();
     }
 
     /// Everything the picks measured, in the Measure tab.
@@ -368,9 +557,12 @@ impl ModelView {
         if !s.holds() {
             return;
         }
-        let unit = units_word(self.model.drawn.units);
+        let (r, unit) = (&s.readout, s.readout.lengths(self.model.drawn.units));
+        let plane = tr::plane_name(r.projection);
         if let Some(d) = &s.distance {
-            for (i, line) in distance_lines(d, unit).iter().enumerate() {
+            let mut lines = distance_lines(d, &unit, r);
+            lines.extend(projected_distance_line(&s.projected, plane, &unit));
+            for (i, line) in lines.iter().enumerate() {
                 if i == 0 {
                     ui.label(RichText::new(line).size(VALUE_SIZE));
                 } else {
@@ -378,13 +570,15 @@ impl ModelView {
                 }
             }
         }
-        for (which, p) in [t::FIRST, t::SECOND].into_iter().zip(&s.picks) {
+        for (i, (which, p)) in [t::FIRST, t::SECOND].into_iter().zip(&s.picks).enumerate() {
             ui.label(which);
-            for line in pick_lines(p, unit) {
+            let grown = matches!(&p.figures, Ok(Figures::Face(f)) if f.source == FaceSource::Grown);
+            let projected = projected_face_lines(&s.projected, i, plane, &unit, grown);
+            for line in pick_lines(p, &unit, r).into_iter().chain(projected) {
                 ui.small(line);
             }
         }
-        if unit.is_empty() {
+        if unit.unit.is_empty() {
             ui.small(t::NO_UNIT);
         }
     }
@@ -392,12 +586,13 @@ impl ModelView {
     /// The measurement under the picture: the headline and two rows whatever
     /// it holds, so the picture keeps its size from one pick to the next.
     pub(super) fn select_readout(&mut self, ui: &mut Ui) {
+        self.select_project();
         let s = &self.measure.select;
-        let unit = units_word(self.model.drawn.units);
+        let (r, unit) = (&s.readout, s.readout.lengths(self.model.drawn.units));
         let mut lines = match (&s.distance, s.picks.last()) {
-            (Some(d), _) => distance_lines(d, unit),
+            (Some(d), _) => distance_lines(d, &unit, r),
             (None, Some(p)) => {
-                let mut l = pick_lines(p, unit);
+                let mut l = pick_lines(p, &unit, r);
                 l.insert(1, t::next(1, s.entity));
                 l
             }
@@ -441,6 +636,10 @@ mod tests {
     #[test]
     fn a_corner_is_said_in_one_line() {
         let f = Figures::Corner([1.0, 0.0, 0.0]);
-        assert_eq!(figure_lines(&f, "mm"), vec![t::corner([1.0, 0.0, 0.0])]);
+        let (unit, r) = (Lengths::plain("mm"), Readout::default());
+        assert_eq!(
+            figure_lines(&f, &unit, &r),
+            vec![t::corner([1.0, 0.0, 0.0], &unit)]
+        );
     }
 }

@@ -18,10 +18,10 @@ use crate::report::CheckReport;
 use crate::trace::TraceLine;
 
 const METHOD: &str = "python fixtures/glow-room.PROVENANCE.py <pdfcer.exe>";
-const SWITCH: &str = "model3d.measure.on";
-const SELECT: &str = "model3d.measure.select";
-const ENTITY: &str = "model3d.select.entity.";
-const AGAIN: &str = "model3d.measure.again";
+pub(crate) const SWITCH: &str = "model3d.measure.on";
+pub(crate) const SELECT: &str = "model3d.measure.select";
+pub(crate) const ENTITY: &str = "model3d.select.entity.";
+pub(crate) const AGAIN: &str = "model3d.measure.again";
 const FIGURES: &str = "model-select-figures";
 const REFUSED: &str = "model-select-refused";
 const DISTANCE: &str = "model-select-distance";
@@ -36,7 +36,7 @@ const FLOOR_HALF: f64 = 2.0;
 /// `tube-b`, x -1.0 to -0.8, y -0.5 to 1.5, height 0 to 0.2, beside the box,
 /// x and y -0.5 to 0.5, height 0 to 1: their nearest sides are 0.3 apart,
 /// their farthest corners `sqrt(1.5^2 + 2^2 + 1^2)`.
-const TUBE_B: (f64, f64) = (-1.0, -0.8);
+pub(crate) const TUBE_B: (f64, f64) = (-1.0, -0.8);
 const BOX_TO_TUBE_NEAREST: f64 = 0.3;
 const BOX_TO_TUBE_FARTHEST: f64 = 2.692_582_404;
 /// The box's six unit squares.
@@ -87,28 +87,28 @@ impl Check for TheViewerMeasuresFacesEdgesCorners {
 }
 
 /// A spot that landed on the model, with the figures its face pick traced.
-struct Landed {
-    spot: Spot,
-    at: [f64; 3],
+pub(crate) struct Landed {
+    pub(crate) spot: Spot,
+    pub(crate) at: [f64; 3],
     line: TraceLine,
 }
 
 impl Landed {
-    fn on_floor(&self) -> bool {
+    pub(crate) fn on_floor(&self) -> bool {
         self.at[2].abs() <= SLACK
     }
 
     /// How far inside the floor's outline, so the floor spot nearest an edge
     /// is the one to pick edges and corners with.
-    fn inset(&self) -> f64 {
+    pub(crate) fn inset(&self) -> f64 {
         FLOOR_HALF - self.at[0].abs().max(self.at[1].abs())
     }
 
-    fn within(&self, (lo, hi): (f64, f64)) -> bool {
+    pub(crate) fn within(&self, (lo, hi): (f64, f64)) -> bool {
         (lo - SLACK..=hi + SLACK).contains(&self.at[0]) && self.at[2] > SLACK
     }
 
-    fn on_box(&self) -> bool {
+    pub(crate) fn on_box(&self) -> bool {
         let [x, y, z] = self.at;
         x.abs() <= 0.5 + SLACK && y.abs() <= 0.5 + SLACK && z > SLACK
     }
@@ -118,15 +118,15 @@ fn near(line: &TraceLine, key: &str, want: f64) -> bool {
     (number(line, key) - want).abs() <= SLACK
 }
 
-struct Selecting<'a>(Measuring<'a>);
+pub(crate) struct Selecting<'a>(pub(crate) Measuring<'a>);
 
 impl Selecting<'_> {
-    fn drive(&self) -> &Drive<'_> {
+    pub(crate) fn drive(&self) -> &Drive<'_> {
         self.0.0
     }
 
     /// Press `region` on the options menu and close the menu again.
-    fn choose(&self, region: &str) -> Result<bool> {
+    pub(crate) fn choose(&self, region: &str) -> Result<bool> {
         let pressed = self.0.press(region)?;
         close(
             self.drive().session,
@@ -137,7 +137,7 @@ impl Selecting<'_> {
     }
 
     /// Click `spot`; the figures or refusal line it traced, if it landed.
-    fn click(&self, (at, vp): &Spot) -> Result<Option<TraceLine>> {
+    pub(crate) fn click(&self, (at, vp): &Spot) -> Result<Option<TraceLine>> {
         let session = self.drive().session;
         let (figures, refused) = (count(session, FIGURES)?, count(session, REFUSED)?);
         self.drive().pointer.click_in(session, vp.as_deref(), *at)?;
@@ -151,7 +151,7 @@ impl Selecting<'_> {
     }
 
     /// Every spot of the grid that lands on the model, each picked alone.
-    fn survey(&self) -> Result<Vec<Landed>> {
+    pub(crate) fn survey(&self) -> Result<Vec<Landed>> {
         let mut landed = Vec::new();
         for spot in self.0.spots()? {
             self.drive().click(AGAIN, "", "model-select-cleared")?;

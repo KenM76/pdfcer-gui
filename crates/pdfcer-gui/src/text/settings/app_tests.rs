@@ -633,7 +633,7 @@ mod tests {
         };
         for (name, note) in [
             ("mask_resample", mask_nearest_note()),
-            ("image_minify", minify_point_note()),
+            ("image_minify", minify_area_note()),
             ("word_gap_ratio", word_gap_note()),
             ("unmappable_code", unmappable_replacement_note()),
             ("actual_text", actual_text_always_note()),

@@ -9,7 +9,10 @@
 //! The settings are the operator's defaults: written only by *Save as
 //! default* (or the Settings window), and read as each viewer opens. *Reset
 //! to defaults* takes up [`factory`]'s, the built-in ones, without writing.
-//! The OS window's size and the menu's tab alone are written as they change
+//! The OS window's size, the menu's tab and the face, edge and corner
+//! measure's unit and second unit (each its engine symbol, empty for the
+//! file's own or none) and places
+//! alone are written as they change
 //! and no pointer is held, merged into the file's keys so a viewer never
 //! overwrites another's saved defaults. A key missing or unreadable leaves
 //! that setting at its default. The projection and the camera are the
@@ -19,7 +22,7 @@ use super::figure::{MEASURE, Measures};
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
-use pdfcer_3d::{LampCut, LightSense, RenderModeKind};
+use pdfcer_3d::{LampCut, LengthUnit, LightSense, RenderModeKind};
 use pdfcer_3d_nav::{AUTO_RANGE, CURVES, LensKind};
 use pdfcer_core::threed::ThreeDLighting;
 
@@ -28,6 +31,7 @@ use super::bindings::{self, Act, Bindings, Drag, Run};
 use super::card::CardParts;
 use super::looks::LAMP_NEAREST;
 use super::nav;
+use super::readout::MAX_DECIMALS;
 use super::shot::Shot;
 use super::shotlook::LookSet;
 use super::sunlight::{BEARING_RANGE, GAIN_RANGE, HEIGHT_RANGE, KELVIN_RANGE, Light};
@@ -40,7 +44,14 @@ use crate::text::model3dlook::{Highlights, SeeThrough};
 pub(super) type Settings = BTreeMap<String, String>;
 
 /// The keys written as they change rather than by *Save as default*.
-pub(super) const KEPT_AS_THEY_CHANGE: [&str; 3] = ["tab", "window_w", "window_h"];
+pub(super) const KEPT_AS_THEY_CHANGE: [&str; 6] = [
+    "tab",
+    "window_w",
+    "window_h",
+    "measure_unit",
+    "measure_second_unit",
+    "measure_decimals",
+];
 
 pub(super) const SENSES: [LightSense; 2] = [LightSense::TowardsLight, LightSense::Emitted];
 pub(super) const SEE_THROUGH: [SeeThrough; 3] =
@@ -270,6 +281,34 @@ fn get_look(get: &Get<'_>, look: &mut LookSet) {
     get.pick("highlights", &HIGHLIGHTS, &mut x.highlights);
 }
 
+fn put_card(put: &mut Put<'_>, card: CardParts) {
+    put.flag("card_picture", card.picture);
+    for (i, on) in card.parts.iter().enumerate() {
+        put.flag(&format!("card_part_{i}"), *on);
+    }
+}
+
+fn get_card(get: &Get<'_>, card: &mut CardParts) {
+    get.flag("card_picture", &mut card.picture);
+    for (i, on) in card.parts.iter_mut().enumerate() {
+        get.flag(&format!("card_part_{i}"), on);
+    }
+}
+
+/// The card switches a new viewer opens with, from the saved defaults.
+pub(crate) fn saved_card(settings: &Settings) -> CardParts {
+    let mut card = CardParts::default();
+    get_card(&Get(settings, ""), &mut card);
+    card
+}
+
+/// `card` as saved-default keys, for `PrefAction::ModelViewMerge`.
+pub(crate) fn card_keys(card: &CardParts) -> Settings {
+    let mut map = Settings::new();
+    put_card(&mut Put(&mut map, ""), *card);
+    map
+}
+
 /// What one viewer keeps, apart from its tab and OS window.
 struct Kept<'a> {
     prefs: &'a nav::Prefs,
@@ -298,10 +337,7 @@ impl Kept<'_> {
         put.pick("lens", &LensKind::ALL, &lens.kind);
         put.pick("lens_curve", &CURVES, &lens.curve);
         put.value("lens_auto_at", format!("{:.0}", lens.auto_at));
-        put.flag("card_picture", self.card.picture);
-        for (i, on) in self.card.parts.iter().enumerate() {
-            put.flag(&format!("card_part_{i}"), *on);
-        }
+        put_card(&mut put, *self.card);
         put_look(&mut Put(map, "look_"), self.look);
         let s = self.shot;
         let mut put = Put(map, "shot_");
@@ -350,6 +386,10 @@ impl ModelView {
         .put(&mut map);
         let mut put = Put(&mut map, "");
         put.value("tab", self.nav.options_tab);
+        let r = &self.measure.select.readout;
+        put.value("measure_unit", r.unit.map_or("", |u| u.symbol()));
+        put.value("measure_second_unit", r.second.map_or("", |u| u.symbol()));
+        put.value("measure_decimals", r.decimals);
         if let Some([w, h]) = self.nav.window.or(self.nav.window_open) {
             put.value("window_w", w);
             put.value("window_h", h);
@@ -374,13 +414,18 @@ impl ModelView {
         get_figure(&Get(settings, "figure_"), &mut p.figure);
         self.nav.recalled(p);
         get.number("tab", 0..=5, &mut self.nav.options_tab);
+        let r = &mut self.measure.select.readout;
+        if let Some(unit) = get.value::<String>("measure_unit") {
+            r.unit = unit.parse::<LengthUnit>().ok();
+        }
+        if let Some(unit) = get.value::<String>("measure_second_unit") {
+            r.second = unit.parse::<LengthUnit>().ok();
+        }
+        get.number("measure_decimals", 0..=MAX_DECIMALS, &mut r.decimals);
         get.pick("lens", &LensKind::ALL, &mut self.lens.kind);
         get.pick("lens_curve", &CURVES, &mut self.lens.curve);
         get.number("lens_auto_at", AUTO_RANGE, &mut self.lens.auto_at);
-        get.flag("card_picture", &mut self.gpu.card.picture);
-        for (i, on) in self.gpu.card.parts.iter_mut().enumerate() {
-            get.flag(&format!("card_part_{i}"), on);
-        }
+        get_card(&get, &mut self.gpu.card);
         let mut size = [0.0_f32; 2];
         get.number("window_w", 200.0..=20_000.0, &mut size[0]);
         get.number("window_h", 200.0..=20_000.0, &mut size[1]);

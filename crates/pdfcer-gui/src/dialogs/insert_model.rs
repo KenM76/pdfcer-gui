@@ -30,6 +30,9 @@ pub const REGION_LIGHTING: &str = "insert-model.lighting";
 /// The glTF fill-light switch.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_FILL_LIGHT: &str = "insert-model.gltf.fill-light";
+/// The glTF occlusion-map switch.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_OCCLUSION: &str = "insert-model.gltf.occlusion";
 
 const ACTIVATIONS: [ThreeDActivation; 3] = [
     ThreeDActivation::Click,
@@ -64,13 +67,14 @@ impl InsertModelDialog {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "insert-model-placed page={} activation={:?} lighting={:?} poster={} gltf={} fill_light={}",
+                    "insert-model-placed page={} activation={:?} lighting={:?} poster={} gltf={} fill_light={} occlusion={}",
                     self.page,
                     self.placement.activation,
                     self.placement.lighting,
                     self.placement.render_poster,
                     self.gltf,
-                    self.placement.gltf_fill_light
+                    self.placement.gltf_fill_light,
+                    self.placement.gltf_bake_occlusion
                 )
             });
             actions.push(Action::Attachment(AttachmentAction::InsertModel {
@@ -114,6 +118,10 @@ impl InsertModelDialog {
                 .checkbox(&mut self.placement.gltf_fill_light, t::gltf_fill_light())
                 .on_hover_text(t::gltf_fill_light_tooltip());
             crate::diag::ui_rect_visible(REGION_FILL_LIGHT, fill.rect, ui.clip_rect());
+            let occlusion = ui
+                .checkbox(&mut self.placement.gltf_bake_occlusion, t::gltf_occlusion())
+                .on_hover_text(t::gltf_occlusion_tooltip());
+            crate::diag::ui_rect_visible(REGION_OCCLUSION, occlusion.rect, ui.clip_rect());
         }
         ui.add_space(12.0);
         ui.separator();
@@ -218,6 +226,7 @@ pub fn open_for(
             gltf_linear: true,
             gltf_z_up: true,
             gltf_fill_light: true,
+            gltf_bake_occlusion: true,
         },
         close_requested: false,
         place_requested: false,

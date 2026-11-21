@@ -19,6 +19,11 @@
 //! by at most the distance chosen. [`Choices::linearize`] writes the copy
 //! for Fast Web View through `RebuildOptions::linearize`; the engine keeps
 //! that copy even when it is larger, because the layout was asked for.
+//! [`Choices::brotli`] re-encodes with `StreamAction::Brotli` in place of the
+//! preset's Flate. [`Choices::compatibility`] is the window's *Make compatible
+//! with* version, set as `OptimizeSettings::compatibility` on every run, a
+//! loaded settings file's included, so a step needing a newer version is
+//! skipped with that version as its reason rather than lowered afterwards.
 //! [`Choices::preset`] is the engine preset the switches are laid over
 //! ([`settings_for`]); [`Choices::budget`] sends the copy through
 //! `EditSession::optimize_to_budget`, reported as a [`Budget`].
@@ -28,13 +33,15 @@
 use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
+use pdfcer_core::PdfVersion;
 use pdfcer_core::document::Document;
 use pdfcer_core::edit::EditSession;
+use pdfcer_core::optimize::ImageSkip;
 use pdfcer_core::optimize::budget::BudgetAttempt;
 use pdfcer_core::optimize::resubset::ResubsetFonts;
 use pdfcer_core::optimize::{
     CleanupOptions, DiscardOptions, OptimizePlan, OptimizeSettings, OptimizedFile, PlannedChange,
-    Preset, RebuildOptions, StreamAction,
+    Preset, RebuildOptions, SkipReason, StreamAction,
 };
 use pdfcer_core::optimize::{ContentPatch, Rounding, Tolerance};
 use pdfcer_core::settings::Settings;
@@ -45,6 +52,9 @@ use crate::app::settings::SettingsExt;
 use crate::dialogs::compact_classes::Classes;
 use crate::dialogs::compact_images::{Pictures, Tally};
 use crate::text::compact as t;
+
+/// Brotli's quality when [`Choices::brotli`] is on: the engine's smallest.
+const BROTLI_QUALITY: u8 = 11;
 
 /// What the operator asked the copy to have done.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -75,6 +85,11 @@ pub struct Choices {
     /// Lay the copy out for Fast Web View: page 1 first, then a table
     /// locating every other page. Takes the place of packing the index.
     pub linearize: bool,
+    /// Re-encode with Brotli in place of Flate; acted on only with
+    /// [`Self::recompress`].
+    pub brotli: bool,
+    /// The version the copy is made compatible with; `None` keeps its own.
+    pub compatibility: Option<PdfVersion>,
     /// The engine preset the switches above are laid over.
     pub preset: Preset,
     /// Make the copy no larger than this many bytes.
@@ -137,6 +152,9 @@ pub struct Recompressed {
     pub unrounded: Vec<String>,
     /// What the size search did, when one ran.
     pub budget: Option<Budget>,
+    /// Parts left as stored because their new filter needs a version above
+    /// [`Choices::compatibility`].
+    pub above_target: usize,
 }
 
 /// What the size search did.
@@ -168,6 +186,12 @@ pub fn settings_for(choices: Choices) -> Result<OptimizeSettings, String> {
         preset.structure = RebuildOptions::none();
     }
     preset.structure.linearize = choices.linearize;
+    if choices.recompress && choices.brotli {
+        preset.streams = StreamAction::Brotli {
+            quality: BROTLI_QUALITY,
+        };
+    }
+    preset.compatibility = choices.compatibility;
     preset.cleanup = CleanupOptions {
         invalid_links: choices.broken,
         invalid_bookmarks: choices.broken,
@@ -260,8 +284,7 @@ pub fn recompress(
 }
 
 /// [`recompress`], running a loaded settings file's `profile` in place of
-/// the preset, switches and size target when there is one. The fonts switch
-/// is laid over it: a settings file cannot say it.
+/// the preset, switches and size target when there is one.
 ///
 /// # Errors
 ///
@@ -278,9 +301,7 @@ pub fn recompress_with(
         Some(loaded) => {
             let mut preset = loaded.clone();
             preset.allow_signed = true;
-            if choices.fonts {
-                preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
-            }
+            preset.compatibility = choices.compatibility;
             (preset, None)
         }
         None => (settings_for(choices)?, choices.budget),
@@ -289,6 +310,7 @@ pub fn recompress_with(
         run(&mut session, &preset, budget, &settings.save_options())?;
     let pictures = Tally::of(&plan);
     let compared = crate::dialogs::compact_compare::rows(&plan);
+    let above_target = plan.skipped.iter().filter(|s| above(&s.reason)).count();
     let mut left = BTreeMap::new();
     for skipped in &plan.skipped {
         *left.entry(t::left_because(&skipped.reason)).or_insert(0) += 1;
@@ -325,7 +347,17 @@ pub fn recompress_with(
         content_rounded: tidied.iter().map(|c| c.numbers_rounded).sum(),
         unrounded: t::unrounded(tidied.iter().copied()),
         budget,
+        above_target,
     })
+}
+
+/// Whether `reason` is the compatibility target refusing a newer filter.
+const fn above(reason: &SkipReason) -> bool {
+    matches!(
+        reason,
+        SkipReason::AboveCompatibility { .. }
+            | SkipReason::ImageUnsupported(ImageSkip::AboveCompatibility { .. })
+    )
 }
 
 /// The trace's word for a size search: `none`, `met` or `missed`.
@@ -361,7 +393,7 @@ impl Job {
                 let result = recompress_with(&copy, &settings, choices, profile.as_ref());
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} matched={} short={} compared={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} profile={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} matched={} short={} compared={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} profile={} brotli={} compat={} above={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -378,6 +410,11 @@ impl Job {
                         result.as_ref().is_ok_and(|r| r.linearized),
                         preset.as_str(),
                         profile.is_some(),
+                        choices.recompress && choices.brotli,
+                        choices
+                            .compatibility
+                            .map_or_else(|| "keep".to_owned(), |v| v.to_string()),
+                        result.as_ref().map_or(0, |r| r.above_target),
                         target_word(result.as_ref().ok().and_then(|r| r.budget.as_ref())),
                         result
                             .as_ref()
@@ -434,6 +471,8 @@ mod tests {
         content: false,
         round: None,
         linearize: false,
+        brotli: false,
+        compatibility: None,
         preset: Preset::Lossless,
         budget: None,
     };
@@ -465,6 +504,36 @@ mod tests {
             "<< /Type /Outlines /First 7 0 R /Last 7 0 R /Count 1 >>".to_string(),
             "<< /Title (Gone) /Parent 6 0 R /Dest [9 0 R /Fit] >>".to_string(),
         ])
+    }
+
+    /// Brotli writes `/BrotliDecode` with the engine's reader note; with the
+    /// copy made compatible with 1.4 the same request is skipped with 1.4
+    /// named, and nothing is written as Brotli.
+    #[test]
+    fn brotli_is_written_unless_the_target_is_older() {
+        let copy = unfiltered();
+        let brotli = Choices {
+            brotli: true,
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), brotli).expect("optimizes");
+        assert!(done.notes.iter().any(|n| n.contains("Brotli")), "{done:?}");
+        let bytes = done.bytes.expect("smaller");
+        assert!(bytes.windows(13).any(|w| w == b"/BrotliDecode"));
+        assert_eq!(done.above_target, 0);
+        let older = Choices {
+            compatibility: Some(PdfVersion { major: 1, minor: 4 }),
+            ..brotli
+        };
+        let done = recompress(&copy, &Settings::default(), older).expect("optimizes");
+        assert!(done.above_target > 0, "{done:?}");
+        assert!(
+            done.left.keys().any(|k| k.contains("1.4")),
+            "{:?}",
+            done.left
+        );
+        let written = done.bytes.unwrap_or_default();
+        assert!(!written.windows(13).any(|w| w == b"/BrotliDecode"));
     }
 
     /// The links and bookmarks that go nowhere are removed and named when

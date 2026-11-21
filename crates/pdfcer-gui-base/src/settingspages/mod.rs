@@ -104,6 +104,9 @@ pub struct Draft {
     /// What the Keyboard shortcuts page lists, built by the app when the
     /// window opens; empty when the program has no keymap.
     pub shortcuts: std::sync::Arc<keyscatalog::Catalog>,
+    /// Set by Display's *Graphics card switches…* button; the app takes it
+    /// and opens that window.
+    pub open_card_switches: bool,
 }
 
 impl Draft {
@@ -144,6 +147,7 @@ impl Draft {
             working_prefs: prefs.clone(),
             original_prefs: prefs.clone(),
             shortcuts: std::sync::Arc::default(),
+            open_card_switches: false,
         }
     }
 

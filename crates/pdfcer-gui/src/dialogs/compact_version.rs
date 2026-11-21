@@ -7,7 +7,10 @@
 //! not change a document to an older version: lowering happens only when
 //! asked. The engine refuses when the content needs more than the version
 //! chosen, and [`lower`] carries the copy's floor and the constructs that
-//! set it so the refusal says why.
+//! set it so the refusal says why. [`lower`] also lists every
+//! `optimize::VersionFeature` the copy uses (`optimize::features_used`),
+//! each with how many objects use it and the lowest-numbered one, marking
+//! those newer than the target; [`lines`] shows the list folded.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/compact_version.md`.
 
@@ -16,7 +19,10 @@ use std::sync::mpsc::{Receiver, TryRecvError, channel};
 use egui::Ui;
 use pdfcer_core::PdfVersion;
 use pdfcer_core::document::Document;
-use pdfcer_core::optimize::{LowerError, LowerOptions, LowerRoute, lower_version, version_floor};
+use pdfcer_core::optimize::{
+    FeatureUse, LowerError, LowerOptions, LowerRoute, VersionFeature, features_used, lower_version,
+    version_floor,
+};
 use pdfcer_core::writer::SaveOptions;
 
 use crate::text::compact_version as t;
@@ -37,6 +43,23 @@ pub const TARGETS: [PdfVersion; 4] = [
 ];
 /// How many constructs are named under a floor.
 const REASONS: usize = 3;
+/// The fold listing the features the copy uses.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_FEATURES: &str = "compact.version.features";
+/// Each line in that fold, `<this>.<index>`.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_FEATURE: &str = "compact.version.feature";
+
+/// One feature the copy uses, as the fold says it.
+#[derive(Debug, Clone)]
+pub struct FeatureLine {
+    /// The sentence.
+    pub line: String,
+    /// The feature needs a version newer than the target.
+    pub above: bool,
+    /// The trace's `token:objects:example` for it.
+    pub trace: String,
+}
 
 /// What lowering the copy did.
 #[derive(Debug)]
@@ -48,15 +71,20 @@ pub struct Lowered {
     pub lines: Vec<String>,
     /// The trace's word for the outcome.
     pub word: &'static str,
+    /// Every version feature the copy uses, in the engine's order.
+    pub features: Vec<FeatureLine>,
 }
 
 /// Lower `copy` to `target`. Never fails: a refusal is an answer, said in
 /// [`Lowered::lines`], and the copy is kept as it was.
 #[must_use]
 pub fn lower(copy: Vec<u8>, target: PdfVersion, save: &SaveOptions) -> Lowered {
-    let floor = Document::from_bytes(copy.clone())
-        .ok()
-        .map(|d| version_floor(&d));
+    let parsed = Document::from_bytes(copy.clone()).ok();
+    let floor = parsed.as_ref().map(version_floor);
+    let features = parsed
+        .as_ref()
+        .map(|d| feature_lines(&features_used(d), target))
+        .unwrap_or_default();
     // A signed copy proceeds: the window already says the copy keeps no
     // signatures, and changing the header is one more reason they stop
     // verifying.
@@ -75,6 +103,7 @@ pub fn lower(copy: Vec<u8>, target: PdfVersion, save: &SaveOptions) -> Lowered {
                 bytes: Some(done.bytes),
                 lines,
                 word: "lowered", // ui-text-exempt: diagnostic trace
+                features,
             }
         }
         Err(why) => {
@@ -86,8 +115,48 @@ pub fn lower(copy: Vec<u8>, target: PdfVersion, save: &SaveOptions) -> Lowered {
                 bytes: None,
                 lines,
                 word: refusal_word(&why),
+                features,
             }
         }
+    }
+}
+
+/// One line per feature in `used`, marked when newer than `target`.
+fn feature_lines(used: &[FeatureUse], target: PdfVersion) -> Vec<FeatureLine> {
+    used.iter()
+        .map(|u| {
+            let example = u.example.map(|id| id.num);
+            FeatureLine {
+                line: t::feature(
+                    u.feature.label(),
+                    &u.feature.introduced(),
+                    u.objects,
+                    example,
+                    u.above(target),
+                ),
+                above: u.above(target),
+                trace: format!(
+                    "{}:{}:{}",
+                    feature_token(u.feature),
+                    u.objects,
+                    example.map_or_else(|| "doc".to_owned(), |n| n.to_string())
+                ),
+            }
+        })
+        .collect()
+}
+
+/// The trace's word for a feature.
+const fn feature_token(feature: VersionFeature) -> &'static str {
+    match feature {
+        VersionFeature::Transparency => "transparency", // ui-text-exempt: diagnostic trace
+        VersionFeature::Jbig2 => "jbig2",               // ui-text-exempt: diagnostic trace
+        VersionFeature::Jpx => "jpx",                   // ui-text-exempt: diagnostic trace
+        VersionFeature::OptionalContent => "layers",    // ui-text-exempt: diagnostic trace
+        VersionFeature::ObjectStreams => "objstm",      // ui-text-exempt: diagnostic trace
+        VersionFeature::CrossReferenceStreams => "xrefstm", // ui-text-exempt: diagnostic trace
+        VersionFeature::Brotli => "brotli",             // ui-text-exempt: diagnostic trace
+        _ => "other",                                   // ui-text-exempt: diagnostic trace
     }
 }
 
@@ -158,6 +227,19 @@ impl Lowering {
                         started.elapsed().as_millis()
                     )
                 });
+                crate::diag::trace(|| {
+                    let list: Vec<&str> = done.features.iter().map(|f| f.trace.as_str()).collect();
+                    format!(
+                        "compact-features to={target} n={} above={} list={}", // ui-text-exempt: diagnostic trace
+                        done.features.len(),
+                        done.features.iter().filter(|f| f.above).count(),
+                        if list.is_empty() {
+                            "none".to_owned()
+                        } else {
+                            list.join(",")
+                        }
+                    )
+                });
                 let _ = tx.send(done);
                 ctx.request_repaint();
             });
@@ -167,6 +249,7 @@ impl Lowering {
                 bytes: None,
                 lines: vec![t::failed(&error.to_string())],
                 word: "failed", // ui-text-exempt: diagnostic trace
+                features: Vec::new(),
             })),
         }
     }
@@ -183,6 +266,7 @@ impl Lowering {
                 bytes: None,
                 lines: vec![t::stopped().to_owned()],
                 word: "failed", // ui-text-exempt: diagnostic trace
+                features: Vec::new(),
             },
         };
         *self = Self::Done(Box::new(landed));
@@ -239,8 +323,28 @@ pub fn lines(ui: &mut Ui, lowering: &Lowering) {
                 let said = ui.small(line.as_str());
                 crate::diag::ui_rect_visible(REGION_VERSION_SAID, said.rect, ui.clip_rect());
             }
+            features_fold(ui, &done.features);
         }
     }
+}
+
+/// The folded list of features the copy uses; nothing when it uses none.
+fn features_fold(ui: &mut Ui, features: &[FeatureLine]) {
+    if features.is_empty() {
+        return;
+    }
+    let above = features.iter().filter(|f| f.above).count();
+    let fold = egui::CollapsingHeader::new(t::features_heading(features.len(), above))
+        .id_salt("compact-version-features") // ui-text-exempt: an id, never displayed
+        .show(ui, |ui| {
+            for (i, feature) in features.iter().enumerate() {
+                let said = ui.small(feature.line.as_str());
+                let region = format!("{REGION_FEATURE}.{i}");
+                crate::diag::ui_rect_visible(&region, said.rect, ui.clip_rect());
+            }
+        });
+    let header = fold.header_response.on_hover_text(t::features_tooltip());
+    crate::diag::ui_rect_visible(REGION_FEATURES, header.rect, ui.clip_rect());
 }
 
 #[cfg(test)]
@@ -271,6 +375,29 @@ mod tests {
             format!("trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").as_bytes(),
         );
         buf
+    }
+
+    /// A page transparency group is listed with its page, newer than 1.3
+    /// and not newer than 1.4.
+    #[test]
+    fn the_features_used_are_listed_against_the_target() {
+        let page = || file(" /Group << /S /Transparency >>");
+        let v13 = PdfVersion { major: 1, minor: 3 };
+        let done = lower(page(), v13, &SaveOptions::default());
+        let group = done
+            .features
+            .iter()
+            .find(|f| f.trace.starts_with("transparency:"))
+            .expect("transparency listed");
+        assert!(group.above, "{:?}", done.features);
+        assert_eq!(group.trace, "transparency:1:3");
+        assert!(group.line.contains("1.4"), "{}", group.line);
+        let done = lower(page(), V14, &SaveOptions::default());
+        assert!(
+            done.features.iter().all(|f| !f.above),
+            "{:?}",
+            done.features
+        );
     }
 
     #[test]

@@ -1097,6 +1097,10 @@ pub struct ModelPlacement {
     /// A glTF model's lamps joined by the engine's ambient fill light, else
     /// the model lit by its own lamps alone.
     pub gltf_fill_light: bool,
+    /// A glTF material's occlusion map baked into its base colour
+    /// (`GltfOcclusion::Bake`), else left out with a note
+    /// (`GltfOcclusion::Drop`).
+    pub gltf_bake_occlusion: bool,
 }
 
 /// `PartialEq` only: a 3D view's camera is floating point.

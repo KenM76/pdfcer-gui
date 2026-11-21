@@ -51,6 +51,17 @@ impl PdfcerApp {
             }
         }
 
+        if std::mem::take(&mut draft.open_card_switches) {
+            self.dialogs.open_card_switches();
+        }
+        // The card switches window saves `draw_pages` the moment it changes;
+        // the draft adopts it so Save and Cancel keep it.
+        let pages = self.prefs.card.draw_pages;
+        if pages != draft.original_prefs.card.draw_pages {
+            draft.original_prefs.card.draw_pages = pages;
+            draft.working_prefs.card.draw_pages = pages;
+        }
+
         match outcome {
             Outcome::Save => self.save_settings(),
             Outcome::Cancel => {
