@@ -3,14 +3,13 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/text_box.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment};
-use crate::checks::save_copy::{click_command, click_tab};
+use crate::checks::save_copy::click_command;
+use crate::checks::scripteddrive::{click_tab, offscreen};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The mode whose canvas may author page content.
 const MODE: &str = "edit";
@@ -71,12 +70,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              only room to the right and below it.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, arms a tool, \
-             drags a rectangle and types. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -106,22 +99,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text_box")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Edit, then arm the text tool ------------------------------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
-    click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
-    click_command(&session, &driver, ui_rect, TOOL, 16)?;
+    click_tab(&session, &pointer, ui_rect, EDIT_TAB)?;
+    click_command(&session, &pointer, ui_rect, TOOL, 16)?;
     let trace = session.trace()?;
     if !trace
         .events("text-edit-tool")
@@ -146,18 +140,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // tall, comfortably above the 12 pt floor `begin_box` refuses under.
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let from =
-        frame.to_screen(mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?);
-    let to = frame.to_screen(mapping.doc_to_window(DocPoint::new(
+    let from = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
+    let to = mapping.doc_to_window(DocPoint::new(
         target.page,
         target.x + 200.0,
         // DOWN the page, which is a SMALLER y: PDF user space runs upward.
         // Getting this backwards draws the box off the top of the sheet, where
         // it is clipped and the drag looks like it did nothing.
         target.y - 60.0,
-    ))?);
-    driver.drag(from, to)?;
+    ))?;
+    pointer.drag(&session, from, to, 12)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -186,16 +178,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // The link that would ship. If Enter still commits, the draft ends here and
     // the second line's keystrokes land nowhere.
-    for key in [vk::A, vk::D] {
-        driver.press(key)?;
-        session.settle(4);
-    }
-    driver.press(vk::ENTER)?;
+    pointer.type_text(&session, None, "ad")?;
+    session.settle(4);
+    pointer.key(&session, None, "Enter", None)?;
     session.settle(6);
-    for key in [vk::A, vk::D] {
-        driver.press(key)?;
-        session.settle(4);
-    }
+    pointer.type_text(&session, None, "ad")?;
     session.settle(10);
 
     // --- 4: Ctrl+Enter commits ---------------------------------------------
@@ -204,7 +191,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // takes multi-line input needs one, and this is the old shell's own choice
     // carried across: *"in box mode a plain Enter is a paragraph break;
     // Ctrl+Enter accepts."*
-    driver.press_chord(&[vk::CONTROL], vk::ENTER)?;
+    pointer.key(&session, None, "Enter", Some("ctrl"))?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -243,5 +230,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★★ the paragraph survived as {lines} lines — a plain Enter inside the box broke the \
          line instead of ending the draft"
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }

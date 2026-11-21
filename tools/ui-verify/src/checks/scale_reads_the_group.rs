@@ -5,13 +5,13 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/scale_reads_the_group.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
+    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_in, declared_names, list, shell_trace,
 };
-use crate::checks::picking;
+use crate::checks::scripteddrive::{offscreen, resolve_pick};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, PageGeometry};
+use crate::coords::{CanvasMapping, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -61,7 +61,7 @@ fn seeded_ratio_real(trace: &Trace) -> Option<f64> {
 
 /// Open the Set-scale window from Measure ▸ Scale on a build already in Review
 /// mode with the Measure tab showing.
-fn click_set_scale(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn click_set_scale(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let item = declared(&trace, ui_rect, "ribbon.item.measure.set_scale").ok_or_else(|| {
         Error::new(format!(
@@ -69,8 +69,17 @@ fn click_set_scale(session: &Session, driver: &Driver, ui_rect: &str) -> Result<
             list(&declared_names(&trace, ui_rect, "ribbon.item.measure."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(session, WindowPoint::centre_of(item))?;
     session.settle(16);
+    Ok(())
+}
+
+/// Click region `name` in whichever viewport declared it; `rect` is the rect
+/// the caller already read for it.
+fn press(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, name: &str) -> Result<()> {
+    let (rect, viewport) = declared_in(&session.trace()?, ui_rect, name)
+        .ok_or_else(|| Error::new(format!("no `{name}` region to click.")))?;
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
     Ok(())
 }
 
@@ -86,14 +95,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, a ribbon tab, \
-             three ribbon or dialog controls, two points on the page, and types into a field. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -131,8 +132,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "scale_reads_the_group")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
@@ -140,10 +143,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Review mode and the Measure tab --------------------------------
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.measure").ok_or_else(|| {
         Error::new(format!(
@@ -151,7 +153,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -164,7 +166,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 2: open the window ------------------------------------------------
-    click_set_scale(&session, &driver, ui_rect)?;
+    click_set_scale(&session, &pointer, ui_rect)?;
     let trace = session.trace()?;
     let Some(body) = declared(&trace, ui_rect, "dialog:set-scale") else {
         return Ok(Some(
@@ -230,16 +232,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // --- 5: step out to the page -------------------------------------------
-    let Some(button) = declared(&trace, ui_rect, "scale.calibrate") else {
+    if declared(&trace, ui_rect, "scale.calibrate").is_none() {
         return Ok(Some(
             "the Set-scale window declared no `scale.calibrate` region, so there is no route \
              from it into the two-point calibration."
                 .to_owned(),
         ));
-    };
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "scale.calibrate")?.declared_center(button),
-    )?;
+    }
+    press(&session, &pointer, ui_rect, "scale.calibrate")?;
     session.settle(16);
     let trace = session.trace()?;
     if !trace
@@ -271,7 +271,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // unsigned as far as every assertion below is concerned; see
     // `CanvasMapping::span_from` for the measurement.
     let span = mapping.span_from(target, SPAN_PT)?;
-    // `picking::resolve_pick`, NOT a bare `click_at`. One click is not
+    // `scripteddrive::resolve_pick`, NOT a bare click. One click is not
     // always one pick: a click that lands on a DERIVED snap candidate — a
     // centreline pdfcer inferred rather than one the file states — is announced
     // and not acted on, and the operator confirms it with a second click on the
@@ -280,20 +280,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     for (label, doc) in [("A", target), ("B", span)] {
         let window = mapping.doc_to_window(doc)?;
-        let screen = session.frame()?.to_screen(window);
         report.note(format!(
-            "pick {label}: document ({:.1}, {:.1}) -> screen ({}, {})",
+            "pick {label}: document ({:.1}, {:.1}) -> window ({:.1}, {:.1})",
             doc.x,
             doc.y,
-            screen.x(),
-            screen.y()
+            window.x(),
+            window.y()
         ));
-        match picking::resolve_pick(&session, &driver, report, label, screen, 14)? {
+        match resolve_pick(&session, &pointer, report, label, window, 14)? {
             Ok(resolved) => report.note(format!(
                 "pick {label} resolved in {} click(s): `{}`",
                 resolved.clicks, resolved.line.raw
             )),
-            Err(failure) => return Ok(Some(failure.why)),
+            Err(why) => return Ok(Some(why)),
         };
     }
     let trace = session.trace()?;
@@ -351,29 +350,26 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 8: commit a scale, so there is one to read back -------------------
     let trace = session.trace()?;
-    let Some(field) = declared(&trace, ui_rect, "scale.real_length") else {
+    let Some((_, field_viewport)) = declared_in(&trace, ui_rect, "scale.real_length") else {
         return Ok(Some(format!(
             "the window came back after measuring {measured:.2} pt and declared no \
              `scale.real_length` region, so it returned on the RATIO path and the operator is \
              asked for a ratio after doing the work of picking two points."
         )));
     };
-    let frame = frame_of(&session, &trace, ui_rect, "scale.real_length")?;
-    driver.click_at(frame.declared_center(field))?;
+    press(&session, &pointer, ui_rect, "scale.real_length")?;
     session.settle(8);
-    driver.type_ascii(TYPED_REAL_LENGTH)?;
+    pointer.type_text(&session, field_viewport.as_deref(), TYPED_REAL_LENGTH)?;
     session.settle(10);
     let trace = session.trace()?;
-    let Some(accept) = declared(&trace, ui_rect, "dialog:set-scale.accept") else {
+    if declared(&trace, ui_rect, "dialog:set-scale.accept").is_none() {
         return Ok(Some(
             "the window declared no `dialog:set-scale.accept` region, so there is no way to \
              commit the calibration it just took."
                 .to_owned(),
         ));
-    };
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "dialog:set-scale.accept")?.declared_center(accept),
-    )?;
+    }
+    press(&session, &pointer, ui_rect, "dialog:set-scale.accept")?;
     session.settle(20);
     let trace = session.trace()?;
     if !trace
@@ -391,7 +387,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("the calibration committed, so the group now has a scale to read back");
 
     // --- 9: O192 proper — reopen, and see the number you set --------------
-    click_set_scale(&session, &driver, ui_rect)?;
+    click_set_scale(&session, &pointer, ui_rect)?;
     let trace = session.trace()?;
     if declared(&trace, ui_rect, "dialog:set-scale").is_none() {
         return Ok(Some(
@@ -421,5 +417,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "reopening the window seeded it at 1:{second_ratio}, moved from 1:{first_ratio} by the \
          calibration — so the window reads the group it is about to overwrite"
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }

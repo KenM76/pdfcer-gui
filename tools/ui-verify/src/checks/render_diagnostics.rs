@@ -7,9 +7,10 @@ use crate::checks::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, SHELL_TRACE_PREFIX, TAB_EVENT,
     UNIMPLEMENTED_EVENT, declared, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive::{offscreen, shot};
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 
 /// The command this check is about.
@@ -63,13 +64,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
              rather than the dispatch arm.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check is two clicks on ribbon controls. \
-             Reported as SKIPPED rather than passed — a check that did not run has learned \
-             nothing.",
-        ));
-    }
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("render_diagnostics.trace.txt"));
     spec.pdf = Some(pdf);
@@ -81,8 +75,10 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "render_diagnostics")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
@@ -122,7 +118,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    let driver = Driver::new(session.window());
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
 
     // --- A. Edit mode, then the Tools tab ----------------------------------
@@ -138,7 +133,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // command on the Tools tab is therefore not merely inconvenient in Read, it
     // is unreachable"*. The same sentence decides which mode this check has to
     // be in.
-    driving::click_mode_segment(&session, &driver, ui_rect, "edit")?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, "edit")?;
 
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, TAB).ok_or_else(|| {
@@ -150,7 +145,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(12);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -184,7 +179,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .events(INVOKE_EVENT)
         .filter(|l| l.get("id") == Some(SUBJECT_ID))
         .count();
-    driver.click_at(session.frame()?.declared_center(control))?;
+    pointer.click(&session, WindowPoint::centre_of(control))?;
     session.settle(24);
 
     let invokes_after = shell_trace(&session)?
@@ -196,7 +191,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         return Err(Error::new(format!(
             "the click on `{SUBJECT}` produced no new `{INVOKE_EVENT} id={SUBJECT_ID}` line, so \
              no click reached the ribbon and nothing after it would mean anything. Two readings, \
-             and this check declines to choose between them: the pointer injection is not \
+             and this check declines to choose between them: the scripted pointer is not \
              reaching this window, or the shell diagnostic switch {}={} did not reach the \
              process — the shell trace carries {} line(s) under `{SHELL_TRACE_PREFIX}`. \
              Trace: {}.",
@@ -250,8 +245,9 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     ));
 
     let png = ctx.out("render_diagnostics.png");
-    crate::capture::window_to_png(&session, &png)?;
+    shot(&session, &pointer, &png)?;
     report.artifact(png);
+    pointer.gone(&session)?;
     Ok(None)
 }
 

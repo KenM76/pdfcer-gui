@@ -2,6 +2,9 @@
 
 `text_box_takes_a_paragraph` — **multi-line text**, driven end to end.
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # What this is for
 
 The operator, 2026-08-21: *"I should be able to make it multi line."*

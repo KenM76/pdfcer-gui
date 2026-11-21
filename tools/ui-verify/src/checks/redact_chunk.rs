@@ -4,19 +4,21 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/redact_chunk.md`.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
-use crate::checks::redact_menu::mark_through_the_menu;
-use crate::checks::text_chunks::{
-    EXPECTED_CHUNKS, MODE, PAGE_REGION, SELECTION_EVENT, Verdict, press_the_toggle, verdict,
+use crate::checks::driving::{
+    SHELL_DIAG_ENV, TAB_EVENT, click_mode_segment, declared, declared_names,
+    declared_or_in_overflow, list, shell_trace,
 };
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::{aim, mark_through_the_menu, offscreen};
+use crate::checks::text_chunks::{
+    EXPECTED_CHUNKS, MODE, PAGE_REGION, SELECTION_EVENT, SWITCH_EVENT, TOGGLE_REGION, Verdict,
+    verdict,
+};
 use crate::checks::{Check, CheckContext};
-use crate::coords::PageGeometry;
+use crate::coords::{PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 use crate::trace::Trace;
 
 /// The rung a whole object is selected at, as `canvas::trace` spells it.
@@ -74,13 +76,6 @@ fn rung(trace: &Trace) -> Option<(String, String)> {
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a line of text, opens a context \
-             menu over it and presses a row. Reported as SKIPPED rather than passed: a check that \
-             did not run has learned nothing.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -128,18 +123,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "redact-chunk")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(45);
-    let driver = Driver::new(session.window());
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(
             "no `{PAGE_REGION}` region, so no sheet is on screen. Regions beginning `page`: {}.",
@@ -159,7 +155,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the chunk boxes were OFF at launch. Turning them on: the chunk rung is offered only \
              where a box is drawn, so this check has no subject without them.",
         );
-        if let Some(failure) = press_the_toggle(&session, &driver, ui_rect, true, report)? {
+        if let Some(failure) = chunks_on(&session, &pointer, ui_rect)? {
             return Ok(Some(failure));
         }
     }
@@ -167,7 +163,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let at = aim(ctx, &session, page, point)?;
 
     // --- A: the block ------------------------------------------------------
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(26);
     let Some((level, raw)) = rung(&session.trace()?) else {
         return Ok(Some(format!(
@@ -207,7 +203,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- B: mark the BLOCK, and read the control --------------------------
-    let block = match mark_through_the_menu(&session, &driver, ui_rect, at, "the whole block")? {
+    let block = match mark_through_the_menu(&session, &pointer, ui_rect, at, "the whole block")? {
         Ok(marked) => marked.bbox,
         Err(failure) => return Ok(Some(failure)),
     };
@@ -218,7 +214,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: undo it, so the chunk is marked on the same document -----------
     let mark = session.trace()?.mark();
-    driver.press_chord(&[vk::CONTROL], vk::Z)?;
+    pointer.key(&session, None, "Z", Some("ctrl"))?;
     session.settle(26);
     let trace = session.trace()?;
     if trace.last_after(UNDO_EVENT, mark).is_none() {
@@ -244,9 +240,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the ladder starts at the bottom again. The first names the block, the
     // second goes inside it — which is the gesture O217 asks redaction to
     // honour.
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(26);
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(26);
     let Some((level, raw)) = rung(&session.trace()?) else {
         return Ok(Some(format!(
@@ -269,7 +265,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!("★★ descended to one line: `{raw}`"));
 
     // --- E: mark the CHUNK, and compare -----------------------------------
-    let chunk = match mark_through_the_menu(&session, &driver, ui_rect, at, "one line")? {
+    let chunk = match mark_through_the_menu(&session, &pointer, ui_rect, at, "one line")? {
         Ok(marked) => marked.bbox,
         Err(failure) => return Ok(Some(failure)),
     };
@@ -333,5 +329,49 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          line itself — the unit, the gesture and the route, all three",
         share * 100.0
     ));
+    pointer.gone(&session)?;
     Ok(None)
+}
+
+/// Switch the chunk boxes on from View ▸ Text chunks, the premise of the
+/// chunk rung. `Ok(Some(_))` is a failure sentence.
+fn chunks_on(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+) -> Result<Option<String>> {
+    const VIEW_TAB: &str = "ribbon.tab.view"; // ui-text-exempt: a trace region name, never displayed
+    if declared(&session.trace()?, ui_rect, TOGGLE_REGION).is_none() {
+        let Some(tab) = declared(&session.trace()?, ui_rect, VIEW_TAB) else {
+            return Ok(Some(format!(
+                "no `{VIEW_TAB}` region to reach the chunk switch from."
+            )));
+        };
+        pointer.click(session, WindowPoint::centre_of(tab))?;
+        session.settle(14);
+        if !shell_trace(session)?
+            .events(TAB_EVENT)
+            .any(|l| l.get("tab") == Some("view"))
+        {
+            return Ok(Some(format!(
+                "the click on `{VIEW_TAB}` produced no `{TAB_EVENT} tab=view` line."
+            )));
+        }
+    }
+    let Some(item) = declared_or_in_overflow(session, pointer, ui_rect, TOGGLE_REGION)? else {
+        return Ok(Some(format!(
+            "the View tab declares no `{TOGGLE_REGION}`, on the band, in a collapsed group or in \
+             the overflow."
+        )));
+    };
+    let mark = session.trace()?.mark();
+    pointer.click(session, WindowPoint::centre_of(item))?;
+    session.settle(22);
+    match session.trace()?.last_after(SWITCH_EVENT, mark) {
+        Some(l) if l.get("enabled") == Some("true") => Ok(None),
+        other => Ok(Some(format!(
+            "pressing `{TOGGLE_REGION}` to turn the chunk boxes on traced `{}`.",
+            other.map_or("nothing", |l| l.raw.as_str())
+        ))),
+    }
 }

@@ -3,6 +3,9 @@
 `an_invalidating_save_is_warned_about` — **the window that stands between a
 structural edit and a signed document's next revision.**
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # What this is for
 
 `pdfcer-core` publishes two verbs written specifically so a front end could

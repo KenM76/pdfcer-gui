@@ -4,17 +4,17 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/undo_redo.md`.
 
-use crate::checks::comments_census::{self, Census};
+use crate::checks::comments_census::Census;
 use crate::checks::driving::{
     INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::{aim, census_baseline, census_refresh, offscreen};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{DocPoint, PageGeometry};
+use crate::coords::{DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -134,7 +134,7 @@ impl Invalidation {
 /// Click a ribbon tab and confirm the shell reported it.
 fn click_tab(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     (region, id): (&str, &str),
 ) -> Result<()> {
@@ -151,7 +151,7 @@ fn click_tab(
         .events(TAB_EVENT)
         .filter(|l| l.get("tab") == Some(id))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(14);
     if shell_trace(session)?
         .events(TAB_EVENT)
@@ -192,14 +192,14 @@ fn control(trace: &Trace, ui_rect: &str, name: &str, prefix: &str) -> Result<LRe
 /// Click a band control and confirm the shell reported the invoke.
 fn click_command(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     (region, id): (&str, &str),
     settle: u32,
 ) -> Result<()> {
     let rect = control(&session.trace()?, ui_rect, region, ITEM_PREFIX)?;
     let before = invokes(session, id)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(settle);
     if invokes(session, id)? <= before {
         return Err(Error::new(format!(
@@ -220,14 +220,14 @@ fn click_command(
 /// Click a **quick-access** control and report whether the shell saw an invoke.
 fn click_qat(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     (region, id): (&str, &str),
     settle: u32,
 ) -> Result<bool> {
     let rect = control(&session.trace()?, ui_rect, region, "ribbon.qat.")?;
     let before = invokes(session, id)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(settle);
     Ok(invokes(session, id)? > before)
 }
@@ -236,23 +236,25 @@ fn click_qat(
 /// census it publishes there.
 fn comments_count(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     report: &mut CheckReport,
 ) -> Result<Census> {
-    comments_census::baseline(
+    census_baseline(
         session,
-        driver,
+        pointer,
         ui_rect,
-        MODE,
-        "the fixture",
-        "the undo",
+        (MODE, "the fixture", "the undo"),
         report,
     )
 }
 
 /// Launch one process with both diagnostic channels armed.
-fn launch(ctx: &CheckContext, report: &mut CheckReport, pdf: &std::path::Path) -> Result<Session> {
+fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    pdf: &std::path::Path,
+) -> Result<(Session, ScriptedPointer)> {
     let mut spec = LaunchSpec::new(
         ctx.resolve_exe().ok_or_else(|| {
             Error::new(format!(
@@ -271,8 +273,10 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport, pdf: &std::path::Path) -
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "undo_redo")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} on {} as pid {}",
         spec.exe.display(),
@@ -292,7 +296,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport, pdf: &std::path::Path) -
             session.trace_path().display()
         )));
     }
-    Ok(session)
+    Ok((session, pointer))
 }
 
 /// One half of the round trip: press a history control and assert everything
@@ -315,14 +319,14 @@ struct Step {
 /// Drive one [`Step`]. `Ok(Some(_))` is a failure verdict.
 fn history_step(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     report: &mut CheckReport,
     step: &Step,
 ) -> Result<Option<String>> {
     let before = Invalidation::of(&session.trace()?);
 
-    if !click_qat(session, driver, ui_rect, step.control, 30)? {
+    if !click_qat(session, pointer, ui_rect, step.control, 30)? {
         return Ok(Some(format!(
             "★ `{}` TOOK NO CLICK AT {}. The control was declared, the click was delivered to its \
              centre, and the shell traced no `{INVOKE_EVENT} id={}` — which for a QAT control \
@@ -428,8 +432,7 @@ fn history_step(
 
     // --- the surface the operator reads moved with it ----------------------
     //
-    let Some(now) = comments_census::refresh(session, driver, ui_rect, applied.lineno, report)?
-    else {
+    let Some(now) = census_refresh(session, pointer, ui_rect, applied.lineno, report)? else {
         return Err(Error::new(format!(
             "{} ran — the engine traced `{}` — and the Comments panel has published no census \
              since. Not a count that failed to move: the panel is not on screen, and a dock draws \
@@ -469,12 +472,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              this check would be measuring the gate rather than the feature.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is six clicks and a drag. Reported as \
-             SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -496,11 +493,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         })?,
     };
 
-    let session = launch(ctx, report, &pdf)?;
-    let driver = Driver::new(session.window());
+    let (session, pointer) = launch(ctx, report, &pdf)?;
 
     // --- PHASE A: the baseline every later count is measured against -------
-    let listed_before = comments_count(&session, &driver, ui_rect, report)?;
+    let listed_before = comments_count(&session, &pointer, ui_rect, report)?;
 
     // …and the epoch oracle has to exist before phases D and E can rest on it.
     // A fixture whose page will not decompose traces `objects-unavailable`
@@ -534,7 +530,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // control must take the click and emit nothing. The absence is admissible
     // because phase D presses the same control again and requires the opposite;
     // a run that stopped here would have proved nothing.
-    if click_qat(&session, &driver, ui_rect, UNDO, 12)? {
+    if click_qat(&session, &pointer, ui_rect, UNDO, 12)? {
         return Ok(Some(format!(
             "★ UNDO IS LIVE WITH AN EMPTY COMMAND LOG. Nothing has been edited in this session, \
              and clicking `{}` produced `{INVOKE_EVENT} id={}` anyway — which a greyed `egui` \
@@ -563,8 +559,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the same control and required the opposite.
 
     // --- PHASE C: author a rectangle on the page ---------------------------
-    click_tab(&session, &driver, ui_rect, MARKUP_TAB)?;
-    click_command(&session, &driver, ui_rect, RECTANGLE, 16)?;
+    click_tab(&session, &pointer, ui_rect, MARKUP_TAB)?;
+    click_command(&session, &pointer, ui_rect, RECTANGLE, 16)?;
 
     let from = aim(
         ctx,
@@ -579,7 +575,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         DocPoint::new(0, DRAG.1.0 * page.width_pt, DRAG.1.1 * page.height_pt),
     )?;
     let applies_before = session.trace()?.events(APPLY_EVENT).count();
-    driver.drag(from, to)?;
+    pointer.drag(&session, from, to, 12)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -607,9 +603,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .trace()?
         .last(APPLY_EVENT)
         .map_or(commit.lineno, |l| l.lineno);
-    let Some(listed_after) =
-        comments_census::refresh(&session, &driver, ui_rect, caused_at, report)?
-    else {
+    let Some(listed_after) = census_refresh(&session, &pointer, ui_rect, caused_at, report)? else {
         return Err(Error::new(format!(
             "the rectangle was authored (`{}`) and the Comments panel has published no census \
              since — not a count that failed to move, but a panel that is not on screen, because \
@@ -647,7 +641,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- PHASE D: UNDO ---------------------------------------------------
     if let Some(failure) = history_step(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         report,
         &Step {
@@ -665,7 +659,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- PHASE E: REDO ---------------------------------------------------
     if let Some(failure) = history_step(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         report,
         &Step {
@@ -687,7 +681,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // emit nothing — which is the strongest form this suite has of "the
     // condition tracks the session", because the two readings are one click
     // apart on one control in one run.
-    if click_qat(&session, &driver, ui_rect, REDO, 12)? {
+    if click_qat(&session, &pointer, ui_rect, REDO, 12)? {
         return Ok(Some(format!(
             "★ REDO IS STILL LIVE WITH AN EMPTY REDO STACK. The previous phase redid the only \
              entry there was, and clicking `{}` produced `{INVOKE_EVENT} id={}` again.\n\n\
@@ -731,6 +725,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          over a CAD drawing is a few hundred antialiased pixels among a page full of thin dark \
          lines, and no threshold in this crate separates the two"
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }
 
@@ -832,7 +827,7 @@ pdfcer-diag objects-unavailable page=0 reason=decompose-failed detail=\"bad stre
             Some("2"),
             "the engine's line is what carries the epoch the undo produced"
         );
-        let census = comments_census::Census::since(&app, 0)
+        let census = Census::since(&app, 0)
             .expect("a census with no filter field reads as unfiltered")
             .expect("the census line is in this capture");
         assert_eq!(census.listed, 12);

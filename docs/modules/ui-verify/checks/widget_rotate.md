@@ -3,6 +3,9 @@
 `turning_a_field_right_turns_it_right` — the driven proof of
 `OPERATOR_REQUESTS.md` **O62**'s rotation half.
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # This check exists for ONE arithmetic sign
 
 `/MK /R` is **counterclockwise**. The page's `/Rotate` is **clockwise**. The
@@ -61,8 +64,6 @@ the canvas out from under the check.
 
 ### `const ROTATE_RIGHT_REGION`
 
-Its own, not a fraction of the row's. The first version took the row's
-rect and aimed 78 % across it — coordinate arithmetic the harness already
-has `declared_center` for — and landed outside the window entirely, which
-surfaced as *"the window could not be brought to the front"* three runs
-running. A named control is aimed at by name.
+Its own, not a fraction of the row's: a point computed as a fraction
+across the row can land outside the window. A named control is aimed at
+by name.

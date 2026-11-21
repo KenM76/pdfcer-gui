@@ -4,11 +4,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/signature_save.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, declared, declared_names, frame_of, list, stable_rect,
+    SHELL_DIAG_ENV, declared, declared_in, declared_names, list, stable_rect,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -62,13 +63,6 @@ impl Check for AnInvalidatingSaveIsWarnedAbout {
               sentence describing it in another"
 )]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks the warning window's proceed \
-             button, which is the half that proves the guard RELEASES the save as well as \
-             holding it.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -126,9 +120,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "signature_save")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} on fixtures/signed-two-pages.pdf as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
@@ -208,7 +204,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("★★ no file was written while the question was on screen");
 
     // --- 4. the operator authorises it, and the save runs --------------------
-    let driver = Driver::new(session.window());
     let Some(button) = stable_rect(&session, ui_rect, PROCEED, 8)? else {
         return Ok(Some(format!(
             "the warning window drew and declared no `{PROCEED}` region. The proceed button is \
@@ -217,9 +212,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    let trace = session.trace()?;
-    let frame = frame_of(&session, &trace, ui_rect, PROCEED)?;
-    driver.click_at(frame.declared_center(button))?;
+    let viewport = declared_in(&session.trace()?, ui_rect, PROCEED).and_then(|(_, vp)| vp);
+    pointer.click_in(
+        &session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(button),
+    )?;
     session.settle(60);
 
     let trace = session.trace()?;
@@ -274,5 +272,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         bytes.len(),
         target.display()
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }

@@ -3,11 +3,11 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/widget_rotate.md`.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
+use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, declared_names, list};
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -81,12 +81,6 @@ impl Check for TurningAFieldRightTurnsItRight {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check places a field, selects it and presses a \
-             button. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -140,15 +134,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
+    let pointer = offscreen(ctx, &mut spec, "widget_rotate")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(60);
-    let driver = Driver::new(session.window());
 
     // --- place a field, so the check does not depend on the fixture ---------
     let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
     let at = DocPoint::new(0, PLACE_AT.0 * page.width_pt, PLACE_AT.1 * page.height_pt);
-    driver.click_at(session.frame()?.to_screen(mapping.doc_to_window(at)?))?;
+    pointer.click(&session, mapping.doc_to_window(at)?)?;
     session.settle(35);
 
     if session.trace()?.events(BOX_LINE).next().is_none() {
@@ -166,23 +161,28 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- scroll the rotation row into view ----------------------------------
     //
-    let panel = declared(&session.trace()?, ui_rect, PANEL_BODY);
-    let mut button = declared(&session.trace()?, ui_rect, ROTATE_RIGHT_REGION);
+    let panel = declared_in(&session.trace()?, ui_rect, PANEL_BODY);
+    let mut button = declared_in(&session.trace()?, ui_rect, ROTATE_RIGHT_REGION);
     let mut turns = 0;
     while button.is_none() && turns < MAX_SCROLL {
-        let Some(panel) = panel else {
+        let Some((panel, panel_vp)) = &panel else {
             return Err(Error::new(format!(
                 "no `{PANEL_BODY}` region, so there is nowhere to point the wheel. The properties \
                  panel is either closed or docked under a name this check does not know. SKIPPED \
                  rather than reported as a defect in the button."
             )));
         };
-        driver.scroll_at(session.frame()?.declared_center(panel), -3)?;
+        pointer.wheel_in(
+            &session,
+            panel_vp.as_deref(),
+            WindowPoint::centre_of(*panel),
+            -3.0,
+        )?;
         session.settle(12);
         turns += 1;
-        button = declared(&session.trace()?, ui_rect, ROTATE_RIGHT_REGION);
+        button = declared_in(&session.trace()?, ui_rect, ROTATE_RIGHT_REGION);
     }
-    let Some(button) = button else {
+    let Some((button, button_vp)) = button else {
         let names = declared_names(&session.trace()?, ui_rect, "properties.widget_edit");
         return Ok(Some(format!(
             "after {MAX_SCROLL} wheel turns there is still no VISIBLE `{ROTATE_RIGHT_REGION}` \
@@ -195,7 +195,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ scrolled {turns} wheel turn(s) to reach the row"));
     report.note(format!("the Turn right button is at {button:?}"));
-    driver.click_at(session.frame()?.declared_center(button))?;
+    pointer.click_in(
+        &session,
+        button_vp.as_deref(),
+        WindowPoint::centre_of(button),
+    )?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -226,5 +230,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★★ 270 — right is clockwise is −90 counterclockwise, and the negation held");
 
+    pointer.gone(&session)?;
     Ok(None)
 }

@@ -3,6 +3,9 @@
 `render_diagnostics_opens_its_report` — the regression test for **the
 inert control whose data was already there.**
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # The defect class this exists for
 
 `shell::commands::reach` called `tools.render_diagnostics` the least

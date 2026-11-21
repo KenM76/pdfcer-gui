@@ -4,6 +4,9 @@
 asks, driven: the redaction verb addresses the unit the operator selected,
 and it is reachable from the object he selected it on.**
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # The request
 
 `OPERATOR_REQUESTS.md` **O217** asks that redaction address a *chunk* of a

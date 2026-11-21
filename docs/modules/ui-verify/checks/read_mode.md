@@ -5,6 +5,9 @@ that is a pure function, tested as a pure function, and whose entire value
 lies in something no pure function can observe: what a real click does to a
 real canvas.**
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # The defect class this exists for
 
 The operator asked for it in one sentence, recorded in
@@ -125,7 +128,7 @@ record rather than implied.
 
 # Every way this reports SKIP, and why none of them is a pass
 
-* no binary, no `--pdf`, `--no-input` — the harness never began;
+* no binary or no `--pdf` — the harness never began;
 * the diagnostic switches did not reach the process;
 * the page size could not be read from the fixture and no `--page-size` was
   given — without the page height there is no y-flip;

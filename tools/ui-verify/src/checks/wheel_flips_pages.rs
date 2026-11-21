@@ -4,9 +4,11 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/wheel_flips_pages.md`.
 
 use crate::checks::driving::{declared, declared_names, declared_or_in_overflow, list};
+use crate::checks::scripteddrive::{at_fraction, offscreen};
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use std::path::PathBuf;
 
@@ -19,8 +21,8 @@ const TOGGLE_REGION: &str = "status-wheel-paging";
 /// The status bar's own line, which carries `page=`.
 const STATUS_EVENT: &str = "status";
 
-/// How many notches to roll for one page turn.
-const NOTCHES: i32 = 2;
+/// How many wheel lines to roll for one page turn.
+const NOTCHES: f32 = 2.0;
 
 /// See the module documentation.
 pub struct TheWheelTurnsPagesWhenTheOperatorAsksItTo;
@@ -89,7 +91,7 @@ fn page(session: &Session) -> Result<Option<usize>> {
 }
 
 /// Click a View-tab command by its ribbon item id.
-fn invoke(session: &Session, driver: &Driver, ui_rect: &str, item: &str) -> Result<()> {
+fn invoke(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, item: &str) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.view").ok_or_else(|| {
         Error::new(format!(
@@ -97,9 +99,9 @@ fn invoke(session: &Session, driver: &Driver, ui_rect: &str, item: &str) -> Resu
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(session, WindowPoint::centre_of(tab))?;
     session.settle(14);
-    let region = declared_or_in_overflow(session, driver, ui_rect, item)?.ok_or_else(|| {
+    let region = declared_or_in_overflow(session, pointer, ui_rect, item)?.ok_or_else(|| {
         Error::new(format!(
             "no `{item}` region on the View tab or in its overflow. Items declared: {}.",
             list(&declared_names(
@@ -109,7 +111,7 @@ fn invoke(session: &Session, driver: &Driver, ui_rect: &str, item: &str) -> Resu
             ))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(region))?;
+    pointer.click(session, WindowPoint::centre_of(region))?;
     session.settle(24);
     Ok(())
 }
@@ -133,12 +135,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              a page to turn to. SKIPPED."
         )));
     }
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check rolls the wheel and presses a status-bar \
-             control. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -154,23 +150,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "wheel_flips_pages")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- the precondition: a single-page display, with pages to turn --------
     //
     // Established THROUGH the ribbon, so the run also proves the control
     // that sets it. A check that reached in and set the mode would be testing
     // its own fixture.
-    invoke(&session, &driver, ui_rect, "ribbon.item.view.page_single")?;
+    invoke(&session, &pointer, ui_rect, "ribbon.item.view.page_single")?;
     let trace = session.trace()?;
     let canvas = declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
-    let frame = session.frame()?;
-    let at = frame.declared_at(canvas, 0.5, 0.5);
+    let at = at_fraction(canvas, 0.5, 0.5);
     let Some(start) = page(&session)? else {
         return Err(Error::new(
             "the status bar never reported a page. SKIPPED.".to_owned(),
@@ -221,7 +216,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                     "the wheel setting is `{other}` and there is no `{TOGGLE_REGION}` region to put it back with. SKIPPED rather than measured from an unknown state."
                 ))
             })?;
-            driver.click_at(session.frame()?.declared_center(toggle))?;
+            pointer.click(&session, WindowPoint::centre_of(toggle))?;
             session.settle(20);
             if wheel(&session)?.as_deref() != Some(SCROLL) {
                 return Err(Error::new(
@@ -239,7 +234,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 1. the default is silent -------------------------------------------
-    driver.scroll_at(at, -NOTCHES)?;
+    pointer.wheel(&session, at, -NOTCHES, false)?;
     session.settle(20);
     let after_default = page(&session)?.unwrap_or(start);
     if after_default != start {
@@ -269,11 +264,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(toggle))?;
+    pointer.click(&session, WindowPoint::centre_of(toggle))?;
     session.settle(20);
     report.note("pressed the wheel-paging toggle beside the page buttons".to_owned());
 
-    driver.scroll_at(at, -NOTCHES)?;
+    pointer.wheel(&session, at, -NOTCHES, false)?;
     session.settle(20);
     let after_on = page(&session)?.unwrap_or(start);
     if after_on <= start {
@@ -294,7 +289,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // --- 3. and it goes back ------------------------------------------------
-    driver.scroll_at(at, NOTCHES)?;
+    pointer.wheel(&session, at, NOTCHES, false)?;
     session.settle(20);
     let after_back = page(&session)?.unwrap_or(after_on);
     if after_back >= after_on {
@@ -317,7 +312,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- 4. and the control is absent where the choice does not exist -------
     invoke(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         "ribbon.item.view.page_continuous",
     )?;
@@ -345,5 +340,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             .to_owned(),
     );
 
+    pointer.gone(&session)?;
     Ok(None)
 }

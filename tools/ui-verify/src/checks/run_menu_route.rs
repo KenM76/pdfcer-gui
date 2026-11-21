@@ -4,10 +4,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/run_menu_route.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -136,13 +136,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check selects with a real click, opens a \
-             real context menu with a real secondary click, and presses a row in it. Reported \
-             as SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -185,9 +178,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "run_menu_route")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
@@ -206,8 +201,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 1: Edit ------------------------------------------------------------
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
     report.note(
         "clicked the Edit mode segment first — the shell's default is Read, whose right-click \
@@ -217,11 +211,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- 2: select the third line's text object, at the OBJECT rung --------
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, PAGE_SIZE, PAGE)?;
-    let window_point = mapping.doc_to_window(DocPoint::new(PAGE, AIM.0, AIM.1))?;
-    let frame = session.frame()?;
-    let target = frame.to_screen(window_point);
+    let target = mapping.doc_to_window(DocPoint::new(PAGE, AIM.0, AIM.1))?;
     report.note(format!(
-        "canvas rect {:?} at zoom {:.3}; page {PAGE} ({:.0}, {:.0}) -> screen ({}, {})",
+        "canvas rect {:?} at zoom {:.3}; page {PAGE} ({:.0}, {:.0}) -> window ({:.1}, {:.1})",
         mapping.image_rect,
         mapping.zoom,
         AIM.0,
@@ -229,7 +221,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         target.x(),
         target.y()
     ));
-    driver.click_at(target)?;
+    pointer.click(&session, target)?;
     session.settle(15);
 
     let trace = session.trace()?;
@@ -301,7 +293,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("control: the status bar has disclosed no rung before the press");
 
     // --- 4: right-click the same point -------------------------------------
-    driver.right_click_at(target)?;
+    pointer.right_click(&session, target)?;
     session.settle(35);
 
     let trace = session.trace()?;
@@ -416,7 +408,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the row ABSENT rather than greyed: the condition is not temporary — the
     // pointer either was on a line of a multi-line text object or it was not,
     // and no amount of waiting changes the answer.
-    let Some(row) = driving::declared(&trace, ui_rect, ROW_REGION) else {
+    let Some((row, row_viewport)) = driving::declared_in(&trace, ui_rect, ROW_REGION) else {
         return Ok(Some(format!(
             "★★★ THE DEFECT, AND IT IS O188(A) EXACTLY: there is NO ROW in the canvas object \
              menu for selecting the line that was clicked — no `{ROW_REGION}` region after the \
@@ -452,7 +444,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 7: press it, and follow the operand -------------------------------
     let mark = trace.mark();
-    driver.click_at(session.frame()?.declared_center(row))?;
+    pointer.click_in(
+        &session,
+        row_viewport.as_deref(),
+        WindowPoint::centre_of(row),
+    )?;
     session.settle(30);
     let after = session.trace()?;
 
@@ -655,5 +651,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          the line he clicked",
     );
 
+    pointer.gone(&session)?;
     Ok(None)
 }

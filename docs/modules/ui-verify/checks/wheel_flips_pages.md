@@ -3,6 +3,9 @@
 `the_wheel_turns_pages_when_the_operator_asks_it_to` — O30, driven end to
 end from the status-bar toggle.
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # The report
 
 

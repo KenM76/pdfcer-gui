@@ -3,6 +3,9 @@
 `text_annot_places_and_authors` — a text box drawn on the page, typed into,
 and actually written to the document.
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # The gap this closes
 
 The operator asked on 2026-08-18 to *"finish adding all of the standard
