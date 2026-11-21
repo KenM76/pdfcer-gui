@@ -2,15 +2,18 @@
 //! magnification** — the driven half of `DEFECTS.md` D47, for
 //! `OPERATOR_REQUESTS.md` O200.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/point_destination.md`.
 
 use std::path::PathBuf;
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint};
 use crate::error::{Error, Result};
-use crate::input::{Driver, Key};
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -183,24 +186,18 @@ impl Check for APointDestinationOffScreenMovesTheHorizontal {
 }
 
 /// Launch on the fixture, provoke a canvas rect, and return the session, the
-/// driver and a mapping to aim with. `Err` is a SKIP.
+/// scripted pointer and a mapping to aim with. `Err` is a SKIP.
 fn set_up(
     ctx: &CheckContext,
     report: &mut CheckReport,
     trace_name: &str,
-) -> Result<(Session, Driver, CanvasMapping)> {
+) -> Result<(Session, ScriptedPointer, CanvasMapping)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check zooms and clicks the canvas. Reported \
-             as SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let pdf = workspace_root().join(FIXTURE);
     if !pdf.is_file() {
         return Err(Error::new(format!(
@@ -224,6 +221,8 @@ fn set_up(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let stem = trace_name.trim_end_matches(".trace.txt");
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, stem)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -233,6 +232,7 @@ fn set_up(
         pdf.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     let trace = session.trace()?;
@@ -244,7 +244,6 @@ fn set_up(
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
 
     // A layout probe, for `checks::delete_key`'s stated reason: some builds
     // trace their canvas rect only on a pointer event. The client-area centre on
@@ -252,7 +251,7 @@ fn set_up(
     let trace = if trace.last(ctx.profile.vocab.canvas_event).is_some() {
         trace
     } else {
-        driver.click_at(session.frame()?.layout_probe_point())?;
+        pointer.click(&session, scripteddrive::window_centre(&session)?)?;
         session.settle(10);
         session.trace()?
     };
@@ -262,7 +261,7 @@ fn set_up(
         "canvas rect {:?} at zoom {:.3}",
         mapping.image_rect, mapping.zoom
     ));
-    Ok((session, driver, mapping))
+    Ok((session, pointer, mapping))
 }
 
 /// A mapping against the page the fixture opens on.
@@ -281,12 +280,12 @@ fn mapping_now(ctx: &CheckContext, trace: &Trace) -> Result<CanvasMapping> {
 /// Click a document point on page 0 and settle.
 fn click_doc(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     mapping: &CanvasMapping,
     at: (f64, f64),
 ) -> Result<()> {
     let window = mapping.doc_to_window(DocPoint::new(0, at.0, at.1))?;
-    driver.click_at(session.frame()?.to_screen(window))?;
+    pointer.click(session, window)?;
     session.settle(20);
     Ok(())
 }
@@ -338,7 +337,7 @@ fn drive(
     report: &mut CheckReport,
     subject: &Subject,
 ) -> Result<Option<String>> {
-    let (session, driver, mapping) = set_up(ctx, report, subject.trace_name)?;
+    let (session, pointer, mapping) = set_up(ctx, report, subject.trace_name)?;
 
     let opened = view_now(&session.trace()?).map_or(0, |v| v.page);
     if opened != 0 {
@@ -352,10 +351,10 @@ fn drive(
     // fitted view, which is what gives the horizontal anywhere to go, and it
     // holds the content under the pointer fixed, which is what puts the near
     // destination on screen without the check predicting anything.
-    let at = session
-        .frame()?
-        .to_screen(mapping.doc_to_window(DocPoint::new(0, subject.aim.0, subject.aim.1))?);
-    driver.scroll_at_held(at, &[Key::Ctrl.vk()], 1, ZOOM_NOTCHES)?;
+    let at = mapping.doc_to_window(DocPoint::new(0, subject.aim.0, subject.aim.1))?;
+    for _ in 0..ZOOM_NOTCHES {
+        pointer.wheel(&session, at, 1.0, true)?;
+    }
     session.settle(20);
 
     let trace = session.trace()?;
@@ -375,7 +374,7 @@ fn drive(
     // standing finding in `D:/dev/rag/egui/`.
     let mapping = mapping_now(ctx, &trace)?;
     let mark = trace.mark();
-    click_doc(&session, &driver, &mapping, subject.aim)?;
+    click_doc(&session, &pointer, &mapping, subject.aim)?;
 
     let trace = session.trace()?;
     let Some(click) = trace.last_after(CLICK_EVENT, mark) else {
@@ -555,6 +554,7 @@ fn drive(
             after.off.x
         ));
     }
+    pointer.gone(&session)?;
     Ok(None)
 }
 

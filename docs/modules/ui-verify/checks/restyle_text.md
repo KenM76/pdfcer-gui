@@ -143,7 +143,7 @@ points wide, so this crosses a whole label and a little blank paper. It does
 **not** need to stop inside the run: a sweep that overshoots selects the run
 and stops, which is the operator's own gesture.
 
-### `const VK_T`
+### The `T` key before the sweep
 
 Pressing it is not optional, and the first run of this check is why.
 

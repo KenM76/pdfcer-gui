@@ -1,13 +1,17 @@
 //! `the_text_tool_types_on_one_click` and `the_points_tool_shows_points_on_one_click`
 //! — **the operator's own two gestures**, driven.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/tool_row.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -37,17 +41,18 @@ fn decline_reason(trace: &crate::trace::Trace) -> Option<String> {
 const TOGGLE_REGION: &str = "ribbon.item.view.show_points";
 /// `canvas-selection via=node-tool …`.
 const NODE_CLICK_EVENT: &str = "canvas-selection";
-/// `T`, as a Windows virtual key. Letters are their ASCII uppercase code point.
-const VK_T: u16 = 0x54;
-/// `A`.
-const VK_A: u16 = 0x41;
 
 /// Launch, open the fixture, enter Edit. The shared preamble of both checks.
 fn open_in_edit(
     ctx: &CheckContext,
     report: &mut CheckReport,
     name: &str,
-) -> Result<(Session, Driver, CanvasMapping, crate::coords::DocPoint)> {
+) -> Result<(
+    Session,
+    ScriptedPointer,
+    CanvasMapping,
+    crate::coords::DocPoint,
+)> {
     let vocab = &ctx.profile.vocab;
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -61,12 +66,6 @@ fn open_in_edit(
     let target = ctx
         .target
         .ok_or_else(|| Error::new("no --doc-point. Pass PAGE,X,Y in PDF user space."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check presses a letter key and clicks the \
-             canvas. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -96,19 +95,20 @@ fn open_in_edit(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, name)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!("launched as pid {}", session.pid()));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
-    Ok((session, driver, mapping, target))
+    Ok((session, pointer, mapping, target))
 }
 
 // ===========================================================================
@@ -140,17 +140,16 @@ impl Check for TheTextToolTypesOnOneClick {
 }
 
 fn drive_text(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let (session, driver, mapping, target) = open_in_edit(ctx, report, "tool_text")?;
+    let (session, pointer, mapping, target) = open_in_edit(ctx, report, "tool_text")?;
 
     // ONE key. Not a ribbon click, not a chord — the bare letter, through the
-    // OS, which is the convention being adopted and the one that a stray focus
+    // keyboard path, which is the convention being adopted and the one that a stray focus
     // could silently break.
-    driver.press(VK_T)?;
+    pointer.key(&session, None, "T", None)?;
     session.settle(16);
 
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let frame = session.frame()?;
-    driver.click_at(frame.to_screen(window_point))?;
+    pointer.click(&session, window_point)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -186,6 +185,7 @@ fn drive_text(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     // Nothing about the second gesture is asserted from this function any
     // more, deliberately. Two places asserting one behaviour is how the weaker
     // one comes to be the only one that ever runs.
+    pointer.gone(&session)?;
     Ok(None)
 }
 
@@ -218,14 +218,13 @@ impl Check for ThePointsToolShowsPointsOnOneClick {
 }
 
 fn drive_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let (session, driver, mapping, target) = open_in_edit(ctx, report, "tool_points")?;
+    let (session, pointer, mapping, target) = open_in_edit(ctx, report, "tool_points")?;
 
-    driver.press(VK_A)?;
+    pointer.key(&session, None, "A", None)?;
     session.settle(16);
 
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let frame = session.frame()?;
-    driver.click_at(frame.to_screen(window_point))?;
+    pointer.click(&session, window_point)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -285,6 +284,7 @@ fn drive_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
         )));
     }
     report.note(format!("★★ {drawn} point(s) drawn on the first click"));
+    pointer.gone(&session)?;
     Ok(None)
 }
 
@@ -315,12 +315,11 @@ impl Check for ShowPointsDrawsAnObjectsPointsWithoutDescending {
 }
 
 fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let (session, driver, mapping, target) = open_in_edit(ctx, report, "show_points")?;
+    let (session, pointer, mapping, target) = open_in_edit(ctx, report, "show_points")?;
 
     // --- 1: click WITHOUT the toggle. The control case. ---------------------
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let frame = session.frame()?;
-    driver.click_at(frame.to_screen(window_point))?;
+    pointer.click(&session, window_point)?;
     session.settle(24);
 
     let before = session.trace()?.events(ANCHORS_EVENT).count();
@@ -359,7 +358,7 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
                 session.trace_path().display()
             ))
         })?;
-    driver.click_at(session.frame()?.declared_center(view_tab))?;
+    pointer.click(&session, WindowPoint::centre_of(view_tab))?;
     session.settle(16);
 
     let trace = session.trace()?;
@@ -375,9 +374,9 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
             session.trace_path().display()
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(toggle))?;
+    pointer.click(&session, WindowPoint::centre_of(toggle))?;
     session.settle(20);
-    driver.click_at(session.frame()?.to_screen(window_point))?;
+    pointer.click(&session, window_point)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -443,12 +442,14 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
             "the object carries {total} anchors, past the 400 cap, so none were drawn \u{2014} which \
              is the cap behaving correctly and is why the status bar is told to say so"
         ));
+        pointer.gone(&session)?;
         return Ok(None);
     }
     report.note(format!(
         "★★★ {drawn} of {total} points drawn at the Object rung, with no descent \u{2014} which is \
          what the toggle is for"
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }
 
@@ -461,7 +462,7 @@ fn drive_show_points(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
 /// for the right reason.
 pub struct AClickOnBlankPaperStartsNewText;
 
-/// How far the reported `origin=` may sit from the point the driver clicked,
+/// How far the reported `origin=` may sit from the point the pointer clicked,
 /// in PDF points, before this check calls it a different place.
 const ORIGIN_TOLERANCE_PT: f64 = 6.0;
 
@@ -491,16 +492,15 @@ impl Check for AClickOnBlankPaperStartsNewText {
 }
 
 fn drive_blank_paper(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let (session, driver, mapping, target) = open_in_edit(ctx, report, "tool_blank_paper")?;
+    let (session, pointer, mapping, target) = open_in_edit(ctx, report, "tool_blank_paper")?;
 
     // One bare letter, exactly as the sibling check presses it and for the same
     // reason: the count of gestures is part of what is being asserted.
-    driver.press(VK_T)?;
+    pointer.key(&session, None, "T", None)?;
     session.settle(16);
 
     let (aim_x, aim_y) = BLANK_AIM_PT;
     let corner = mapping.doc_to_window(DocPoint::new(target.page, aim_x, aim_y))?;
-    let frame = session.frame()?;
 
     // The anchor is taken HERE — after the tool is armed, immediately
     // before the gesture whose effect is being read. Anchoring any earlier
@@ -508,7 +508,7 @@ fn drive_blank_paper(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
     // question about the click.
     let mark = session.trace()?.mark();
 
-    driver.click_at(frame.to_screen(corner))?;
+    pointer.click(&session, corner)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -604,6 +604,7 @@ fn drive_blank_paper(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opt
              right and the route is not the documented one; read `place::click`",
         );
     }
+    pointer.gone(&session)?;
     Ok(None)
 }
 

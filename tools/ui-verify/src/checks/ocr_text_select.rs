@@ -1,14 +1,15 @@
 //! `text_on_a_scan_can_still_be_swept_over_the_image` — **the OCR layer must
 //! not lose to the picture it sits on.**
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/ocr_text_select.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::{self, aim};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -55,11 +56,6 @@ impl Check for TextOnAScanCanStillBeSweptOverTheImage {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). The subject is which of two things a click means.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -100,16 +96,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // without exercising anything.
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "ocr-text-select")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(50);
-    let driver = Driver::new(session.window());
 
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(
@@ -133,9 +130,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // indistinguishable from a click that landed on nothing. A double-click
     // selects the word, so `chars>0` is a positive statement about the OCR
     // layer being reachable rather than an absence of evidence.
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(20);
-    driver.double_click_at(at)?;
+    pointer.double_click(&session, at)?;
 
     // **POLLED, not settled** — `D:/dev/rag/egui/` records this exact rule
     // under `a_multi_step_gesture_needs_a_polled_verdict_not_a_settle`, and
@@ -205,7 +202,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         },
         DocPoint::new(0, OFF_THE_WORDS.0, OFF_THE_WORDS.1),
     )?;
-    driver.click_at(off)?;
+    pointer.click(&session, off)?;
     session.settle(35);
 
     let trace = session.trace()?;
@@ -228,5 +225,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report
         .note("★★★ …and off the words the picture still takes the click, which is the whole rule");
+    pointer.gone(&session)?;
     Ok(None)
 }

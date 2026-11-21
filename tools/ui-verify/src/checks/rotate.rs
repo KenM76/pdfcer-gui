@@ -1,12 +1,14 @@
 //! `rotate_handle_turns_a_selection` — **the ninth grip**, driven end to end.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/rotate.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::{self, at_fraction};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -82,12 +84,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          one place on that sheet where a grip drag can be measured",
         pdf.display()
     ));
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, clicks page \
-             content and drags the rotate handle. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -117,27 +113,27 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "rotate")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Edit, the one mode whose canvas selects content ----------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     // --- 2: select something -----------------------------------------------
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let frame = session.frame()?;
-    driver.click_at(frame.to_screen(window_point))?;
+    pointer.click(&session, window_point)?;
     session.settle(16);
 
     let trace = session.trace()?;
@@ -175,22 +171,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              harness does not know where the handle is. It refuses to guess."
         ))
     })?;
-    let frame = session.frame()?;
     let w = (outline.max.x - outline.min.x).max(1.0);
     let h = (outline.max.y - outline.min.y).max(1.0);
 
-    // EVERY POINT BELOW IS BUILT WITH `declared_at`, AND THAT IS THE
-    // DISCIPLINE RATHER THAN A CONVENIENCE.
-    //
-    // `ScreenPoint`'s only constructor in this crate is `WindowFrame::to_screen`
-    // — deliberately, so that a screen coordinate can only be *produced by a
-    // conversion* and never assembled from two integers. This check would have
-    // been the first place to break that, because it needs a point at an
-    // arbitrary bearing from the selection's centre.
-    //
-    // It does not need to. `declared_at` takes fractions of the declared box and
-    // does not clamp them — precisely so a check can aim outside a control's
-    // edge — so the whole gesture is expressible in the box's own coordinates:
+    // Every point below is built with `at_fraction`, which takes fractions of
+    // the declared box and does not clamp them — so a check can aim outside a
+    // control's edge — and the whole gesture is expressible in the box's own
+    // coordinates:
     //
     //   the handle   0.5 across, `-STEM/h` up      (due north, on the stem)
     //   the release  `0.5 + r/w` across, 0.5 down  (due east, same radius)
@@ -200,7 +187,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // between `r/w` and `r/h` is the whole reason both extents are read: a
     // fraction is not a distance until you say of what.
     let radius_pt = 0.5 * h + STEM_PT;
-    let handle = frame.declared_at(outline, 0.5, -STEM_PT / h);
+    let handle = at_fraction(outline, 0.5, -STEM_PT / h);
 
     // --- 3b: IS THE HANDLE EVEN ON THE CANVAS? -----------------------------
     //
@@ -256,17 +243,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // The mid-point is at 45°, so the drag passes through frames where the
     // bearing is genuinely changing rather than teleporting from press to
-    // release. `drag_via`'s own header makes the same argument for holding a
-    // modifier throughout a gesture.
+    // release.
     const DIAG: f32 = std::f32::consts::FRAC_1_SQRT_2;
-    let via = frame.declared_at(
+    let via = at_fraction(
         outline,
         0.5 + radius_pt * DIAG / w,
         0.5 - radius_pt * DIAG / h,
     );
-    let to = frame.declared_at(outline, 0.5 + radius_pt / w, 0.5);
+    let to = at_fraction(outline, 0.5 + radius_pt / w, 0.5);
     let before = session.trace()?.events(COMMIT_EVENT).count();
-    driver.drag_via(handle, via, std::time::Duration::from_millis(60), to, None)?;
+    scripteddrive::drag_via(&session, &pointer, (handle, via, to), 8, 4)?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -333,5 +319,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★★ the rotation reached the engine through `transform_objects`");
+    pointer.gone(&session)?;
     Ok(None)
 }

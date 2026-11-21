@@ -77,4 +77,4 @@ rather than by observation.
 
 The check does not aim at this number directly. It is used only to know how
 far outside the published outline to look, and the press is then made at the
-point the application itself declared — see `driving::declared_at`.
+point the application itself declared — see `scripteddrive::at_fraction`.

@@ -36,7 +36,7 @@ the old build could do all of that, it just needed four steps to get there.
 So each check performs exactly one press of one key and exactly one click,
 and asserts the outcome. Anything that needs a second click fails.
 
-And the key is pressed as a **bare letter through the OS**, not as a
+And the key is pressed as a **bare letter through the keyboard path**, not as a
 command dispatched by name. `V`/`A`/`T`/`H` being bare is the whole
 convention being adopted, and a bare letter is the one chord shape that can
 be broken by a stray focus — `canvas::keys` gates every keystroke on
@@ -77,15 +77,15 @@ code.
 
 ⇒ With the reason in the trace, no check has to guess. `not-entered` stays a
 failure, because it means the click did not reach the rung and that is the
-program's job; everything here means the driver pointed somewhere the feature
+program's job; everything here means the pointer aimed somewhere the feature
 has nothing to say about.
 
 ### `const ORIGIN_TOLERANCE_PT`
 
-Generous on purpose, and the generosity has a source: the driver clicks a
-**whole screen pixel**, and at the fit zoom this shell opens at, one screen
-pixel is a little under two PDF points on a D-size sheet. Rounding the
-window point to an integer, converting back through the renderer's inverse
+Generous on purpose, and the generosity has a source: the pointer clicks a
+window point **to one decimal**, and the shell resolves the press to its
+own pixel grid, where at the fit zoom one pixel is a little under two PDF
+points on a D-size sheet. Rounding the window point, converting back through the renderer's inverse
 transform, and comparing in page space therefore cannot be exact.
 
 ⚠ It is a bound on *rounding*, not a bound on *correctness*. Six points is

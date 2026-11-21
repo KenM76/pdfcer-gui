@@ -1,17 +1,18 @@
 //! # `refused_character_face` — **a refused character offers the face that can
 //! type it**, driven end to end
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/refused_character_face.md`.
 
 use crate::checks::driving::{self, INVOKE_EVENT, SHELL_DIAG_ENV, declared, declared_names, list};
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::{self, aim};
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The fixture, relative to the source root. See the module header: it is
 /// pinned, and a `--pdf` is reported as ignored rather than honoured.
@@ -124,14 +125,6 @@ fn published_after(trace: &crate::trace::Trace, region: &str, after: usize) -> b
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks page text, commits an edit, opens \
-             a combo box and clicks a row in it, and none of the four can be simulated from a \
-             trace. Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -193,9 +186,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_TYPE".to_owned(), SEED.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    // Wide so the right-hand dock has room for a panel body. A panel squeezed
+    // to nothing publishes regions nobody can press, and this check reads
+    // three of them.
+    let pointer = scripteddrive::offscreen_wide(ctx, &mut spec, "refused-character-face")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} on {} with PDFCER_DIAG_INVOKE={INVOKE} and \
          PDFCER_DIAG_TYPE={SEED}",
@@ -204,12 +202,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         pdf.display()
     ));
     session.settle(50);
-    // Maximised so the right-hand dock has room for a panel body. A panel
-    // squeezed to nothing publishes regions nobody can press, and this check
-    // reads three of them.
-    session.maximize();
-    session.settle(24);
-    let driver = Driver::new(session.window());
 
     // --- 0a: the dock reset LANDED -----------------------------------------
     let trace = session.trace()?;
@@ -233,7 +225,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "page"))
         )));
     }
-    driving::raise_dock_tab(&session, &driver, ui_rect, PROPERTIES_PANEL)?;
+    driving::raise_dock_tab(&session, &pointer, ui_rect, PROPERTIES_PANEL)?;
     session.settle(14);
 
     // --- 0b: THE CONTROL POINT -----------------------------------------
@@ -262,7 +254,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 1: the refusal ----------------------------------------------------
     let at = aim(ctx, &session, PAGE, target)?;
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(26);
 
     let trace = session.trace()?;
@@ -283,7 +275,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ the click placed a caret: `{caret}`"));
 
-    driver.press_chord(&[vk::CONTROL], vk::ENTER)?;
+    pointer.key(&session, None, "Enter", Some("ctrl"))?;
     session.settle(34);
 
     let trace = session.trace()?;
@@ -358,7 +350,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .last()
     else {
         let shot = ctx.out("refused-character-face.no-offer.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
@@ -427,7 +419,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let Some(disclosure) = declared(&trace, ui_rect, OFFER_DISCLOSURE_REGION) else {
         let shot = ctx.out("refused-character-face.no-disclosure.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
@@ -449,7 +441,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         && disclosure.overlaps(page_rect)
     {
         let shot = ctx.out("refused-character-face.disclosure-on-canvas.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
@@ -470,12 +462,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     );
 
     // --- 4: take the offer --------------------------------------------------
-    let Some(combo) = driving::scroll_to(
+    let Some(combo) = scripteddrive::wheel_to(
         &session,
-        &driver,
-        ui_rect,
-        OFFER_REGION,
-        OFFER_FACE_REGION,
+        &pointer,
+        (OFFER_REGION, OFFER_FACE_REGION),
         SCROLL_ATTEMPTS,
         report,
     )?
@@ -503,16 +493,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    driver.click_at(session.frame()?.declared_center(combo))?;
+    pointer.click(&session, WindowPoint::centre_of(combo))?;
     session.settle(26);
 
     let trace = session.trace()?;
     if declared(&trace, ui_rect, POPUP_ADDABLE_REGION).is_none() {
         let shot = ctx.out("refused-character-face.no-addable.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
-        driver.press(vk::ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?;
         return Ok(Some(format!(
             "★★ THE OFFER'S FONT LIST HOLDS NOTHING THE DOCUMENT DOES NOT ALREADY CONTAIN: the \
              chooser opened and declared no `{POPUP_ADDABLE_REGION}` region.\n\
@@ -530,7 +520,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // copy, shared verbatim with the *This text* section and the ribbon's Font
     // group, so losing it loses it in three surfaces at once.
     if declared(&trace, ui_rect, POPUP_DISCLOSURE_REGION).is_none() {
-        driver.press(vk::ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?;
         return Ok(Some(format!(
             "the chooser opened inside the offer and declared `{POPUP_ADDABLE_REGION}` without \
              `{POPUP_DISCLOSURE_REGION}`. `face::popup_body` draws them one after the other, so \
@@ -540,14 +530,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     let Some(row) = declared(&trace, ui_rect, POPUP_NEW_REGION) else {
-        driver.press(vk::ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?;
         return Ok(Some(format!(
             "the chooser drew the `{POPUP_ADDABLE_REGION}` heading and no `{POPUP_NEW_REGION}` \
              row under it, so the group is a caption over an empty band. Trace: {}.",
             session.trace_path().display()
         )));
     };
-    driver.click_at(session.frame()?.declared_center(row))?;
+    pointer.click(&session, WindowPoint::centre_of(row))?;
     // Waited for by its OUTCOME rather than by a frame count. A restyle costs
     // one provenance extraction per run — 392 ms on the operator's benchmark
     // sheet — and a fixed settle that was generous on this 1.7 KB fixture would
@@ -621,7 +611,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .map(|l| l.raw.clone());
     if landed.is_none() && refused_again.is_none() {
         let shot = ctx.out("refused-character-face.no-retype.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
@@ -680,7 +670,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let Some((landed_at, landed_raw)) = landed else {
         let refused_raw = refused_again.unwrap_or_default();
         let shot = ctx.out("refused-character-face.retype-refused.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         if refused_raw.contains("R-INV-1") || refused_raw.contains("SUBSET") {
@@ -767,12 +757,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // move, because the last thing the pointer did was click the chooser's row
     // some way away from it. Moving to where the pointer already is would be no
     // move at all and would provoke nothing.
-    driver.move_to(at)?;
+    pointer.hover(&session, at)?;
     session.settle(10);
     let trace = session.trace()?;
     if let Some(why) = offer_must_retire(ctx, &session, &trace, landed_at, &landed_raw) {
         let shot = ctx.out("refused-character-face.offer-survived.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(why));
@@ -823,6 +813,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          to the document \u{2014} it is not a region drawn unconditionally"
     ));
 
+    pointer.gone(&session)?;
     Ok(None)
 }
 

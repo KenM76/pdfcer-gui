@@ -1,13 +1,16 @@
 //! `restyling_selected_text_reaches_the_document` — **sweep text, press Bold,
 //! and the file changes.**
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/restyle_text.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -36,8 +39,6 @@ const SELECTION_EVENT: &str = "canvas-text-selection";
 const SWEEP_PT: f64 = 60.0;
 /// How many scroll notches to spend looking for Bold below the panel's fold.
 const SCROLL_ATTEMPTS: usize = 6;
-/// `T`, as a Windows virtual key — the text-sweep tool.
-const VK_T: u16 = 0x54;
 
 /// See the module documentation.
 pub struct RestylingSelectedTextReachesTheDocument;
@@ -98,12 +99,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          eight characters into a 12 pt line on a 612 × 792 page",
         pdf.display()
     ));
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check sweeps the pointer across text and \
-             presses a button, and neither can be simulated from the trace.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -138,41 +133,36 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "restyle-text")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Edit mode -------------------------------------------------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     // --- 2: sweep across the text ------------------------------------------
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let start =
-        frame.to_screen(mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?);
+    let start = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
     // Along the baseline, same y — a diagonal drag would also select and would
     // make a failure ambiguous between "the sweep missed the line" and "the
     // panel did not follow".
-    let end = frame.to_screen(mapping.doc_to_window(DocPoint::new(
-        target.page,
-        target.x + SWEEP_PT,
-        target.y,
-    ))?);
-    // Arm the text-sweep tool FIRST — see `VK_T`'s own note. Without this the
+    let end = mapping.doc_to_window(DocPoint::new(target.page, target.x + SWEEP_PT, target.y))?;
+    // Arm the text-sweep tool FIRST, with its bare `T`. Without this the
     // drag below is an object marquee and the check reports a working panel as
     // broken.
-    driver.press(VK_T)?;
+    pointer.key(&session, None, "T", None)?;
     session.settle(16);
-    driver.drag(start, end)?;
+    pointer.drag(&session, start, end, 12)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -206,7 +196,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // Evidence before the verdict: a section that is not on screen is a
         // layout question, and a layout question has exactly one oracle.
         let shot = ctx.out("restyle_text.no-section.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         // ASK THE APPLICATION WHY BEFORE GUESSING WHY.
@@ -279,7 +269,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 session.trace_path().display()
             )));
         };
-        driver.scroll_at(session.frame()?.declared_center(section), -1)?;
+        pointer.wheel(&session, WindowPoint::centre_of(section), -1.0, false)?;
         session.settle(12);
     }
     let bold = bold.ok_or_else(|| {
@@ -292,8 +282,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
 
     // --- 5: press it -------------------------------------------------------
-    let frame = session.frame()?;
-    driver.click_at(frame.declared_center(bold))?;
+    pointer.click(&session, WindowPoint::centre_of(bold))?;
 
     // WAIT FOR THE GESTURE, do not guess at it. `settle(30)` — 750 ms — was
     // the first shape here and it read the trace mid-restyle: the trace held
@@ -333,7 +322,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .or_else(|| trace.events(SPAN_STYLE_EVENT).last())
     else {
         let shot = ctx.out("restyle_text.no-effect.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
+        if scripteddrive::shot(&session, &pointer, &shot).is_ok() {
             report.artifact(shot);
         }
         return Ok(Some(format!(
@@ -373,5 +362,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★★ the swept text was restyled in the open document, through `format_text`");
+    pointer.gone(&session)?;
     Ok(None)
 }

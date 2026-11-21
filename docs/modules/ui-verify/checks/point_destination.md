@@ -68,7 +68,7 @@ measures the centring rather than the operator.
 
 # Every way these report SKIP
 
-No binary, `--no-input`, no diagnostic channel, no canvas rect to aim
+No binary, no diagnostic channel, no canvas rect to aim
 against, the fixture missing, or a window so wide that eight notches of zoom
 still leave no horizontal scroll range. None of those is a pass, and each
 says which it was.

@@ -1,15 +1,16 @@
 //! `ctrl_s_after_an_edit_saves_and_the_program_is_still_running` — **the
 //! operator pressed Ctrl+S and the window disappeared.**
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/save_after_edit.md`.
 
 use crate::checks::driving::SHELL_DIAG_ENV;
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The edit, through the seam: rotate page one. No pointer, no dialog.
 const INVOKE: &str = "pages.rotate_right";
@@ -49,12 +50,6 @@ impl Check for CtrlSAfterAnEditSavesAndTheProgramIsStillRunning {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). The whole subject is a real keystroke — the seam \
-             route is already covered elsewhere and does not reproduce this.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -94,9 +89,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "save-after-edit")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} on a scratch copy",
         exe.display(),
@@ -116,9 +113,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★ the document has an unsaved change");
 
-    // --- 2: press the chord, for real ---------------------------------------
-    let driver = Driver::new(session.window());
-    driver.press_chord(&[vk::CONTROL], vk::S)?;
+    // --- 2: press the chord, through the keyboard path ----------------------
+    pointer.key(&session, None, "S", Some("ctrl"))?;
     session.settle(60);
 
     // THE ASSERTION THIS CHECK EXISTS FOR, and it comes BEFORE the trace
@@ -218,5 +214,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★★ …and the document is still open on {pages} page(s), with {before_zoom} canvas \
          frame(s) drawn — O65, driven for the first time"
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }

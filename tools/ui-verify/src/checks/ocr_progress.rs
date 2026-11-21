@@ -1,15 +1,18 @@
 //! **The three checks about a recognition run while it is still running** —
 //! progress, Stop, and Cancel.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/ocr_progress.md`.
 
 use std::path::PathBuf;
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
-use crate::checks::ocr::{click_command, click_region, click_tab};
+use crate::checks::ocr::{click_command, click_region_in, click_tab};
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -126,20 +129,13 @@ fn start_a_run(
     ctx: &CheckContext,
     report: &mut CheckReport,
     trace_name: &str,
-) -> Result<(Session, Driver, bool)> {
+) -> Result<(Session, ScriptedPointer, bool)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control and dialog \
-             buttons. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -181,6 +177,8 @@ fn start_a_run(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let stem = trace_name.trim_end_matches(".trace.txt");
+    let pointer = scripteddrive::offscreen_wide(ctx, &mut spec, stem)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -189,30 +187,10 @@ fn start_a_run(
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    // **MAXIMIZE, and this line is a repair.**
-    //
-    // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
-    // SKIP for a reason that turned out to apply to THIS check too: at the
-    // window's default width the `file` tab's **Recognise group collapses**,
-    // and a collapsed group declares `ribbon.group.file.recognise.collapsed`
-    // instead of `ribbon.item.file.ocr`. The harness then reports *"the
-    // application declared no `ribbon.item.file.ocr` region"* — which reads as
-    // the command having been removed, and is in fact the ribbon doing exactly
-    // what a ribbon is for.
-    //
-    // This check had therefore been reporting **SKIP** rather than PASS, and
-    // a SKIP is not a failure, so nothing was red and nothing prompted a look.
-    // `Session::maximize`'s own doc comment describes this precise symptom —
-    // *"would have been handed ten controls ending at `file.print`, and would
-    // have reported a shipped feature as missing"* — so the lesson was already
-    // written down and this call site simply never got it.
-    //
-    // Opt-in per check by design, because a maximised window is a different
-    // layout and several checks measure the layout. Nothing here does: this
-    // check's subject is a command, a dialog and a file on disk.
-    session.maximize();
-    session.settle(12);
+    // A desktop-wide window, so the `file` tab's Recognise group shows open
+    // rather than collapsed into a `.collapsed` region.
 
     if !session.trace()?.started(ctx.profile.vocab.start_event) {
         return Err(Error::new(format!(
@@ -222,11 +200,10 @@ fn start_a_run(
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
 
-    driving::click_mode_segment(&session, &driver, ui_rect, READ)?;
-    click_tab(&session, &driver, ui_rect, TAB)?;
-    click_command(&session, &driver, ui_rect, COMMAND)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, READ)?;
+    click_tab(&session, &pointer, ui_rect, TAB)?;
+    click_command(&session, &pointer, ui_rect, COMMAND)?;
     session.settle(16);
 
     let trace = session.trace()?;
@@ -269,8 +246,8 @@ fn start_a_run(
             exe.display()
         )));
     }
-    click_region(&session, &driver, ui_rect, "ocr-run")?;
-    Ok((session, driver, real))
+    click_region_in(&session, &pointer, ui_rect, "ocr-run")?;
+    Ok((session, pointer, real))
 }
 
 /// A refusal, if the trace carries one. Every check treats it the same way:
@@ -314,7 +291,7 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("no ui-rect event in this profile"))?;
-    let (session, _driver, real) = start_a_run(ctx, report, "ocr-progress.trace.txt")?;
+    let (session, pointer, real) = start_a_run(ctx, report, "ocr-progress.trace.txt")?;
 
     // Wait for the first page to finish. Until one has, the label is
     // deliberately not drawn: `Page 0 of 8 — 0 words` beside a spinner says
@@ -503,6 +480,7 @@ fn drive_progress(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
              numbers that move, on a window that keeps redrawing itself",
         );
     }
+    pointer.gone(&session)?;
     Ok(None)
 }
 
@@ -604,7 +582,7 @@ fn drive_ending(
         Ending::Stop => "ocr-stop.trace.txt",
         Ending::Cancel => "ocr-cancel.trace.txt",
     };
-    let (session, driver, real) = start_a_run(ctx, report, trace_name)?;
+    let (session, pointer, real) = start_a_run(ctx, report, trace_name)?;
 
     // **Wait for a page to finish before pressing anything, and that is
     // not politeness — it is what makes the result mean something.**
@@ -675,7 +653,7 @@ fn drive_ending(
             driving::list(&driving::declared_names(&trace, ui_rect, "ocr-"))
         )));
     }
-    click_region(&session, &driver, ui_rect, ending.region())?;
+    click_region_in(&session, &pointer, ui_rect, ending.region())?;
 
     // The stop flag is read between pages, so the wait is bounded by one page
     // plus the poll — generous margin, same reasoning as everywhere else here.
@@ -810,6 +788,7 @@ fn drive_ending(
              document-independent; recognition quality is not, and is not claimed",
         );
     }
+    pointer.gone(&session)?;
     Ok(None)
 }
 

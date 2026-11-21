@@ -19,7 +19,7 @@ that happened**:
 | `saving_writes_the_document` and friends | invoke `file.save` through `PDFCER_DIAG_INVOKE` | the seam, not the keyboard |
 | 2,786 unit tests | call the verbs | a process that exits is not a returned `Err` |
 
-⇒ The gap is the **conjunction**: a real keystroke, on a document that has
+⇒ The gap is the **conjunction**: a keystroke through the keyboard path, on a document that has
 something to write. Each half was covered and the pair was not, which is the
 shape of nearly every defect this project has found by driving.
 

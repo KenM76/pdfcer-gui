@@ -1,13 +1,17 @@
 //! `a_selected_object_can_be_marked_for_redaction` — the driven proof of
 //! `OPERATOR_REQUESTS.md` **O60**.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/redact_selection.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -61,12 +65,6 @@ fn marks(trace: &Trace) -> Option<usize> {
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check must click an object on the page to \
-             select it. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -112,6 +110,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "redact-selection")?;
 
     // Normalise the saved dock layout, or a panel TOGGLE alternates between
     // opening and closing across runs. Same rule, same file, as the bookmark
@@ -126,9 +125,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(60);
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, "edit")?;
+    click_mode_segment(&session, &pointer, ui_rect, "edit")?;
     session.settle(20);
 
     let before = marks(&session.trace()?).ok_or_else(|| {
@@ -146,7 +145,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- select something ---------------------------------------------------
     let mapping = CanvasMapping::from_trace(&session.trace()?, vocab, page, point.page)?;
     let at = DocPoint::new(point.page, point.x, point.y);
-    driver.click_at(session.frame()?.to_screen(mapping.doc_to_window(at)?))?;
+    pointer.click(&session, mapping.doc_to_window(at)?)?;
     session.settle(20);
 
     let selected = session
@@ -200,7 +199,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             crate::checks::driving::list(&tabs)
         )));
     };
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(18);
 
     // `declared_or_in_overflow`, not `declared`. The harness drives an
@@ -212,7 +211,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // harness gap and left.
     let button = crate::checks::driving::declared_or_in_overflow(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         REDACT_BUTTON,
     )?
@@ -221,10 +220,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 "no `{REDACT_BUTTON}` region, so the Redact selection control is not on the ribbon and there is nothing to press. `edit.redact_selection` is gated on `selection.any` and an object IS selected, so this says the band is not drawn rather than that the control is disabled. SKIPPED."
             ))
         })?;
-    driver.click_at(session.frame()?.declared_center(button))?;
+    pointer.click(&session, WindowPoint::centre_of(button))?;
     session.settle(30);
 
-    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
+    raise_panel(&session, &pointer, ui_rect)?;
     let after_trace = session.trace()?;
     if after_trace.events(REQUESTED).next().is_none() {
         return Ok(Some(format!(
@@ -269,5 +268,32 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("★★ and nothing was applied — the mark is a mark, as it must be");
 
+    pointer.gone(&session)?;
     Ok(None)
+}
+
+/// Bring the Redact panel to the front of its dock: the scripted twin of
+/// `redaction::raise_panel`, for a ribbon already on the Security tab. A
+/// selection raises Properties over it, and a panel behind another tab
+/// publishes no census.
+fn raise_panel(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
+    const TAB: &str = "dock.tab.edit.redact"; // ui-text-exempt: a trace region name
+    const ITEM: &str = "ribbon.item.edit.redact"; // ui-text-exempt: a trace region name
+    let trace = session.trace()?;
+    if crate::checks::driving::declared(&trace, ui_rect, PANEL).is_some() {
+        return Ok(());
+    }
+    let name = if crate::checks::driving::declared(&trace, ui_rect, TAB).is_some() {
+        TAB
+    } else {
+        ITEM
+    };
+    scripteddrive::click(session, pointer, name)?;
+    session.settle(20);
+    if crate::checks::driving::declared(&session.trace()?, ui_rect, PANEL).is_none() {
+        return Err(Error::new(format!(
+            "a click on `{name}` did not bring the Redact panel forward."
+        )));
+    }
+    Ok(())
 }

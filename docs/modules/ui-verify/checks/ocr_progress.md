@@ -86,8 +86,7 @@ page** through `pdfcer ocr`. See `OPERATOR_REQUESTS.md` O93.
 
 # Every way these report SKIP, and why none of them is a pass
 
-* no binary, no `--no-input`, no diagnostic channel — the harness never
-  began;
+* no binary, no diagnostic channel — the harness never began;
 * the fixture is missing;
 * a tab, a mode segment or a control was never declared, or took no click;
 * the model weights are not beside the binary — the application says so by
@@ -166,7 +165,7 @@ Everything up to the moment work starts is identical in all three checks,
 and duplicating it three times would be three places for the ribbon path to
 rot. `Err` is a SKIP in every caller.
 
-Returns the session, the driver, and the resolved document with its
+Returns the session, the scripted pointer that drives it, and the resolved document with its
 real-material flag.
 
 ### `fn the_fixture_is_multi_page_and_image_only`
