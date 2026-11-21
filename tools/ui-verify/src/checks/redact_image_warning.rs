@@ -5,9 +5,11 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/redact_image_warning.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
+use crate::checks::scripteddrive::{OFFSCREEN_WIDE, offscreen_at};
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -60,12 +62,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check presses a panel button. Reported as \
-             SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -139,19 +135,45 @@ fn mark_whole_page(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    // Desktop-sized, because the Edit tab's later groups fold away at the
+    // harness's default width.
+    let stem = path
+        .file_stem()
+        .map_or_else(|| "fixture".into(), |s| s.to_string_lossy());
+    let pointer = offscreen_at(
+        ctx,
+        &mut spec,
+        &format!("redact-image-warning-{stem}"),
+        OFFSCREEN_WIDE,
+    )?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    // Maximised, because the Edit tab's later groups fold away at the harness's
-    // default width — three checks skipped for a fortnight on exactly that.
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
 
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(14);
 
+    open_panel(&session, &pointer, ui_rect)?;
+
+    let trace = session.trace()?;
+    let button = declared(&trace, ui_rect, WHOLE_PAGE).ok_or_else(|| {
+        Error::new(format!(
+            "no `{WHOLE_PAGE}` region, so the Redact panel is not on screen or has no Mark \
+             whole page control. Regions beginning `redact-`: {}.",
+            list(&declared_names(&trace, ui_rect, "redact-"))
+        ))
+    })?;
+    pointer.click(&session, WindowPoint::centre_of(button))?;
+    session.settle(30);
+    pointer.gone(&session)?;
+
+    Ok(session.trace()?.last(MARKED).map(|e| e.raw.clone()))
+}
+
+/// Open the Redact panel from the Security tab, unless it is already showing.
+fn open_panel(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     // Only if it is not already there: a panel toggle that is already on
     // CLOSES the thing this check needs.
     if declared(&session.trace()?, ui_rect, PANEL).is_none() {
@@ -162,10 +184,10 @@ fn mark_whole_page(
                 list(&declared_names(&trace, ui_rect, "ribbon.tab."))
             ))
         })?;
-        driver.click_at(session.frame()?.declared_center(tab))?;
+        pointer.click(session, WindowPoint::centre_of(tab))?;
         session.settle(14);
         let item = crate::checks::driving::declared_or_in_overflow(
-            &session, &driver, ui_rect, PANEL_ITEM,
+            session, pointer, ui_rect, PANEL_ITEM,
         )?
         .ok_or_else(|| {
             Error::new(format!(
@@ -178,20 +200,8 @@ fn mark_whole_page(
                 ))
             ))
         })?;
-        driver.click_at(session.frame()?.declared_center(item))?;
+        pointer.click(session, WindowPoint::centre_of(item))?;
         session.settle(24);
     }
-
-    let trace = session.trace()?;
-    let button = declared(&trace, ui_rect, WHOLE_PAGE).ok_or_else(|| {
-        Error::new(format!(
-            "no `{WHOLE_PAGE}` region, so the Redact panel is not on screen or has no Mark \
-             whole page control. Regions beginning `redact-`: {}.",
-            list(&declared_names(&trace, ui_rect, "redact-"))
-        ))
-    })?;
-    driver.click_at(session.frame()?.declared_center(button))?;
-    session.settle(30);
-
-    Ok(session.trace()?.last(MARKED).map(|e| e.raw.clone()))
+    Ok(())
 }

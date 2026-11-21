@@ -4,11 +4,11 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/read_image_copy.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::offscreen;
+use crate::checks::text_selection::aim_window;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -30,9 +30,6 @@ const PAGE_REGION: &str = "page"; // ui-text-exempt: a trace region name, never 
 const MENU: &str = "canvas-menu"; // ui-text-exempt: a trace event name, never displayed
 /// The context a reader's right-click on a picture must resolve to.
 const READ_MENU: &str = "canvas.read-object"; // ui-text-exempt: a menu context id, never displayed
-/// `C`, for the copy chord.
-const VK_C: u16 = 0x43;
-
 /// **The fixture: a page that is one image and nothing else.**
 const FIXTURE: &str = "../../fixtures/synthetic-image-only.pdf";
 /// Its page, as the file declares it.
@@ -67,11 +64,6 @@ impl Check for ReadModeCopiesAPicture {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is a click and a chord.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -103,31 +95,30 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "read-image-copy")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} on a page that is one picture",
         exe.display(),
         session.pid()
     ));
     session.settle(45);
-    let driver = Driver::new(session.window());
 
     // --- A: Read mode, and a click selects the picture ---------------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(
             "no `{PAGE_REGION}` region, so no sheet is on screen. Regions beginning `page`: {}.",
             list(&declared_names(&session.trace()?, ui_rect, "page"))
         )));
     }
-    driver.click_at(aim(
-        ctx,
+    pointer.click(
         &session,
-        page,
-        DocPoint::new(0, POINT.0, POINT.1),
-    )?)?;
+        aim_window(ctx, &session, page, DocPoint::new(0, POINT.0, POINT.1))?,
+    )?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -148,7 +139,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("★ a click in Read selected the picture");
 
     // --- B: Ctrl+C copies it -----------------------------------------------
-    driver.press_chord(&[crate::sys::vk::CONTROL], VK_C)?;
+    pointer.copy(&session, None)?;
     session.settle(40);
 
     let trace = session.trace()?;
@@ -214,12 +205,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // --- D: the route somebody finds without being told ------------------
-    driver.right_click_at(aim(
-        ctx,
+    pointer.right_click(
         &session,
-        page,
-        DocPoint::new(0, POINT.0, POINT.1),
-    )?)?;
+        aim_window(ctx, &session, page, DocPoint::new(0, POINT.0, POINT.1))?,
+    )?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -246,5 +235,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★★ …and a right-click offers it, which is the route nobody has to be told about");
+    pointer.gone(&session)?;
     Ok(None)
 }

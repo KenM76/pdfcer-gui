@@ -653,7 +653,6 @@ fn tools/ui-verify/src/checks/protect.rs::drive
 fn tools/ui-verify/src/checks/purge_passwords_scripted.rs::drive
 fn tools/ui-verify/src/checks/qat_icons.rs::assess
 fn tools/ui-verify/src/checks/quit_unsaved.rs::drive
-fn tools/ui-verify/src/checks/raster_wall.rs::drive_a
 fn tools/ui-verify/src/checks/raster_wall.rs::drive_b
 fn tools/ui-verify/src/checks/raster_wall.rs::part_a
 fn tools/ui-verify/src/checks/raster_wall.rs::part_b

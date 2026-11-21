@@ -48,7 +48,7 @@ operator cannot use.
 | # | step | oracle |
 |---|---|---|
 | A | Read mode, click the picture | `selection-set … via=read-image` |
-| B | `Ctrl+C` | `clipboard-copy kind=content objects=1` |
+| B | `Ctrl+C`, delivered as egui's Copy event | `clipboard-copy kind=content objects=1` |
 | C | …and a picture went with it | `clipboard-image w=… h=…`, at least 1:1 |
 | D | **right-click it** | `canvas-menu context=canvas.read-object` |
 
