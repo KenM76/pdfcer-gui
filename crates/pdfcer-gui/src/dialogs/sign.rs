@@ -19,13 +19,7 @@ use crate::sign::{Authored, Identity, IdentityFailure, Placement, Refusal, Stand
 use crate::text::protect as tp;
 use crate::text::sign as t;
 
-// ---------------------------------------------------------------------------
-// Named regions
-//
-// Matched LITERALLY by `tools/ui-verify`, so renaming one silently un-aims the
-// check that measures it. `crate::dialogs::protect`'s block records why a
-// dialog needs these when a ribbon control gets its rect for free.
-// ---------------------------------------------------------------------------
+// Named regions, matched literally by `tools/ui-verify`: a rename un-aims its check.
 
 /// The whole window.
 pub(super) const REGION_DIALOG: &str = "sign-dialog"; // ui-text-exempt: trace region name, never displayed
