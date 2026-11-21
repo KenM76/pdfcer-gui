@@ -337,6 +337,9 @@ pub mod evidence;
 /// not check about a signature that already exists).
 #[cfg(feature = "signing")]
 pub mod sign;
+/// The Sign window's picture in a visible signature.
+#[cfg(feature = "signing")]
+pub mod sign_picture;
 /// **What this shell says about a digital signature before and after it
 /// writes.** The claim-bearing area of the catalog: every sentence is a
 /// translation of a distinction `pdfcer-core`'s `signature` module draws, and

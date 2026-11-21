@@ -48,7 +48,9 @@ pub(super) fn dispatch(app: &PdfcerApp, actions: &mut Vec<Action>) {
         });
         return;
     };
-    let crate::app::files::Picked::Path(path) = crate::app::files::pick_image_source() else {
+    let crate::app::files::Picked::Path(path) =
+        crate::app::files::pick_image_source(crate::text::images::window_title())
+    else {
         return;
     };
     let Some(picture) = super::images::import(&app.status, &path) else {

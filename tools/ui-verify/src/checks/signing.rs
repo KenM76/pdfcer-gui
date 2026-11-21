@@ -148,6 +148,7 @@ pub mod placement;
 mod reaching;
 pub mod reopened;
 pub mod sign_box;
+pub mod sign_image;
 pub mod timestamp;
 pub mod typed_sign;
 

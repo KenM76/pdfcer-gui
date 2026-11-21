@@ -9,7 +9,9 @@ use pdfcer_gui_base::picture::Picture;
 
 /// The whole of `edit.insert_image` after its capability guard.
 pub(super) fn insert(dialogs: &mut DialogsState, status: &Status) {
-    let crate::app::files::Picked::Path(path) = crate::app::files::pick_image_source() else {
+    let crate::app::files::Picked::Path(path) =
+        crate::app::files::pick_image_source(crate::text::images::window_title())
+    else {
         return;
     };
     insert_path(dialogs, status, &path);

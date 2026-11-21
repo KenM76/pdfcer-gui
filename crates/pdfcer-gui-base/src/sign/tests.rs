@@ -265,6 +265,23 @@ fn the_visible_box_sits_where_the_window_says_it_does() {
     assert!((r.ury - r.lly - 60.0).abs() < 1e-9, "60 pt tall");
 }
 
+/// **A picture widens the box leftward and leaves the text its 180 pt.**
+#[test]
+fn a_picture_widens_the_box_by_its_share() {
+    let letter = Rect::from_corners(0.0, 0.0, 612.0, 792.0);
+    assert!(
+        (picture_widening(32, 32) - 60.0).abs() < 1e-9,
+        "square: 60 pt"
+    );
+    assert!(
+        (picture_widening(600, 10) - 180.0).abs() < 1e-9,
+        "capped at the text's width"
+    );
+    let r = sized_rect(letter, 180.0 + picture_widening(60, 24));
+    assert!((r.urx - 576.0).abs() < 1e-9, "the right edge stays");
+    assert!((r.urx - r.llx - 330.0).abs() < 1e-9, "180 + 150");
+}
+
 /// **On a page smaller than the box, the box stays ON the page.**
 #[test]
 fn the_visible_box_is_clamped_onto_a_small_page() {

@@ -27,6 +27,9 @@ pub mod timestamp;
 /// Reading certificate, CRL and OCSP files for Add validation evidence….
 pub mod evidence;
 
+/// The picture a visible signature is drawn with.
+pub mod picture;
+
 // ---------------------------------------------------------------------------
 // What the document says today
 // ---------------------------------------------------------------------------
@@ -410,20 +413,36 @@ pub enum Placement {
     },
 }
 
+/// The visible signature box's text width, in PDF points.
+const BOX_W: f64 = 180.0;
+/// The visible signature box's height, in PDF points.
+const BOX_H: f64 = 60.0;
+
 /// The visible signature's box, in PDF points: **180 × 60, inset 36 pt from
 /// the page's bottom-right corner.**
 #[must_use]
 pub fn default_rect(media: Rect) -> Rect {
-    /// The box, in PDF points.
-    const W: f64 = 180.0;
-    /// See [`W`].
-    const H: f64 = 60.0;
+    sized_rect(media, BOX_W)
+}
+
+/// How much wider the box grows for a `width` × `height` picture: what the
+/// picture needs at the box's height, at most the text's own width. The engine
+/// gives a picture at most half the box, so the text keeps its 180 pt.
+#[must_use]
+pub fn picture_widening(width: u32, height: u32) -> f64 {
+    (BOX_H * f64::from(width.max(1)) / f64::from(height.max(1))).min(BOX_W)
+}
+
+/// [`default_rect`] at `width` points wide.
+#[must_use]
+pub fn sized_rect(media: Rect, width: f64) -> Rect {
+    const H: f64 = BOX_H;
     /// The inset from the page edge, in PDF points. Half an inch.
     const INSET: f64 = 36.0;
 
     let page_w = (media.urx - media.llx).abs();
     let page_h = (media.ury - media.lly).abs();
-    let w = W.min(page_w);
+    let w = width.min(page_w);
     let h = H.min(page_h);
     // The inset shrinks rather than pushing the box off the page when there is
     // not room for both it and the box.
@@ -476,6 +495,8 @@ pub struct Authored {
     /// PAdES B-T. `None` is B-B. A named server that fails fails the signing;
     /// it is never retried without the timestamp.
     pub timestamp_server: Option<String>,
+    /// A picture drawn in the box beside its text; ignored when invisible.
+    pub appearance_image: Option<picture::AppearancePicture>,
 }
 
 /// Why a signing did not produce bytes.
@@ -616,6 +637,10 @@ pub fn prepare(
     // assembled in the order the engine guards it: certification is refused
     // before any field is resolved.
     request.certify = authored.certify;
+    request.appearance_image = authored
+        .appearance_image
+        .as_ref()
+        .map(|p| p.image().clone());
     request.visible = match &authored.placement {
         Placement::Invisible => None,
         // `Pass 10.13`: the field's OWN `/Rect` and page place the
@@ -645,7 +670,11 @@ pub fn prepare(
             let crop = pages
                 .get(page)
                 .map_or(Rect::from_corners(0.0, 0.0, 612.0, 792.0), |p| p.crop_box);
-            Some((page, default_rect(crop)))
+            let widen = authored.appearance_image.as_ref().map_or(0.0, |p| {
+                let (w, h) = p.size();
+                picture_widening(w, h)
+            });
+            Some((page, sized_rect(crop, BOX_W + widen)))
         }
     };
 

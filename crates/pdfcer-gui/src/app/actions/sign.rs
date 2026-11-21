@@ -140,6 +140,19 @@ fn run(
             serial: &stamp.serial_hex,
         }),
     });
+    let asked = authored.appearance_image.is_some();
+    if let Some(line) = crate::text::sign_picture::receipt(asked, report.appearance_image_drawn) {
+        details.push('\n');
+        details.push_str(line);
+    }
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "sign-picture-drawn asked={} drawn={}",
+            u8::from(asked),
+            u8::from(report.appearance_image_drawn)
+        )
+    });
     if let Some(rc4) = crate::app::rc4::after_save(report.rc4_keystream_reused) {
         details.push('\n');
         details.push_str(&rc4);

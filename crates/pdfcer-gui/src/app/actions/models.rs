@@ -448,7 +448,9 @@ pub(super) fn save_picture(doc: &mut OpenDoc, artwork: &ThreeDArtwork, bytes: &[
 
 /// Pick a picture file and make it the page picture of `artwork`.
 pub(super) fn pick_poster(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
-    let crate::app::files::Picked::Path(source) = crate::app::files::pick_image_source() else {
+    let crate::app::files::Picked::Path(source) =
+        crate::app::files::pick_image_source(crate::text::images::window_title())
+    else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             "model-poster-cancelled".to_owned()
