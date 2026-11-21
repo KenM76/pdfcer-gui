@@ -2,8 +2,9 @@
 //! run's font lacks, with those characters set in another face
 //!
 //! [`try_commit`] asks the engine to set the characters in the face itself
-//! (`EditOptions::with_fallback`), which it does when the match lies in one
-//! show operator. Otherwise [`commit`] commits the tokenised line through the ordinary plan, then for
+//! (`EditOptions::with_fallback`), which it does when the changed stretch
+//! lies in one show operator. Otherwise [`commit`] commits the tokenised line
+//! through the ordinary plan, then for
 //! each segment, last first, moves its token to the face (`format_text`) and
 //! writes the characters over it (`edit_text`). Every step lands in one undo
 //! entry (`coalesce_last`); a step that fails rolls the session back to the
@@ -25,7 +26,7 @@ use crate::canvas::textedit::Plan;
 
 /// Commit `replacement` with `reface`'s characters in its face, when the run
 /// still refuses any of them. The engine's fallback (G078) is tried first; a
-/// match it cannot split — several show operators — falls to the placeholder
+/// change it cannot split — across several show operators — falls to the placeholder
 /// route in the same undo step. Answers whether it took the commit; `false`
 /// leaves it to the ordinary path.
 pub(super) fn try_commit(
