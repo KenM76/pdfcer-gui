@@ -28,7 +28,7 @@ pub use authoring::{
 };
 
 pub use groups::*;
-pub use notes::{FieldNoteKind, field_display_notes, field_display_notes_tooltip};
+pub use notes::{FieldNoteKind, field_display_notes, field_display_notes_tooltip, rich_fill_notes};
 pub use redraw::{RedrawSubject, redraw_notes};
 pub use tab_order::*;
 
@@ -256,9 +256,9 @@ pub fn form_field_choice_multi_value_not_listed() -> &'static str {
 /// Note on a rich-text field row.
 #[must_use]
 pub fn form_field_rich_text_note() -> &'static str {
-    "This field holds formatted text. pdfcer cannot edit that formatting yet, and typing plain \
-     text into it would leave the stored formatting deciding what other viewers show — so the \
-     box above is read-only."
+    "This field holds formatted text. Click it on the page to type into it: what you type \
+     stays formatted text, in the field's default style, and replaces the formatting listed \
+     below."
 }
 
 /// The convert-to-plain-text button on a rich-text row.

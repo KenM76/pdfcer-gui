@@ -14,6 +14,16 @@ pub enum FormEdit {
         /// The plain text to store.
         value: String,
     },
+    /// Write `value` into the rich-text field named `field` **as rich text**:
+    /// one paragraph per line, in the field's default style (`/DS`), through
+    /// `fill_rich_text_field`. The field stays rich text; per-run formatting
+    /// the earlier value carried is replaced, and the fill says so.
+    FillRichText {
+        /// The field's fully-qualified name.
+        field: String,
+        /// The plain text typed, lines separated by `\n`.
+        value: String,
+    },
     /// Write `value` into the rich-text field named `field`, **discarding its
     /// `/RV`**.
     ///
@@ -128,6 +138,7 @@ impl FormEdit {
     pub const fn label(&self) -> &'static str {
         match self {
             Self::FillText { .. } => "form-fill-text",
+            Self::FillRichText { .. } => "form-fill-rich-text",
             Self::ConvertRichTextToPlain { .. } => "form-convert-rich-text",
             Self::FillTextStoringPassword { .. } => "form-fill-storing-password",
             Self::SetButtonState { .. } => "form-set-button-state",

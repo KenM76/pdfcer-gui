@@ -61,6 +61,7 @@ use crate::canvas::forms::boxes::{
 use crate::canvas::strip::{DrawnPage, PageView};
 use crate::canvas::tool::CanvasTool;
 use crate::panels::forms::edit::FormEdit;
+use pdfcer_core::forms::Field;
 
 /// `egui::Memory` key for the frame's widget boxes, in canvas space.
 const BOXES_KEY: &str = "pdfcer-canvas-form-boxes"; // ui-text-exempt: internal memory id, never displayed
@@ -546,7 +547,11 @@ pub(super) fn settle(ctx: &egui::Context, doc: &OpenDoc, actions: &mut Vec<Actio
 
 /// Raise a fill if the draft differs from what the document holds.
 pub(super) fn commit(focus: &Focus, doc: &OpenDoc, actions: &mut Vec<Action>) {
-    let stored = stored_value(doc, &focus.field).unwrap_or_default();
+    let held = stored_field(doc, &focus.field);
+    let stored = held
+        .as_ref()
+        .map(|f| f.value.display_text())
+        .unwrap_or_default();
     let Some(value) =
         crate::panels::forms::rows::commit(true, focus.draft.as_str(), stored.as_str())
     else {
@@ -565,23 +570,28 @@ pub(super) fn commit(focus: &Focus, doc: &OpenDoc, actions: &mut Vec<Action>) {
             value.chars().count()
         )
     });
-    actions.push(
-        FieldAction::Edit(FormEdit::FillText {
-            field: focus.field.clone(),
-            value,
-        })
-        .into(),
-    );
+    let field = focus.field.clone();
+    // A rich-text field stays one: `fill_text_field` refuses it.
+    let edit = if held.as_ref().is_some_and(Field::is_rich_text) {
+        FormEdit::FillRichText { field, value }
+    } else {
+        FormEdit::FillText { field, value }
+    };
+    actions.push(FieldAction::Edit(edit).into());
 }
 
 /// What the document currently holds for `field`, as display text.
 pub(super) fn stored_value(doc: &OpenDoc, field: &str) -> Option<String> {
+    stored_field(doc, field).map(|f| f.value.display_text())
+}
+
+/// The field named `field`, as the document currently holds it.
+fn stored_field(doc: &OpenDoc, field: &str) -> Option<Field> {
     let view = doc.session.view();
-    let form = pdfcer_core::forms::parse_acroform(&view)?;
-    form.fields
-        .iter()
+    pdfcer_core::forms::parse_acroform(&view)?
+        .fields
+        .into_iter()
         .find(|f| f.fully_qualified_name == field)
-        .map(|f| f.value.display_text())
 }
 
 /// **Interact with a focused field's rectangle and keep the keys it reads.**

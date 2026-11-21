@@ -321,10 +321,7 @@ pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, 
     }
 
     match (field.field_type, field.button_kind) {
-        // Rich text is not refused by `block_reason` on purpose — the panel
-        // offers it a disclosed *conversion*. There is no conversion gesture
-        // on a page, so here it is simply not offered.
-        (Some(FieldType::Text), _) if field.is_rich_text() => Err(NotOnCanvas::NotOffered),
+        // A rich-text field is typed into as rich text (`FillRichText`).
         (Some(FieldType::Text), _) => {
             if !rotate.is_multiple_of(360) {
                 return Err(NotOnCanvas::RotatedPage);

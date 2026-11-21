@@ -41,6 +41,7 @@ pub mod properties_restyle_word;
 pub mod remove_ocr;
 pub mod repair_form_fonts;
 pub mod rich_copy;
+pub mod rich_fill;
 pub mod run_width;
 /// A selection dropped on another window is pasted there; Shift moves it.
 pub mod selection_drop;

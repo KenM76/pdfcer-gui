@@ -235,19 +235,17 @@ fn the_canvas_declines_every_field_the_panel_blocks() {
         );
     }
 
-    // Rich text is the case `block_reason` deliberately does NOT cover —
-    // the panel offers a conversion. There is no conversion gesture on a
-    // page, so the canvas declines it on its own account.
+    // Rich text is typed into on the page, as rich text.
     let rich = Field {
         flags: FieldFlags(FieldFlags::RICH_TEXT),
         ..text_field()
     };
     assert!(rich.is_rich_text());
     assert!(crate::panels::forms::rows::block_reason(&rich).is_none());
-    assert_eq!(
+    assert!(matches!(
         classify(&rich, &drawn_widget(), 0),
-        Err(NotOnCanvas::NotOffered),
-    );
+        Ok(BoxKind::Text { .. })
+    ));
 }
 
 /// **A radio widget carries its OWN on-state, not the field's first.**
