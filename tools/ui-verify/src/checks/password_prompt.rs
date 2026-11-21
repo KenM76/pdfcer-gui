@@ -1,12 +1,16 @@
 //! `an_encrypted_document_can_be_opened_with_its_password` — the capability the
 //! audit found missing, driven end to end.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/password_prompt.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -57,12 +61,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check types a password and presses a button. \
-             Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx
         .profile
         .vocab
@@ -99,6 +97,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "password_prompt")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -107,8 +106,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     let trace = session.trace()?;
     if declared(&trace, ui_rect, BODY).is_none() {
@@ -124,15 +123,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- B: a wrong password is refused, and SAYS it was refused -----------
     //
-    // Typed through the OS, not seeded: the field is a real `TextEdit` behind
+    // Typed as input events, not seeded: the field is a real `TextEdit` behind
     // a real viewport, and a check that wrote the string into memory would be
     // asserting about a program nobody can operate.
-    driver.type_ascii(WRONG)?;
+    let prompt = viewport_of(&session, ui_rect, BODY)?;
+    pointer.type_text(&session, prompt.as_deref(), WRONG)?;
     session.settle(8);
-    let open = declared(&session.trace()?, ui_rect, OPEN)
-        .ok_or_else(|| Error::new(format!("the prompt declared no `{OPEN}` button to press.")))?;
-    let frame = crate::checks::driving::frame_of(&session, &session.trace()?, ui_rect, OPEN)?;
-    driver.click_at(frame.declared_center(open))?;
+    if declared(&session.trace()?, ui_rect, OPEN).is_none() {
+        return Err(Error::new(format!(
+            "the prompt declared no `{OPEN}` button to press."
+        )));
+    }
+    press(&session, &pointer, ui_rect, OPEN)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -175,18 +177,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // when it opens — which is why the defect only appears after a rejection,
     // i.e. only in the branch nothing had ever driven.
     let trace = session.trace()?;
-    if let Some(field) = declared(&trace, ui_rect, FIELD) {
-        let frame = crate::checks::driving::frame_of(&session, &trace, ui_rect, FIELD)?;
-        driver.click_at(frame.declared_center(field))?;
+    if declared(&trace, ui_rect, FIELD).is_some() {
+        press(&session, &pointer, ui_rect, FIELD)?;
         session.settle(8);
     }
-    driver.type_ascii(RIGHT)?;
+    pointer.type_text(&session, prompt.as_deref(), RIGHT)?;
     session.settle(8);
-    let trace = session.trace()?;
-    let open = declared(&trace, ui_rect, OPEN)
-        .ok_or_else(|| Error::new(format!("the prompt no longer declares `{OPEN}`.")))?;
-    let frame = crate::checks::driving::frame_of(&session, &trace, ui_rect, OPEN)?;
-    driver.click_at(frame.declared_center(open))?;
+    if declared(&session.trace()?, ui_rect, OPEN).is_none() {
+        return Err(Error::new(format!(
+            "the prompt no longer declares `{OPEN}`."
+        )));
+    }
+    press(&session, &pointer, ui_rect, OPEN)?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -261,7 +263,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let shot = ctx.out("password-prompt.png");
-    match crate::capture::window_to_png(&session, &shot) {
+    pointer.gone(&session)?;
+    match scripteddrive::shot(&session, &pointer, &shot) {
         Ok(_) => {
             report.artifact(shot);
         }
@@ -275,4 +278,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     } else {
         Ok(Some(failures.join("  |  ")))
     }
+}
+
+/// The viewport `region` was last declared in; `None` is the root.
+fn viewport_of(session: &Session, ui_rect: &str, region: &str) -> Result<Option<String>> {
+    Ok(
+        crate::checks::driving::declared_in(&session.trace()?, ui_rect, region)
+            .and_then(|(_, v)| v),
+    )
+}
+
+/// Click the centre of `region` in the viewport it was declared in.
+fn press(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, region: &str) -> Result<()> {
+    let trace = session.trace()?;
+    let (rect, viewport) = crate::checks::driving::declared_in(&trace, ui_rect, region)
+        .ok_or_else(|| Error::new(format!("the prompt declared no `{region}` region.")))?;
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
+    Ok(())
 }

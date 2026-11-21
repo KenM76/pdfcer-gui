@@ -6,9 +6,12 @@
 use crate::checks::driving::{
     ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::geom::LRect;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
 /// The ribbon control, and the tab it lives on.
@@ -65,12 +68,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check is five clicks. Reported as SKIPPED \
-             rather than passed — a check that did not run has learned nothing.",
-        ));
-    }
 
     // No fixture. See the module header: the command is offered with nothing
     // open, on purpose, and that is the state to drive it from.
@@ -83,6 +80,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "new_document_size")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -91,6 +89,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(30);
 
     let trace = session.trace()?;
@@ -118,7 +117,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
-    let driver = Driver::new(session.window());
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
 
     // --- A. the File tab ----------------------------------------------------
@@ -128,7 +126,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(12);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -157,7 +155,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
              laid out and not on screen."
         )));
     }
-    driver.click_at(session.frame()?.declared_center(control))?;
+    pointer.click(&session, WindowPoint::centre_of(control))?;
     session.settle(15);
 
     let trace = session.trace()?;
@@ -194,7 +192,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let target = format!("{SIZE_ITEM_PREFIX}{A3_INDEX}");
     let mut opened = None;
     for attempt in 0..3 {
-        driver.click_at(dialog_frame(&session, ui_rect, SIZE)?.declared_center(size))?;
+        press(&session, &pointer, ui_rect, SIZE, size)?;
         session.settle(20);
         if let Some(rect) = declared(&session.trace()?, ui_rect, &target) {
             if attempt > 0 {
@@ -218,7 +216,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             list(&entries)
         )));
     };
-    driver.click_at(dialog_frame(&session, ui_rect, &target)?.declared_center(entry))?;
+    press(&session, &pointer, ui_rect, &target, entry)?;
     session.settle(12);
 
     // --- D. turn it landscape -----------------------------------------------
@@ -228,7 +226,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
             "the dialog published no `{LANDSCAPE}` region, so there is no orientation control."
         ))
     })?;
-    driver.click_at(dialog_frame(&session, ui_rect, LANDSCAPE)?.declared_center(landscape))?;
+    press(&session, &pointer, ui_rect, LANDSCAPE, landscape)?;
     session.settle(12);
 
     // --- E. create ----------------------------------------------------------
@@ -245,7 +243,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
              drawn."
         )));
     };
-    driver.click_at(dialog_frame(&session, ui_rect, CREATE)?.declared_center(create))?;
+    press(&session, &pointer, ui_rect, CREATE, create)?;
     // Longer than a widget settle: this parses a template, rewrites the whole
     // file, re-parses it, and then adopts a new document — which drops the
     // render worker's texture and rebuilds every panel.
@@ -300,44 +298,21 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )));
     }
 
+    pointer.gone(&session)?;
     Ok(None)
 }
 
-/// **The frame a New-document dialog region must be converted against.**
-///
-///
-/// This check clicked every one of its dialog controls through
-/// `session.frame()`, which is the **application's main window**. The dialog is
-/// its own OS viewport:
-///
-/// ```text
-/// ui-rect  name=new-document.size rect=[[12.0 58.0] - [155.2 82.0]] viewport="F7DA"
-/// viewport-inner id="F7DA" rect=[[836.0 119.0] - [1296.0 639.0]]
-/// ```
-///
-/// So a click aimed at `(84, 70)` in the dialog was delivered at `(84, 70)` of
-/// the main window — roughly 800 px away, on the ribbon. The size popup
-/// therefore never opened, no `new-document.size.item.N` region was ever
-/// published (they exist only inside `ComboBox::show_ui`), and the check
-/// SKIPPED with *"the popup did not open, or opened and closed within the
-/// settle … this is a harness timing question"*. It was not a timing question.
-/// Three clicks and a 20-frame settle apiece changed nothing, which is the tell:
-/// **a retry that does not help means the aim, not the wait.**
-///
-/// `RESUME.md` records the identical fault in `checks::ocr::click_region` on
-/// 2026-08-27, and its conclusion verbatim: *"If you convert a check to drive a
-/// dialog, use `driving::frame_of`; it is safe on a main-window region and costs
-/// nothing."* That check was fixed; this one was written afterwards without it.
-/// A note is not a mechanism.
-///
-/// # Errors
-///
-/// If the trace cannot be read or the viewport frame cannot be resolved.
-fn dialog_frame(
+/// Click `rect`'s centre in the viewport `region` was declared in: the dialog
+/// is its own OS viewport and its rects are relative to it.
+fn press(
     session: &Session,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     region: &str,
-) -> Result<crate::coords::WindowFrame> {
-    let trace = session.trace()?;
-    crate::checks::driving::frame_of(session, &trace, ui_rect, region)
+    rect: LRect,
+) -> Result<()> {
+    let viewport = crate::checks::driving::declared_in(&session.trace()?, ui_rect, region)
+        .and_then(|(_, v)| v);
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
+    Ok(())
 }

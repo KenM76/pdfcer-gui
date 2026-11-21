@@ -16,7 +16,6 @@ dup tools/ui-verify::armed_tool in tools/ui-verify/src/checks/custom_stamp.rs, t
 dup tools/ui-verify::at in tools/ui-verify/src/checks/signing/hand_sign.rs, tools/ui-verify/src/checks/signing/next_box.rs
 dup tools/ui-verify::census in tools/ui-verify/src/checks/bookmark_edit.rs, tools/ui-verify/src/checks/bookmark_move.rs
 dup tools/ui-verify::click in tools/ui-verify/src/checks/shortcut_change.rs, tools/ui-verify/src/checks/snapshot_dpi.rs
-dup tools/ui-verify::click_doc in tools/ui-verify/src/checks/link_follow.rs, tools/ui-verify/src/checks/point_destination.rs
 dup tools/ui-verify::differs in tools/ui-verify/src/checks/model_poster.rs, tools/ui-verify/src/checks/model_view_poster.rs
 dup tools/ui-verify::digest in tools/ui-verify/src/checks/ocr.rs, tools/ui-verify/src/checks/page_ops.rs, tools/ui-verify/src/checks/redaction.rs, tools/ui-verify/src/checks/save_as.rs, tools/ui-verify/src/checks/save_copy.rs
 dup tools/ui-verify::drag_holding in tools/ui-verify/src/checks/dimension_corner_count.rs, tools/ui-verify/src/checks/markup_node_edit.rs
@@ -102,7 +101,6 @@ file tools/ui-verify/src/checks/form_groups.rs
 file tools/ui-verify/src/checks/markup_shapes.rs
 file tools/ui-verify/src/checks/measure_linear.rs
 file tools/ui-verify/src/checks/mod.rs
-file tools/ui-verify/src/checks/ocr_progress.rs
 file tools/ui-verify/src/checks/raster_wall.rs
 file tools/ui-verify/src/checks/redaction.rs
 file tools/ui-verify/src/checks/refused_character_face.rs

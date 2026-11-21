@@ -84,7 +84,7 @@ drawing in sight.
 
 ### `enum Gesture`
 
-An enum rather than a closure because the two arms need different driver
+An enum rather than a closure because the two arms need different pointer
 calls with different argument shapes, and a boxed closure per gesture would
 be ceremony around a two-case match.
 

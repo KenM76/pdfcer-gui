@@ -114,3 +114,130 @@ pub fn offset(p: WindowPoint, dx: f32, dy: f32) -> WindowPoint {
     };
     WindowPoint::centre_of(LRect { min: q, max: q })
 }
+
+/// A desktop-sized placement off the desktop, for a check whose ribbon group
+/// must show open rather than collapsed: the off-desktop twin of
+/// `Session::maximize`, which would carry the window onto the screen.
+pub const OFFSCREEN_WIDE: &str = "-4200,-4200,1920,1080";
+
+/// [`offscreen`] at [`OFFSCREEN_WIDE`].
+pub fn offscreen_wide(
+    ctx: &CheckContext,
+    spec: &mut LaunchSpec,
+    stem: &str,
+) -> Result<ScriptedPointer> {
+    let pointer = offscreen(ctx, spec, stem)?;
+    if let Some(slot) = spec.env.iter_mut().rev().find(|(_, v)| v == OFFSCREEN) {
+        OFFSCREEN_WIDE.clone_into(&mut slot.1);
+    }
+    Ok(pointer)
+}
+
+/// Aim document point `at` at the canvas as it is laid out now, in window
+/// points: the scripted twin of `text_selection::aim`. Errs when the canvas
+/// shows another page, since `at` would land somewhere plausible and wrong.
+pub fn aim(
+    ctx: &CheckContext,
+    session: &Session,
+    page: crate::coords::PageGeometry,
+    at: crate::coords::DocPoint,
+) -> Result<WindowPoint> {
+    let trace = session.trace()?;
+    let shown = trace
+        .last(ctx.profile.vocab.canvas_event)
+        .and_then(|l| l.get_usize("page"));
+    if shown != Some(at.page) {
+        return Err(Error::new(format!(
+            "the canvas is showing page {}, and this check's point is on page {}.",
+            shown.map_or_else(|| "an unreported index".to_owned(), |p| (p + 1).to_string()),
+            at.page + 1
+        )));
+    }
+    let mapping =
+        crate::coords::CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, at.page)?;
+    mapping.doc_to_window(at)
+}
+
+/// The centre of the window's client area in window points: the scripted twin
+/// of `WindowFrame::layout_probe_point`.
+pub fn window_centre(session: &Session) -> Result<WindowPoint> {
+    let frame = session.frame()?;
+    let half = |px: u32| px as f32 / frame.scale.max(f32::EPSILON) / 2.0;
+    let p = Pt {
+        x: half(frame.client_size.0),
+        y: half(frame.client_size.1),
+    };
+    Ok(WindowPoint::centre_of(LRect { min: p, max: p }))
+}
+
+/// Press at `from`, move through `via` to `to` in `steps` moves per leg, and
+/// release at `to`, holding at `via` for `hold` frames: the scripted twin of
+/// `Driver::drag_via`, for a gesture whose middle frames must see a changing
+/// pointer rather than a straight-line jump.
+pub fn drag_via(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    (from, via, to): (WindowPoint, WindowPoint, WindowPoint),
+    steps: u32,
+    hold: u32,
+) -> Result<()> {
+    use crate::input::scripted::xy;
+    let leg = |a: WindowPoint, b: WindowPoint| -> Result<()> {
+        for i in 1..=steps {
+            #[allow(clippy::cast_precision_loss)]
+            let t = i as f32 / steps as f32;
+            let p = offset(a, (b.x() - a.x()) * t, (b.y() - a.y()) * t);
+            pointer.send(session, &format!("move {}", xy(p)))?;
+        }
+        Ok(())
+    };
+    pointer.send(session, &format!("down {}", xy(from)))?;
+    leg(from, via)?;
+    session.settle(hold);
+    leg(via, to)?;
+    pointer.send(session, &format!("up {}", xy(to)))?;
+    Ok(())
+}
+
+/// Wheel one line at a time over `anchor`, in its own viewport, until `wanted`
+/// is declared, up to `attempts` notches: the scripted twin of
+/// `reaching::scroll_to`, with the same per-notch note. `Ok(None)` when it
+/// never appears; an error when `anchor` itself leaves the screen.
+pub fn wheel_to(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    (anchor, wanted): (&str, &str),
+    attempts: usize,
+    report: &mut crate::report::CheckReport,
+) -> Result<Option<LRect>> {
+    for attempt in 0..attempts {
+        let trace = session.trace()?;
+        if let Some((rect, _)) = declared_in(&trace, UI_RECT, wanted) {
+            if attempt > 0 {
+                report.note(format!(
+                    "`{wanted}` was below the panel's fold; {attempt} scroll notch(es) brought \
+                     it into view"
+                ));
+            }
+            return Ok(Some(rect));
+        }
+        let Some((at, vp)) = declared_in(&trace, UI_RECT, anchor) else {
+            return Err(Error::new(format!(
+                "`{anchor}` stopped being visible while scrolling for `{wanted}`, so there is \
+                 nothing left to aim the wheel at. Trace: {}.",
+                session.trace_path().display()
+            )));
+        };
+        let point = WindowPoint::centre_of(at);
+        pointer.wheel_in(session, vp.as_deref(), point, -1.0)?;
+        session.settle(12);
+        if let Some((after, _)) = declared_in(&session.trace()?, UI_RECT, anchor) {
+            report.note(format!(
+                "scroll {attempt}: wheel at ({}, {}), `{anchor}` now {after:?}",
+                point.x(),
+                point.y()
+            ));
+        }
+    }
+    Ok(None)
+}

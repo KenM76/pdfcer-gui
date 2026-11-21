@@ -2,6 +2,8 @@
 //! whose whole product is **text that was not in the document before**, and
 //! whose whole risk is that it might have touched a file nobody saved.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/ocr.md`.
 
 //!
@@ -37,8 +39,7 @@
 //!
 //! # Every way this reports SKIP, and why none is a pass
 //!
-//! * no binary, no `--no-input`, no diagnostic channel — the harness never
-//!   began;
+//! * no binary, no diagnostic channel — the harness never began;
 //! * the fixture is missing, or already has extractable text (in which case it
 //!   is the wrong fixture and OCR's contribution could not be isolated);
 //! * a tab, a mode segment or a ribbon control was never declared, or took no
@@ -50,9 +51,12 @@
 use std::path::PathBuf;
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -248,7 +252,7 @@ fn digest(bytes: &[u8]) -> (usize, u64) {
 /// Click a ribbon band control by command id, and confirm the shell saw it.
 pub(super) fn click_command(
     session: &Session,
-    driver: &Driver,
+    driver: &impl crate::input::Click,
     ui_rect: &str,
     id: &str,
 ) -> Result<()> {
@@ -274,7 +278,7 @@ pub(super) fn click_command(
         .events(driving::INVOKE_EVENT)
         .filter(|l| l.get("id") == Some(id))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    driver.click_rect(session, rect)?;
     session.settle(16);
     let after = driving::shell_trace(session)?
         .events(driving::INVOKE_EVENT)
@@ -336,11 +340,40 @@ pub(super) fn click_region(
     name: &str,
 ) -> Result<()> {
     let trace = session.trace()?;
-    let rect = driving::declared(&trace, ui_rect, name).ok_or_else(|| {
+    let rect = application_region(&trace, ui_rect, name)?;
+    // `frame_of`, never `session.frame()`: a dialog is its own viewport.
+    driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
+    session.settle(12);
+    Ok(())
+}
+
+/// [`click_region`] through the scripted pointer, in the viewport the region
+/// was declared in.
+pub(super) fn click_region_in(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    name: &str,
+) -> Result<()> {
+    let trace = session.trace()?;
+    let rect = application_region(&trace, ui_rect, name)?;
+    let viewport = driving::declared_in(&trace, ui_rect, name).and_then(|(_, v)| v);
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
+    session.settle(12);
+    Ok(())
+}
+
+/// The rect `name` was last declared at, refused when absent or arealess.
+fn application_region(
+    trace: &crate::trace::Trace,
+    ui_rect: &str,
+    name: &str,
+) -> Result<crate::geom::LRect> {
+    let rect = driving::declared(trace, ui_rect, name).ok_or_else(|| {
         Error::new(format!(
             "the application declared no `{name}` region. Regions it did declare beginning \
              `ocr-`: {}.",
-            driving::list(&driving::declared_names(&trace, ui_rect, "ocr-"))
+            driving::list(&driving::declared_names(trace, ui_rect, "ocr-"))
         ))
     })?;
     if !rect.is_substantial() {
@@ -348,12 +381,7 @@ pub(super) fn click_region(
             "`{name}` was declared at {rect:?}, which has no usable area to click."
         )));
     }
-    // **`frame_of`, never `session.frame()`.**
-    //
-    //
-    driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
-    session.settle(12);
-    Ok(())
+    Ok(rect)
 }
 
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
@@ -372,13 +400,6 @@ fn drive(
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control and two dialog \
-             buttons. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -456,6 +477,7 @@ fn drive(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen_wide(ctx, &mut spec, "ocr")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -464,30 +486,10 @@ fn drive(
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    // **MAXIMIZE, and this line is a repair.**
-    //
-    // Found on 2026-09-01 by writing `checks::ocr_progress` and watching it
-    // SKIP for a reason that turned out to apply to THIS check too: at the
-    // window's default width the `file` tab's **Recognise group collapses**,
-    // and a collapsed group declares `ribbon.group.file.recognise.collapsed`
-    // instead of `ribbon.item.file.ocr`. The harness then reports *"the
-    // application declared no `ribbon.item.file.ocr` region"* — which reads as
-    // the command having been removed, and is in fact the ribbon doing exactly
-    // what a ribbon is for.
-    //
-    // This check had therefore been reporting **SKIP** rather than PASS, and
-    // a SKIP is not a failure, so nothing was red and nothing prompted a look.
-    // `Session::maximize`'s own doc comment describes this precise symptom —
-    // *"would have been handed ten controls ending at `file.print`, and would
-    // have reported a shipped feature as missing"* — so the lesson was already
-    // written down and this call site simply never got it.
-    //
-    // Opt-in per check by design, because a maximised window is a different
-    // layout and several checks measure the layout. Nothing here does: this
-    // check's subject is a command, a dialog and a file on disk.
-    session.maximize();
-    session.settle(12);
+    // A desktop-wide window, so the `file` tab's Recognise group shows open
+    // rather than collapsed into a `.collapsed` region.
 
     let trace = session.trace()?;
     if !trace.started(ctx.profile.vocab.start_event) {
@@ -498,17 +500,16 @@ fn drive(
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
 
     // --- phase A: reach the command IN READ --------------------------------
-    driving::click_mode_segment(&session, &driver, ui_rect, READ)?;
-    click_tab(&session, &driver, ui_rect, TAB)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, READ)?;
+    click_tab(&session, &pointer, ui_rect, TAB)?;
     report.note(format!(
         "the `{TAB}` tab is present and took a click while the mode selector is on `{READ}` — so \
          the command is reachable in the mode the operator asked for it in, which the \
          specification's Tools placement would not have been"
     ));
-    click_command(&session, &driver, ui_rect, COMMAND)?;
+    click_command(&session, &pointer, ui_rect, COMMAND)?;
 
     // --- phase B: the dialog is up ------------------------------------------
     session.settle(16);
@@ -540,7 +541,7 @@ fn drive(
             exe.display()
         )));
     }
-    click_region(&session, &driver, ui_rect, "ocr-run")?;
+    click_region_in(&session, &pointer, ui_rect, "ocr-run")?;
     session.settle(RECOGNITION_FRAMES);
 
     let trace = session.trace()?;
@@ -683,12 +684,11 @@ fn drive(
          writes where it was told, and leaves the original alone",
     );
     report.note(
-        "NOT covered here: the Find bar's OCR offer. Reaching it needs a committed search, a \
-         search is committed by Enter, and synthetic keystrokes do not reach the target window \
-         from this session (see find_bar). Its rule is covered by unit test including the \
-         falsifying case; its drawing is covered by nothing, and that gap is stated rather than \
+        "NOT covered here: the Find bar's OCR offer. Its rule is covered by unit test including \
+         the falsifying case; its drawing is covered by nothing, and that gap is stated rather than \
          implied by a green result",
     );
+    pointer.gone(&session)?;
     Ok(None)
 }
 

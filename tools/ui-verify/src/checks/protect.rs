@@ -2,6 +2,8 @@
 //! document's own state, and **refuses a signed document instead of offering a
 //! form**
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/protect.md`.
 
 use std::path::{Path, PathBuf};
@@ -11,8 +13,10 @@ use super::driving::{
     declared_or_in_overflow, list, shell_trace,
 };
 use super::{Check, CheckContext};
+use crate::checks::scripteddrive;
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -78,7 +82,7 @@ fn launch(
     report: &mut CheckReport,
     pdf: &Path,
     trace_name: &str,
-) -> Result<Session> {
+) -> Result<(Session, ScriptedPointer)> {
     let mut spec = LaunchSpec::new(
         ctx.resolve_exe().ok_or_else(|| {
             Error::new(format!(
@@ -97,6 +101,8 @@ fn launch(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer =
+        scripteddrive::offscreen(ctx, &mut spec, trace_name.trim_end_matches(".trace.txt"))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -106,6 +112,7 @@ fn launch(
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     if !session.trace()?.started(ctx.profile.vocab.start_event) {
@@ -118,13 +125,13 @@ fn launch(
             session.trace_path().display()
         )));
     }
-    Ok(session)
+    Ok((session, pointer))
 }
 
 /// Click a ribbon tab and confirm the shell reported it.
 fn click_tab(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     (region, id): (&str, &str),
 ) -> Result<()> {
@@ -139,7 +146,7 @@ fn click_tab(
         .events(TAB_EVENT)
         .filter(|l| l.get("tab") == Some(id))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(14);
     if shell_trace(session)?
         .events(TAB_EVENT)
@@ -156,9 +163,9 @@ fn click_tab(
 }
 
 /// **Find one of the two Security controls and press it.**
-fn press(session: &Session, driver: &Driver, ui_rect: &str, id: &str) -> Result<()> {
+fn press(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, id: &str) -> Result<()> {
     let name = format!("{ITEM_PREFIX}{id}");
-    let found = declared_or_in_overflow(session, driver, ui_rect, &name)?;
+    let found = declared_or_in_overflow(session, pointer, ui_rect, &name)?;
     // The item list is read BEFORE the `ok_or_else` rather than inside it: a
     // closure returning `Error` cannot carry a `?`, and the failure message is
     // worth more than the one allocation it costs on the happy path. Without
@@ -173,7 +180,7 @@ fn press(session: &Session, driver: &Driver, ui_rect: &str, id: &str) -> Result<
         ))
     })?;
     let before = invokes(session, id)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(24);
     if invokes(session, id)? <= before {
         return Err(Error::new(format!(
@@ -200,8 +207,10 @@ fn drawn(trace: &Trace, ui_rect: &str, name: &str) -> bool {
 
 /// Close the window, so the next phase's press is not declined by
 /// `DialogsState::open_protect`'s already-open guard.
-fn close_window(session: &Session, driver: &Driver) -> Result<()> {
-    driver.press(crate::sys::vk::ESCAPE)?;
+fn close_window(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
+    let viewport =
+        driving::declared_in(&session.trace()?, ui_rect, REGION_DIALOG).and_then(|(_, v)| v);
+    pointer.key(session, viewport.as_deref(), "Escape", None)?;
     session.settle(16);
     Ok(())
 }
@@ -223,13 +232,6 @@ fn last_opened(session: &Session) -> Result<Option<(String, String, String)>> {
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is six clicks across two processes. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -251,14 +253,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // =======================================================================
     let mut findings: Vec<String> = Vec::new();
     {
-        let session = launch(ctx, report, &plain, "protect-plain.trace.txt")?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        let (session, pointer) = launch(ctx, report, &plain, "protect-plain.trace.txt")?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
 
         // --- A: Encrypt… on an unprotected document ------------------------
-        press(&session, &driver, ui_rect, ENCRYPT)?;
+        press(&session, &pointer, ui_rect, ENCRYPT)?;
         let trace = session.trace()?;
         for (name, what) in [
             (REGION_DIALOG, "the window itself"),
@@ -316,7 +317,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  was never emitted and this check has only one oracle where it should have two."
             )),
         }
-        close_window(&session, &driver)?;
+        close_window(&session, &pointer, ui_rect)?;
 
         // --- B: Permissions… on an unprotected document --------------------
         //
@@ -325,7 +326,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // SAYS NOTHING — permissions live inside the `/Encrypt` dictionary — so
         // a window that drew eight ticked boxes here would be inventing a
         // declaration the file never made.
-        press(&session, &driver, ui_rect, PERMISSIONS)?;
+        press(&session, &pointer, ui_rect, PERMISSIONS)?;
         let trace = session.trace()?;
         if !drawn(&trace, ui_rect, REGION_DIALOG) {
             findings.push(format!(
@@ -339,19 +340,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report.note(format!(
             "phase B: `{REGION_STANDING}` declarations so far: {standing_now}"
         ));
-        close_window(&session, &driver)?;
+        close_window(&session, &pointer, ui_rect)?;
+        pointer.gone(&session)?;
     }
 
     // =======================================================================
     // PHASE C — the signed document. Every presence above becomes an absence.
     // =======================================================================
     {
-        let session = launch(ctx, report, &signed, "protect-signed.trace.txt")?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        let (session, pointer) = launch(ctx, report, &signed, "protect-signed.trace.txt")?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
-        press(&session, &driver, ui_rect, ENCRYPT)?;
+        click_tab(&session, &pointer, ui_rect, SECURITY_TAB)?;
+        press(&session, &pointer, ui_rect, ENCRYPT)?;
         let trace = session.trace()?;
 
         // The instrument still works: the window opened.
@@ -413,6 +414,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                  emitted."
             )),
         }
+        pointer.gone(&session)?;
     }
 
     if findings.is_empty() {

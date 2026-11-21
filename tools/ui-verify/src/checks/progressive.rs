@@ -1,10 +1,13 @@
 //! `progressive` — **the page is never blank while a sharper one is on its way.**
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/progressive.md`.
 
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -13,8 +16,6 @@ use crate::trace::Trace;
 const CANVAS_REGION: &str = "canvas-viewport";
 /// The canvas trace line, which carries the zoom and the rect.
 const CANVAS_EVENT: &str = "canvas";
-/// Ctrl, for zoom-by-wheel.
-const VK_CONTROL: u16 = 0x11;
 /// Notches per zoom batch, and how many batches to climb.
 const ZOOM_BATCH: usize = 6;
 /// How many batches to climb before giving up on reaching the region tier.
@@ -86,11 +87,29 @@ fn coverage_samples(trace: &Trace) -> Vec<f64> {
         .collect()
 }
 
-/// Capture the canvas, and return the image.
-fn capture(session: &Session, ctx: &CheckContext, name: &str) -> Result<crate::image::Image> {
-    let path = ctx.out(name);
-    crate::capture::window_to_png(session, &path)
-        .map_err(|e| Error::new(format!("the window capture failed: {e}")))
+/// The window's own frame, and return the image.
+fn capture(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ctx: &CheckContext,
+    name: &str,
+) -> Result<crate::image::Image> {
+    scripteddrive::shot(session, pointer, &ctx.out(name))
+        .map_err(|e| Error::new(format!("the window's frame could not be taken: {e}")))
+}
+
+/// `times` Ctrl+wheel lines of `dy` at `at`.
+fn zoom_wheel(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    at: crate::coords::WindowPoint,
+    dy: f32,
+    times: usize,
+) -> Result<()> {
+    for _ in 0..times {
+        pointer.wheel(session, at, dy, true)?;
+    }
+    Ok(())
 }
 
 /// How many sampled canvas pixels carry **ink** — anything appreciably darker
@@ -123,12 +142,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              interval under test to exist.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is a wheel climb, a pan and two window \
-             captures. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -144,9 +157,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "progressive")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     let trace = session.trace()?;
@@ -158,7 +173,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let canvas = crate::checks::driving::declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
     let frame = session.frame()?;
-    let driver = Driver::new(session.window());
 
     // **The wheel is aimed at CONTENT, not at the canvas centre**, and the
     // first run of this check is why. Ctrl+wheel is zoom-about-the-pointer, so
@@ -195,11 +209,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     let mapping =
         crate::coords::CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
-    let centre = frame.to_screen(mapping.doc_to_window(crate::coords::DocPoint::new(
+    let centre = mapping.doc_to_window(crate::coords::DocPoint::new(
         target.page,
         target.x,
         target.y,
-    ))?);
+    ))?;
     report.note(format!(
         "aiming the wheel at PDF ({}, {}) on page {}",
         target.x, target.y, target.page
@@ -217,7 +231,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if z >= CLIMB_TO {
             break;
         }
-        driver.scroll_at_held(centre, &[VK_CONTROL], 1, ZOOM_BATCH)?;
+        zoom_wheel(&session, &pointer, centre, 1.0, ZOOM_BATCH)?;
         session.settle(4);
         batches += 1;
     }
@@ -233,7 +247,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     let px = frame.logical_to_capture_pixels(canvas);
-    let settled_ink = ink(&capture(&session, ctx, "progressive-before.png")?, px);
+    let settled_ink = ink(
+        &capture(&session, &pointer, ctx, "progressive-before.png")?,
+        px,
+    );
     report.note(format!(
         "{settled_ink} ink pixel(s) on the canvas before the gesture"
     ));
@@ -248,9 +265,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     for (label, gesture) in [("pan", Gesture::Pan), ("zoom out", Gesture::ZoomOut)] {
         let before_frames = coverage_samples(&session.trace()?);
         match gesture {
-            Gesture::Pan => driver.scroll_at(centre, PAN_NOTCHES)?,
+            Gesture::Pan => {
+                pointer.wheel(&session, centre, PAN_NOTCHES as f32, false)?;
+            }
             Gesture::ZoomOut => {
-                driver.scroll_at_held(centre, &[VK_CONTROL], -1, ZOOM_OUT_NOTCHES)?;
+                zoom_wheel(&session, &pointer, centre, -1.0, ZOOM_OUT_NOTCHES)?;
             }
         }
         // Let it finish. There is no shutter to beat — the trace already holds
@@ -292,5 +311,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
         report.note(format!("{label}: the page stayed covered throughout"));
     }
+    pointer.gone(&session)?;
     Ok(None)
 }
