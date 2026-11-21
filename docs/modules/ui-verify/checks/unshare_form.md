@@ -290,7 +290,7 @@ shipped in and the state these checks exist to prevent returning to.
 
 Its own function so the click and the right-click cannot hop differently —
 the class of error `crate::coords` exists to prevent. Both gestures in this
-check aim at the *same* screen point, and that is load-bearing: the menu
+check aim at the *same* window point, and that is load-bearing: the menu
 must open over the thing that was selected, not over a second guess at where
 it is.
 

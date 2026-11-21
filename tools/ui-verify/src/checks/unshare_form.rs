@@ -5,10 +5,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/unshare_form.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry, ScreenPoint, WindowFrame};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -174,13 +174,6 @@ fn open_and_press(
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check cannot be performed without \
-             clicking and right-clicking. Reported as SKIPPED rather than passed: a check that \
-             did not run has learned nothing.",
-        ));
-    }
     let fixture = engine_fixture(scenario.fixture).ok_or_else(|| {
         Error::new(format!(
             "the engine's form fixture is not at D:/Dev/pdfcer/fixtures/synthetic/{}. This check \
@@ -214,6 +207,11 @@ fn open_and_press(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(
+        ctx,
+        &mut spec,
+        scenario.trace_name.trim_end_matches(".trace.txt"),
+    )?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -223,6 +221,7 @@ fn open_and_press(
         fixture.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     let trace = session.trace()?;
@@ -236,8 +235,7 @@ fn open_and_press(
     }
 
     // --- 1: leave Read, where a content click is refused BY DESIGN ---------
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, "edit")?;
+    click_mode_segment(&session, &pointer, ui_rect, "edit")?;
     report.note(
         "clicked the Edit mode segment first — the shell's default mode is Read, where a canvas \
          click on content is refused by design (DEFECTS.md D6)",
@@ -256,16 +254,15 @@ fn open_and_press(
         "canvas rect {:?} at zoom {:.3}",
         mapping.image_rect, mapping.zoom
     ));
-    let frame = session.frame()?;
-    let target = aim(&mapping, &frame, scenario.aim_at)?;
+    let target = aim(&mapping, scenario.aim_at)?;
     report.note(format!(
-        "the square's centre (page 0, {:.1}, {:.1}) -> screen ({}, {})",
+        "the square's centre (page 0, {:.1}, {:.1}) -> window ({:.1}, {:.1})",
         scenario.aim_at.0,
         scenario.aim_at.1,
         target.x(),
         target.y()
     ));
-    driver.click_at(target)?;
+    pointer.click(&session, target)?;
     session.settle(15);
 
     let after = session.trace()?;
@@ -294,7 +291,7 @@ fn open_and_press(
     ));
 
     // --- 3: right-click the same point -------------------------------------
-    driver.right_click_at(target)?;
+    pointer.right_click(&session, target)?;
     session.settle(35);
 
     let trace = session.trace()?;
@@ -369,8 +366,9 @@ fn open_and_press(
     let before = session.trace()?;
     let applied_before = before.events(APPLIED).count();
     let funnel_before = before.events(FUNNEL).count();
-    driver.click_at(session.frame()?.declared_center(row))?;
+    pointer.click(&session, WindowPoint::centre_of(row))?;
     session.settle(30);
+    pointer.gone(&session)?;
 
     Ok(Ok(Pressed {
         session,
@@ -618,15 +616,13 @@ fn drive_unshared(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option
     Ok(None)
 }
 
-/// A page-space point, through the mapping and the window frame, to a desktop
-/// point.
-fn aim(mapping: &CanvasMapping, frame: &WindowFrame, point: (f64, f64)) -> Result<ScreenPoint> {
-    let window = mapping.doc_to_window(DocPoint {
+/// A page-space point on page 0, through the mapping, to a window point.
+fn aim(mapping: &CanvasMapping, point: (f64, f64)) -> Result<WindowPoint> {
+    mapping.doc_to_window(DocPoint {
         page: 0,
         x: point.0,
         y: point.1,
-    })?;
-    Ok(frame.to_screen(window))
+    })
 }
 
 /// The `first=` value of the most recent `canvas-selection` line, if any.

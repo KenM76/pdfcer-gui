@@ -6,14 +6,14 @@
 use std::fmt::Write as _;
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, arm_select_from_ribbon, click_mode_segment};
-use crate::checks::scale_aim::{CANVAS_EVENT, aim_residual, reported_page_point, tier_of, zoom_to};
+use crate::checks::scale_aim::{CANVAS_EVENT, reported_page_point, tier_of};
+use crate::checks::scripteddrive::{aim_residual, at_fraction, offscreen, offset, shot, zoom_to};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry, ScreenPoint};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The mode whose canvas may select page content.
 const MODE: &str = "edit";
@@ -93,8 +93,8 @@ const AIM_TOLERANCE_PX: f32 = 6.0;
 const PAN_NOTCHES: i32 = 3;
 
 /// **Undo whatever the last gesture committed.**
-fn undo(session: &Session, driver: &Driver) -> Result<()> {
-    driver.press_chord(&[vk::CONTROL], vk::Z)?;
+fn undo(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
+    pointer.key(session, None, "Z", Some("ctrl"))?; // ui-text-exempt: a key name, never displayed
     session.settle(24);
     Ok(())
 }
@@ -160,12 +160,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              the sweep zooms about it and then tries to select it. ★ PAGE IS 0-BASED.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This sweep drives the wheel, the pointer and both \
-             mouse buttons. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -197,9 +191,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "scale-sweep")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}, page {}x{} pt",
         exe.display(),
@@ -208,15 +204,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         page.height_pt
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
     // Without this there is no rubber band at all, and the sweep reports
     // "the marquee raised no selection" at every rung — a confident, wrong
     // finding about a feature that was never armed. `off_page_marquee` learned
     // the same thing; the helper exists because of it.
-    if !arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
+    if !arm_select_from_ribbon(&session, &pointer, ui_rect, report)? {
         return Err(Error::new(
             "the select tool could not be armed from the ribbon, so no rubber band could be \
              started at any rung. Nothing about the marquee was measured.",
@@ -232,8 +227,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let frame = session.frame()?;
-    let mut aim = frame.to_screen(window_point);
+    let mut aim = window_point;
     // The SAME point in canvas space — Y-down from the page's top-left,
     // which is the space `canvas-pointer` reports in. This is what the
     // closed-loop re-aim steers towards, and it is the reason the sweep can
@@ -271,11 +265,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // ⇒ Escape twice, then re-arm Select from the ribbon: the tool is the
         // thing that has to be true at the start of a rung, and the only honest
         // way to make it true is to set it rather than to assume it survived.
-        driver.press(vk::ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?; // ui-text-exempt: a key name, never displayed
         session.settle(8);
-        driver.press(vk::ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?; // ui-text-exempt: a key name, never displayed
         session.settle(8);
-        if !arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
+        if !arm_select_from_ribbon(&session, &pointer, ui_rect, report)? {
             return Err(Error::new(
                 "the select tool could not be re-armed between rungs, so what followed would \
                  have been driven in an unknown tool.",
@@ -283,7 +277,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
         session.settle(12);
 
-        let reached = zoom_to(&session, &driver, &mut aim, target_canvas, wanted, viewport)?;
+        let reached = zoom_to(
+            &session,
+            &pointer,
+            &mut aim,
+            target_canvas,
+            wanted,
+            viewport,
+        )?;
         let mut rung = Rung {
             zoom: reached,
             tier: tier_of(&session)?,
@@ -309,7 +310,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         }
 
-        probe_pointer(&session, &driver, aim, &mut rung)?;
+        probe_pointer(&session, &pointer, aim, &mut rung)?;
 
         //
         // # The limit this measures, and it is the harness's own
@@ -329,7 +330,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // blank paper 6.5 points away from the content. Correcting the rest of
         // the way needs the view PANNED, which this check does not do; naming
         // that is honest and inventing a defect is not.
-        if let Some(residual) = aim_residual(&session, &driver, aim, target_canvas)? {
+        if let Some(residual) = aim_residual(&session, &pointer, aim, target_canvas)? {
             let off_px = residual * reached;
             if off_px > AIM_TOLERANCE_PX {
                 rung.lines.push(format!(
@@ -350,13 +351,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         }
 
-        let selected = click_select(&session, &driver, ui_rect, aim, &mut rung)?;
+        let selected = click_select(&session, &pointer, ui_rect, aim, &mut rung)?;
         if selected {
-            drag_selection(&session, &driver, ui_rect, aim, &mut rung)?;
+            drag_selection(&session, &pointer, ui_rect, aim, &mut rung)?;
         }
-        marquee(&session, &driver, ui_rect, viewport, aim, &mut rung)?;
-        nodes_and_handles(&session, &driver, ui_rect, aim, &mut rung)?;
-        pan_and_watch_the_edges(&session, &driver, viewport, &mut rung)?;
+        marquee(&session, &pointer, ui_rect, viewport, aim, &mut rung)?;
+        nodes_and_handles(&session, &pointer, ui_rect, aim, &mut rung)?;
+        pan_and_watch_the_edges(&session, &pointer, viewport, &mut rung)?;
         // The double-clicks above can leave a text editor open; say so if one
         // is, because it is a fact about this rung and not only about the next.
         if session.trace()?.events("text-edit-caret").count() > 0 {
@@ -369,15 +370,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         // The picture, at every rung, because placement questions are only
         // answerable by looking.
-        let shot = ctx.out(&format!("scale-sweep-{:.0}x.png", reached));
-        if let Ok(f) = session.frame()
-            && crate::capture::frame_to_png(&session, &f, &shot).is_ok()
-        {
-            report.artifact(shot);
+        let png = ctx.out(&format!("scale-sweep-{:.0}x.png", reached));
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
 
         findings.push(rung);
     }
+
+    pointer.gone(&session)?;
 
     // --- the report ---------------------------------------------------------
     let mut problems: Vec<String> = Vec::new();
@@ -410,8 +411,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // be catastrophic for all of them: a build in which the closed-loop
     // correction broke at the first notch would report **zero problems** and
     // this function would answer `Ok(None)` — a green result meaning *"nothing
-    // was tried"*, which is this harness's own stated worst outcome and the
-    // reason `--no-input` reports SKIPPED rather than passing.
+    // was tried"*, which is this harness's own stated worst outcome.
     //
     // The oracle is the `click-select:` line rather than a counter kept
     // alongside, so it cannot drift from what was actually run: a rung that
@@ -498,20 +498,19 @@ fn wanted_rungs() -> Vec<f32> {
 /// **The linearity probe** — see the module header.
 fn probe_pointer(
     session: &Session,
-    driver: &Driver,
-    aim: ScreenPoint,
+    pointer: &ScriptedPointer,
+    aim: WindowPoint,
     rung: &mut Rung,
 ) -> Result<()> {
-    let frame = session.frame()?;
-    driver.move_to(aim)?;
+    pointer.hover(session, aim)?;
     session.settle(6);
     let Some(before) = reported_page_point(session)? else {
         rung.lines
             .push("pointer: the application published no `canvas-pointer` line".to_owned());
         return Ok(());
     };
-    let moved = frame.offset_from(aim, PROBE_PX, PROBE_PX);
-    driver.move_to(moved)?;
+    let moved = offset(aim, PROBE_PX, PROBE_PX);
+    pointer.hover(session, moved)?;
     session.settle(6);
     let Some(after) = reported_page_point(session)? else {
         rung.lines
@@ -575,13 +574,13 @@ fn outline_box(session: &Session, ui_rect: &str) -> Result<Option<crate::geom::L
 /// is** — which is what decides whether it can be dragged at all.
 fn click_select(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
-    aim: ScreenPoint,
+    aim: WindowPoint,
     rung: &mut Rung,
 ) -> Result<bool> {
     let sets_before = session.trace()?.events(SELECTION_SET_EVENT).count();
-    driver.click_at(aim)?;
+    pointer.click(session, aim)?;
     session.settle(20);
     let trace = session.trace()?;
     let picked: Vec<&crate::trace::TraceLine> = trace
@@ -629,9 +628,9 @@ fn click_select(
 /// Drag whatever is selected and say what the gesture actually became.
 fn drag_selection(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
-    aim: ScreenPoint,
+    aim: WindowPoint,
     rung: &mut Rung,
 ) -> Result<()> {
     let trace = session.trace()?;
@@ -643,10 +642,9 @@ fn drag_selection(
         trace.events(MARQUEE_EVENT).count(),
     );
     let box_before = outline_box(session, ui_rect)?;
-    let frame = session.frame()?;
     let press = aim;
-    let to = frame.offset_from(press, DRAG_PX, DRAG_PX);
-    driver.drag(press, to)?;
+    let to = offset(press, DRAG_PX, DRAG_PX);
+    pointer.drag(session, press, to, 8)?;
     session.settle(36);
 
     let trace = session.trace()?;
@@ -772,22 +770,21 @@ fn drag_selection(
             "an object dragged {DRAG_PX:.0} pt on each axis landed {dx:.1}, {dy:.1} pt away"
         ));
     }
-    undo(session, driver)?;
+    undo(session, pointer)?;
     Ok(())
 }
 
 /// Rubber-band on empty paper, then move what it caught.
 fn marquee(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     viewport: Option<crate::geom::LRect>,
-    aim: ScreenPoint,
+    aim: WindowPoint,
     rung: &mut Rung,
 ) -> Result<()> {
-    driver.press(vk::ESCAPE)?;
+    pointer.key(session, None, "Escape", None)?; // ui-text-exempt: a key name, never displayed
     session.settle(8);
-    let frame = session.frame()?;
     let Some(vp) = viewport.or_else(|| {
         session
             .trace()
@@ -811,14 +808,14 @@ fn marquee(
     ];
     let mut origin = None;
     for (fx, fy) in CANDIDATES {
-        let at = frame.declared_at(vp, fx, fy);
-        driver.click_at(at)?;
+        let at = at_fraction(vp, fx, fy);
+        pointer.click(session, at)?;
         session.settle(12);
         if selection_count(session)? == 0 {
             origin = Some((at, (fx, fy)));
             break;
         }
-        driver.press(vk::ESCAPE)?;
+        pointer.key(session, None, "Escape", None)?; // ui-text-exempt: a key name, never displayed
         session.settle(8);
     }
     let Some((from, (fx, fy))) = origin else {
@@ -831,11 +828,11 @@ fn marquee(
     };
     // Diagonally across the viewport, left-to-right so it is an ENCLOSING
     // window (O88) and the count means "wholly inside the box".
-    let to = frame.declared_at(vp, 1.0 - fx, 1.0 - fy);
+    let to = at_fraction(vp, 1.0 - fx, 1.0 - fy);
 
     let bands_before = session.trace()?.events(MARQUEE_EVENT).count();
     let sel_before = session.trace()?.events(SELECTION_EVENT).count();
-    driver.drag(from, to)?;
+    pointer.drag(session, from, to, 8)?;
     session.settle(36);
     let trace = session.trace()?;
     let Some(band) = trace.events(MARQUEE_EVENT).nth(bands_before) else {
@@ -896,7 +893,7 @@ fn marquee(
     let declines_before = trace.events(RESIZE_DECLINED_EVENT).count();
     let commits_before = trace.events(RESIZE_COMMIT_EVENT).count();
     let mid = aim;
-    driver.drag(mid, frame.offset_from(mid, DRAG_PX, DRAG_PX))?;
+    pointer.drag(session, mid, offset(mid, DRAG_PX, DRAG_PX), 8)?;
     session.settle(36);
     let trace = session.trace()?;
     if let Some(r) = trace.events(RESIZE_COMMIT_EVENT).nth(commits_before) {
@@ -926,21 +923,21 @@ fn marquee(
             "a marquee selection of {sel} object(s) could not be moved"
         ));
     }
-    undo(session, driver)?;
+    undo(session, pointer)?;
     Ok(())
 }
 
 /// Descend to the anchors, look at where the grips were placed, and drag one.
 fn nodes_and_handles(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
-    aim: ScreenPoint,
+    aim: WindowPoint,
     rung: &mut Rung,
 ) -> Result<()> {
-    driver.press(vk::ESCAPE)?;
+    pointer.key(session, None, "Escape", None)?; // ui-text-exempt: a key name, never displayed
     session.settle(6);
-    driver.click_at(aim)?;
+    pointer.click(session, aim)?;
     session.settle(12);
 
     // Resize handles first — they belong to the Object rung.
@@ -969,7 +966,7 @@ fn nodes_and_handles(
             .push("bezier handles: no `canvas-handles` line after selecting".to_owned()),
     }
 
-    driver.double_click_at(aim)?;
+    pointer.double_click(session, aim)?;
     session.settle(20);
     let trace = session.trace()?;
     let Some(anchors) = trace.last(ANCHORS_EVENT) else {
@@ -1018,12 +1015,11 @@ fn nodes_and_handles(
         }
         return Ok(());
     };
-    let frame = session.frame()?;
-    let grip = frame.declared_center(first);
+    let grip = WindowPoint::centre_of(first);
     // Is the grip anywhere near the thing it belongs to? At a deep zoom a
     // grip placed through a lossy conversion lands somewhere plausible and
     // wrong, and this is the cheapest statement of that.
-    let dist = f64::from((grip.x() - aim.x()).pow(2) + (grip.y() - aim.y()).pow(2)).sqrt();
+    let dist = f64::from((grip.x() - aim.x()).powi(2) + (grip.y() - aim.y()).powi(2)).sqrt();
     rung.lines.push(format!(
         "nodes: the first grip is at screen ({:.0}, {:.0}), {dist:.0} pt from the aim point",
         grip.x(),
@@ -1031,7 +1027,7 @@ fn nodes_and_handles(
     ));
 
     let moves_before = trace.events(MOVE_EVENT).count();
-    driver.double_click_at(grip)?;
+    pointer.double_click(session, grip)?;
     session.settle(16);
     let trace = session.trace()?;
     let picked = trace
@@ -1059,8 +1055,8 @@ fn nodes_and_handles(
         return Ok(());
     }
     let from = driving::declared(&trace, ui_rect, "canvas.selected-anchor")
-        .map_or(grip, |r| frame.declared_center(r));
-    driver.drag(from, frame.offset_from(from, DRAG_PX, DRAG_PX))?;
+        .map_or(grip, WindowPoint::centre_of);
+    pointer.drag(session, from, offset(from, DRAG_PX, DRAG_PX), 8)?;
     session.settle(24);
     let trace = session.trace()?;
     match trace.events(MOVE_EVENT).nth(moves_before) {
@@ -1072,27 +1068,27 @@ fn nodes_and_handles(
                 .push("a node could not be dragged at this zoom".to_owned());
         }
     }
-    undo(session, driver)?;
+    undo(session, pointer)?;
     Ok(())
 }
 
 /// **Pan, and watch the leading edge stay sharp.**
 fn pan_and_watch_the_edges(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     viewport: Option<crate::geom::LRect>,
     rung: &mut Rung,
 ) -> Result<()> {
-    driver.press(vk::ESCAPE)?;
+    pointer.key(session, None, "Escape", None)?; // ui-text-exempt: a key name, never displayed
     session.settle(8);
     let Some(vp) = viewport else {
         rung.lines
             .push("pan: no viewport rect, so the wheel has nowhere to land".to_owned());
         return Ok(());
     };
-    let at = session.frame()?.declared_at(vp, 0.5, 0.5);
+    let at = at_fraction(vp, 0.5, 0.5);
     let before = session.trace()?.events(COVERAGE_EVENT).count();
-    driver.scroll_at(at, -PAN_NOTCHES)?;
+    pointer.wheel(session, at, -(PAN_NOTCHES as f32), false)?;
     // Generous: a region raster on this page takes on the order of a second,
     // and the question is what the operator sees WHILE it is in flight as well
     // as after.
@@ -1113,7 +1109,7 @@ fn pan_and_watch_the_edges(
     // the only recovery that leaves no residue for the next rung to inherit.
     // It is read AFTER the coverage lines above so the measurement is of the
     // pan, not of the restoration.
-    driver.scroll_at(at, PAN_NOTCHES)?;
+    pointer.wheel(session, at, PAN_NOTCHES as f32, false)?;
     session.settle(40);
     let after: Vec<f32> = trace
         .events(COVERAGE_EVENT)

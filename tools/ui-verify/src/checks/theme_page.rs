@@ -4,14 +4,17 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/theme_page.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, declared, declared_names, delta, fill_of, frame_of, list,
+    SHELL_DIAG_ENV, declared, declared_in, declared_names, declared_or_in_overflow, delta, fill_of,
+    list,
 };
-use crate::checks::settings_theme::{DIALOG, THEME_PREFIX, open_the_theme_picker};
+use crate::checks::scripteddrive::{click_tab, offscreen, shot};
+use crate::checks::settings_theme::{DIALOG, THEME_PREFIX};
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::geom::{LRect, Pt};
 use crate::image::Rgb;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
 /// **Every preset the shell ships, in the order the picker draws them.**
@@ -184,12 +187,6 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
              measure and therefore nothing has been learned.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check is six clicks. Reported as SKIPPED \
-             rather than passed — a check that did not run has learned nothing.",
-        ));
-    }
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("theme_page.trace.txt"));
     spec.pdf = Some(pdf.clone());
@@ -201,6 +198,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "theme_page")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -210,13 +208,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
         pdf.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
-
-    // Maximised for the same reason its sibling is — `file.settings` is in
-    // the File tab's LAST group and lives in the ribbon's overflow at the
-    // window's opening width, where a control publishes no rect. It also gives
-    // the fit-page view a generous margin, which is the backdrop this check
-    // samples.
-    session.maximize();
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     let trace = session.trace()?;
@@ -229,7 +221,6 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
         )));
     }
 
-    let driver = Driver::new(session.window());
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
 
     // THE SHEET MUST BE ON SCREEN BEFORE THE WINDOW THAT WILL COVER IT IS
@@ -247,14 +238,14 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
         )));
     }
 
-    if let Some(failure) = open_the_theme_picker(&session, &driver, ui_rect, &trace)? {
+    if let Some(failure) = open_the_theme_picker(&session, &pointer, ui_rect, &trace)? {
         return Ok(Some(failure));
     }
 
     // --- the three presets, each measured on its own capture ----------------
     let mut readings: Vec<Reading> = Vec::new();
     for preset in PRESETS {
-        match measure_preset(ctx, &session, &driver, ui_rect, preset, report)? {
+        match measure_preset(ctx, &session, &pointer, ui_rect, preset, report)? {
             Ok(reading) => readings.push(reading),
             Err(failure) => return Ok(Some(failure)),
         }
@@ -365,7 +356,7 @@ fn page_stays_white(ctx: &CheckContext, report: &mut CheckReport) -> Result<Opti
 fn measure_preset(
     ctx: &CheckContext,
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     preset: &'static str,
     report: &mut CheckReport,
@@ -384,8 +375,8 @@ fn measure_preset(
             list(&declared_names(&trace, ui_rect, THEME_PREFIX))
         )));
     };
-    let dialog_frame = frame_of(session, &trace, ui_rect, DIALOG)?;
-    driver.click_at(dialog_frame.declared_center(radio))?;
+    let viewport = declared_in(&trace, ui_rect, &region).and_then(|(_, v)| v);
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(radio))?;
     // Generous, and for the reason its sibling states: the theme is installed
     // at the TOP of the next frame and `Theme::apply` rewrites both of egui's
     // styles. Airy additionally re-lays the whole shell out, and the canvas
@@ -393,17 +384,13 @@ fn measure_preset(
     // re-render, not just a repaint.
     session.settle(30);
 
-    // THE APPLICATION'S OWN WINDOW, and `frame_to_png` raises it — which
-    // puts the Settings dialog behind it, exactly as intended. A screen grab
-    // reads the COMPOSITED desktop, so a capture taken with the dialog in front
-    // would sample the dialog's panel through the page's rectangle and report a
-    // confident colour about the wrong surface. The next iteration's click
-    // brings the dialog back by itself: `Driver::click_at` raises the smallest
-    // window of the process containing the point, which is the dialog whatever
-    // the z-order is.
+    // THE APPLICATION'S OWN WINDOW: the root viewport's rendered frame, which
+    // the Settings dialog, being its own viewport, never covers. A capture of
+    // the composited desktop would sample the dialog's panel through the
+    // page's rectangle and report a confident colour about the wrong surface.
     let app_frame = session.frame()?;
     let path = ctx.out(&format!("theme_page.{preset}.png"));
-    let image = crate::capture::frame_to_png(session, &app_frame, &path)?;
+    let image = shot(session, pointer, &path)?;
     report.artifact(path);
 
     let trace = session.trace()?;
@@ -450,6 +437,74 @@ fn measure_preset(
         page_share: report_at.background_share,
         viewport_top: viewport.min.y,
     }))
+}
+
+/// The region the Settings control publishes on the File band.
+const SETTINGS: &str = "ribbon.item.file.settings"; // ui-text-exempt: a trace region name, never displayed
+/// The Appearance group's heading inside the Settings window.
+const APPEARANCE_HEADING: &str = "settings.heading.appearance"; // ui-text-exempt: a trace region name, never displayed
+
+/// **File tab, Settings, expand Appearance**: the three clicks and refusals
+/// of `settings_theme::open_the_theme_picker`, through the scripted pointer.
+fn open_the_theme_picker(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    trace: &crate::trace::Trace,
+) -> Result<Option<String>> {
+    if declared(trace, ui_rect, DIALOG).is_some() {
+        return Ok(Some(format!(
+            "`{DIALOG}` was declared before anything was clicked — the Settings window opened \
+             on its own, which pdfcer may not do."
+        )));
+    }
+    click_tab(session, pointer, ui_rect, ("ribbon.tab.file", "file"))?; // ui-text-exempt: a trace region name, never displayed
+    // The File band is wider than the window, so Settings may sit in the
+    // band's overflow.
+    let Some(control) = declared_or_in_overflow(session, pointer, ui_rect, SETTINGS)? else {
+        return Ok(Some(format!(
+            "the File tab is active and its controls publish their rects, but none of them is \
+             `{SETTINGS}`. Controls declared: {}.",
+            list(&declared_names(&session.trace()?, ui_rect, "ribbon.item."))
+        )));
+    };
+    if !control.is_substantial() {
+        return Ok(Some(format!(
+            "`{SETTINGS}` was declared at {control:?}, which has no usable area."
+        )));
+    }
+    pointer.click(session, WindowPoint::centre_of(control))?;
+    session.settle(20);
+    let trace = session.trace()?;
+    let Some(body) = declared(&trace, ui_rect, DIALOG) else {
+        return Ok(Some(format!(
+            "the click on `{SETTINGS}` opened no window: no `{DIALOG}` region was declared. \
+             Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    if !body.is_substantial() {
+        return Ok(Some(format!(
+            "`{DIALOG}` was declared at {body:?}, which has no usable area — the window is laid \
+             out and not on screen."
+        )));
+    }
+    // Expanded before any capture: expanding re-flows the window, and a
+    // difference measured across it would be partly the expansion.
+    let Some((heading, viewport)) = declared_in(&trace, ui_rect, APPEARANCE_HEADING) else {
+        return Ok(Some(format!(
+            "the Settings window is open but declared no `{APPEARANCE_HEADING}`. Headings \
+             declared: {}.",
+            list(&declared_names(&trace, ui_rect, "settings.heading."))
+        )));
+    };
+    pointer.click_in(
+        session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(heading),
+    )?;
+    session.settle(12);
+    Ok(None)
 }
 
 #[cfg(test)]

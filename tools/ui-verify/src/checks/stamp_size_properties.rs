@@ -5,12 +5,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/stamp_size_properties.md`.
 
 use crate::checks::driving::{
-    self, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
+    self, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_in, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive::{at_fraction, offscreen};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -79,14 +79,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check drags a stamp onto the page, selects it, \
-             brings a dock tab forward and types into a spinner. Reported as SKIPPED rather than \
-             passed, because a check that cannot touch the control it is named after has \
-             measured nothing.",
-        ));
-    }
     let ui_rect = ctx
         .profile
         .vocab
@@ -122,6 +114,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "stamp_size_properties")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -130,11 +123,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Review mode and the Markup tab ---------------------------------
-    driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.markup").ok_or_else(|| {
         Error::new(format!(
@@ -142,7 +135,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -162,7 +155,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let item = crate::checks::driving::declared_or_in_overflow(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         "ribbon.item.markup.stamp",
     )?
@@ -172,19 +165,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(&session, WindowPoint::centre_of(item))?;
     session.settle(14);
 
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let from = frame.to_screen(mapping.doc_to_window(target)?);
-    let to = frame.to_screen(mapping.doc_to_window(DocPoint {
+    let from = mapping.doc_to_window(target)?;
+    let to = mapping.doc_to_window(DocPoint {
         page: target.page,
         x: target.x + BOX_PT,
         y: target.y + BOX_PT,
-    })?);
-    driver.drag(from, to)?;
+    })?;
+    pointer.drag(&session, from, to, 8)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -202,8 +194,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "text-annot."))
         )));
     };
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "text-annot.accept")?.declared_center(accept),
+    let viewport = declared_in(&trace, ui_rect, "text-annot.accept").and_then(|(_, v)| v);
+    pointer.click_in(
+        &session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(accept),
     )?;
     session.settle(24);
     if session.trace()?.events("stamp-style").next().is_none() {
@@ -220,19 +215,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // THE TOOL MUST GO DOWN FIRST. With the stamp tool still armed, a click
     // on the page starts a SECOND stamp — and the check would then report that
     // the mark could not be selected, about a build whose selection works.
-    if !driving::arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
-        driver.press(crate::sys::vk::V)?;
+    if !driving::arm_select_from_ribbon(&session, &pointer, ui_rect, report)? {
+        pointer.key(&session, None, "V", None)?; // ui-text-exempt: a key name, never displayed
         session.settle(12);
     }
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let centre = frame.to_screen(mapping.doc_to_window(DocPoint {
+    let centre = mapping.doc_to_window(DocPoint {
         page: target.page,
         x: target.x + BOX_PT / 2.0,
         y: target.y + BOX_PT / 2.0,
-    })?);
-    driver.click_at(centre)?;
+    })?;
+    pointer.click(&session, centre)?;
     session.settle(24);
     if session.trace()?.events(SELECT_EVENT).last().is_none() {
         return Ok(Some(format!(
@@ -253,7 +247,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    driver.click_at(session.frame()?.declared_at(tab, 0.5, 0.5))?;
+    pointer.click(&session, at_fraction(tab, 0.5, 0.5))?;
     session.settle(24);
 
     // --- 5: IS THE SIZE ROW EVEN THERE? --------------------------------
@@ -341,14 +335,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // row keeps drawing while it is; anchoring later would let a line the click
     // itself provoked count as evidence that the *typing* landed.
     let mark = session.trace()?.mark();
-    let frame = session.frame()?;
-    driver.click_at(frame.declared_center(field))?;
+    pointer.click(&session, WindowPoint::centre_of(field))?;
     session.settle(12);
-    driver.press_chord(&[crate::sys::vk::CONTROL], crate::sys::vk::A)?;
-    driver.type_ascii(&format!("{WANTED_PT:.0}"))?;
+    pointer.key(&session, None, "A", Some("ctrl"))?; // ui-text-exempt: a key name, never displayed
+    pointer.type_text(&session, None, &format!("{WANTED_PT:.0}"))?;
     session.settle(8);
-    driver.press(crate::sys::vk::ENTER)?;
+    pointer.key(&session, None, "Enter", None)?; // ui-text-exempt: a key name, never displayed
     session.settle(30);
+    pointer.gone(&session)?;
 
     // --- 8: did the ENGINE get it? -----------------------------------------
     let trace = session.trace()?;

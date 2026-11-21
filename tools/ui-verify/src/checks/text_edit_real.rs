@@ -5,14 +5,13 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/text_edit_real.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
-use crate::checks::save_copy::{click_command, click_tab};
+use crate::checks::save_copy::click_command;
+use crate::checks::scripteddrive::{click_tab, offscreen, shot};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The mode whose tab list carries Edit.
 const MODE: &str = "edit";
@@ -101,13 +100,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              its centre as `--doc-point page,x,y` in PDF user space.",
         ));
     };
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, a ribbon tab, a \
-             ribbon control and the page. Reported as SKIPPED rather than passed: a check that \
-             did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -147,16 +139,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text_edit_real")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Edit mode, so the Edit tab exists at all -----------------------
     //
@@ -166,11 +159,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the mode marking up puts them in — genuinely cannot reach either text
     // tool without changing mode first. That is by design and it is also
     // exactly the kind of design an operator experiences as "it doesn't work".
-    driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     // --- 2: the Edit tab ---------------------------------------------------
-    click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
+    click_tab(&session, &pointer, ui_rect, EDIT_TAB)?;
     session.settle(14);
     if !driving::shell_trace(&session)?
         .events(driving::TAB_EVENT)
@@ -184,7 +177,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 3: arm the caret --------------------------------------------------
-    click_command(&session, &driver, ui_rect, EDIT_TEXT_ITEM, 18)?;
+    click_command(&session, &pointer, ui_rect, EDIT_TEXT_ITEM, 18)?;
     let trace = session.trace()?;
     if !trace
         .events(TOOL_EVENT)
@@ -209,13 +202,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("Edit ▸ Edit text armed the caret on the real drawing");
 
     // --- 4: click where the ENGINE says there is text ----------------------
-    let at = crate::checks::text_selection::aim(
+    let at = crate::checks::scripteddrive::aim(
         ctx,
         &session,
         page,
         DocPoint::new(target.page, target.x, target.y),
     )?;
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -386,18 +379,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: type, and commit through the ONE path a commit takes ------------
     //
-    // Real keystrokes. `add_text_takes_real_keystrokes` established that the
-    // OS → egui → draft link holds; what is unproven here is that it holds for
-    // the EDIT variant on a run that already has text in it, where the draft
-    // starts seeded rather than empty.
-    for key in [vk::A, vk::D] {
-        driver.press(key)?;
-        session.settle(4);
-    }
-    session.settle(10);
+    // Typed text into the EDIT variant on a run that already has text in it,
+    // where the draft starts seeded rather than empty.
+    pointer.type_text(&session, None, "ad")?; // ui-text-exempt: typed input, never displayed
+    session.settle(14);
     // Ctrl+Enter commits a run draft; a bare Enter would open its paragraph.
-    driver.press_chord(&[vk::CONTROL], vk::ENTER)?;
+    pointer.key(&session, None, "Enter", Some("ctrl"))?; // ui-text-exempt: a key name, never displayed
     session.settle(30);
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
 
@@ -603,9 +592,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .and_then(|v| v.parse().ok())
         .unwrap_or(MAX_FOLLOWERS + 1);
     if followers > MAX_FOLLOWERS {
-        let shot = ctx.out("text-edit-followers.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("text-edit-followers.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
         return Ok(Some(format!(
             "★ ONE EDIT REPOSITIONED {followers} FOLLOWING OPERATORS. A line is a handful of \
@@ -712,9 +701,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     if moved.abs() > MAX_SHIFT_PT {
-        let shot = ctx.out("text-edit-line-shifted.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("text-edit-line-shifted.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
         return Ok(Some(format!(
             "★★★ THE CORRECTION MOVED THE LINE IT CORRECTED. Its left edge went from {} to {} \
