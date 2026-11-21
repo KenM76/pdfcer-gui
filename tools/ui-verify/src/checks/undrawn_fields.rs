@@ -59,13 +59,13 @@ impl Check for AFormWithoutDrawnValuesDrawsAndClicks {
 }
 
 /// One `form-box kind=text` line: its page and canvas rectangle.
-struct TextBox {
-    page: usize,
-    field: String,
+pub(super) struct TextBox {
+    pub(super) page: usize,
+    pub(super) field: String,
     rect: (f64, f64, f64, f64),
 }
 
-fn text_boxes(trace: &crate::trace::Trace) -> Vec<TextBox> {
+pub(super) fn text_boxes(trace: &crate::trace::Trace) -> Vec<TextBox> {
     trace
         .events(BOX_LINE)
         .filter(|l| l.get("kind") == Some("text"))
@@ -142,7 +142,7 @@ fn measure(
 
 /// Each box's window rectangle in capture pixels, widened by two pixels so a
 /// border on the edge is inside it.
-fn capture_rect(
+pub(super) fn capture_rect(
     ctx: &CheckContext,
     session: &Session,
     page: PageGeometry,

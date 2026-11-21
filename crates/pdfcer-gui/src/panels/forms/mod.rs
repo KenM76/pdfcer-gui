@@ -17,6 +17,7 @@ pub mod edit;
 /// from nowhere else in the shell, and for the two-press protocol its
 /// invisibility forces.
 mod groups;
+mod notes;
 /// One field, one row — the per-field controls.
 pub mod rows;
 /// **The panel→canvas channel** — which field the panel is pointing at, so the
@@ -581,6 +582,7 @@ fn field_list(
     // borrows of one struct is the ordinary Rust shape here and the ordinary
     // answer is to split them; taking and replacing keeps the state in one
     // place, which is what makes `FormsUi::prune` able to reason about it.
+    let notes = notes::FieldNotes::load(ui, doc, &doc.session.view(), form);
     let mut button_draft = ui_state.button_draft.take();
     let mut ctx = RowContext {
         page_numbers: &page_numbers,
@@ -610,6 +612,7 @@ fn field_list(
         .show(ui, |ui| {
             for (index, field) in form.fields.iter().enumerate() {
                 rows::row(ui, field, index, &mut ctx, &mut ui_state.drafts, edits);
+                notes.show(ui, index);
                 ui.separator();
             }
         });

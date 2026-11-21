@@ -42,16 +42,6 @@ pub(super) fn paste(
 ) {
     use pdfcer_core::formclip::{FieldClip, FieldPastePolicy};
 
-    // A copied RADIO button pasted into its own group: `paste_field` would
-    // re-add the copied export value, which the engine refuses as
-    // `RadioExportValueTaken` every time. `radiogroup` authors a member with a
-    // free one instead.
-    if let FieldPastePolicy::AdditionalWidget { existing } = policy
-        && super::radiogroup::is_radio(doc, existing)
-    {
-        super::radiogroup::add_member(doc, existing, page, rect);
-        return;
-    }
     let clip = match FieldClip::from_bytes(clip) {
         Ok(c) => c,
         Err(e) => {
@@ -122,8 +112,13 @@ pub(super) fn paste(
     crate::app::actions::apply::vector_edit(doc, "paste-field", page, 1, |session| {
         session
             .paste_field(&clip, page, rect, policy)
-            .map(|outcome| {
+            .map(|mut outcome| {
                 widgets.set(outcome.widget_ids.len());
+                if let Some(state) = &outcome.radio_on_state {
+                    trace_radio(&wanted, state, page);
+                    let joined = crate::text::radiogroup::joined(&wanted, state);
+                    outcome.disclosures.insert(0, joined);
+                }
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!(
@@ -150,6 +145,15 @@ pub(super) fn paste(
     }
 }
 
+/// Another member of a radio group: the engine chose `state`, a free
+/// on-state when the copied one was taken.
+fn trace_radio(group: &str, state: &str, page: usize) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("radio-paste-applied group={group} export={state} page={page} engine=paste_field")
+    });
+}
+
 /// Which widget of `fqn` the paste just added — the last one.
 fn widget_index_after_paste(doc: &OpenDoc, fqn: &str) -> usize {
     let view = doc.session.view();
@@ -162,18 +166,14 @@ fn widget_index_after_paste(doc: &OpenDoc, fqn: &str) -> usize {
         .unwrap_or(0)
 }
 
-/// One field of a several-field paste, decoded before the session is taken.
-enum Step {
-    /// `paste_field`.
-    Field {
-        page: usize,
-        rect: pdfcer_core::page_tree::Rect,
-        clip: pdfcer_core::formclip::FieldClip,
-        policy: pdfcer_core::formclip::FieldPastePolicy,
-    },
-    /// Another button of a radio group, which `paste_field` refuses; see
-    /// [`paste`].
-    Radio(pdfcer_core::edit::NewRadioButton),
+/// One field of a several-field paste, decoded before the session is taken:
+/// `paste_field`'s operands. Another button of a radio group goes this way
+/// too; the engine gives it an on-state no member uses.
+struct Step {
+    page: usize,
+    rect: pdfcer_core::page_tree::Rect,
+    clip: pdfcer_core::formclip::FieldClip,
+    policy: pdfcer_core::formclip::FieldPastePolicy,
 }
 
 /// **Paste several copied fields as one undo step**, leaving them selected.
@@ -225,45 +225,31 @@ fn decode(
     items: &[pdfcer_gui_base::fieldaction::FieldPaste],
 ) -> Option<(Vec<Step>, Vec<Placed>)> {
     use pdfcer_core::formclip::{FieldClip, FieldPastePolicy};
-    let (mut steps, mut names, mut claimed) = (Vec::new(), Vec::new(), Vec::<String>::new());
+    let (mut steps, mut names) = (Vec::new(), Vec::new());
     for item in items {
         let name = match item.policy.as_ref() {
             FieldPastePolicy::NewField { name, .. } => name.clone(),
             FieldPastePolicy::AdditionalWidget { existing } => existing.clone(),
             _ => String::new(),
         };
-        // A radio group with no widget to copy the look of falls through to
-        // `paste_field`, whose refusal is then said rather than lost.
-        let radio = matches!(
-            item.policy.as_ref(),
-            FieldPastePolicy::AdditionalWidget { .. }
-        ) && super::radiogroup::is_radio(doc, &name);
-        if let Some((spec, export)) = radio
-            .then(|| super::radiogroup::member(doc, &name, item.page, item.rect, &claimed))
-            .flatten()
-        {
-            claimed.push(export);
-            steps.push(Step::Radio(spec));
-        } else {
-            let clip = match FieldClip::from_bytes(&item.clip) {
-                Ok(c) => c,
-                Err(e) => {
-                    crate::app::actions::record_note(
-                        doc.edit_epoch,
-                        crate::text::fieldclip::refusal(
-                            &crate::canvas::fieldclip::Refusal::EngineRefused(e.to_string()),
-                        ),
-                    );
-                    return None;
-                }
-            };
-            steps.push(Step::Field {
-                page: item.page,
-                rect: item.rect,
-                clip,
-                policy: (*item.policy).clone(),
-            });
-        }
+        let clip = match FieldClip::from_bytes(&item.clip) {
+            Ok(c) => c,
+            Err(e) => {
+                crate::app::actions::record_note(
+                    doc.edit_epoch,
+                    crate::text::fieldclip::refusal(
+                        &crate::canvas::fieldclip::Refusal::EngineRefused(e.to_string()),
+                    ),
+                );
+                return None;
+            }
+        };
+        steps.push(Step {
+            page: item.page,
+            rect: item.rect,
+            clip,
+            policy: (*item.policy).clone(),
+        });
         names.push((name, item.page));
     }
     Some((steps, names))
@@ -278,24 +264,22 @@ fn commit(
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
     use crate::app::actions::foldeach::{OnRefusal, fold_each};
     use pdfcer_core::edit::CommandKind;
+    use pdfcer_core::formclip::FieldPastePolicy;
     let done = fold_each(
         session,
         steps.iter(),
         CommandKind::PasteFormField,
         OnRefusal::Stop,
         |session, step| {
-            let lines = match step {
-                Step::Field {
-                    page,
-                    rect,
-                    clip,
-                    policy,
-                } => session
-                    .paste_field(clip, *page, *rect, policy)
-                    .map(|o| o.disclosures),
-                Step::Radio(spec) => session.add_radio_button(spec).map(|_| Vec::new()),
-            };
-            lines.map(Some)
+            let outcome = session.paste_field(&step.clip, step.page, step.rect, &step.policy)?;
+            let mut lines = outcome.disclosures;
+            if let (Some(state), FieldPastePolicy::AdditionalWidget { existing }) =
+                (&outcome.radio_on_state, &step.policy)
+            {
+                trace_radio(existing, state, step.page);
+                lines.insert(0, crate::text::radiogroup::joined(existing, state));
+            }
+            Ok(Some(lines))
         },
     )?;
     let (pushed, folded, told, failure) = (

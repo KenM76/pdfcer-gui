@@ -59,12 +59,9 @@ pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: us
 }
 
 /// **Delete several boxes as one undo step** — the selected fields of a
-/// multi-field selection. The engine deletes one widget per command (G192),
-/// so each goes by `delete_widget` and the commands pushed are folded by
-/// `coalesce_last`.
-///
-/// A field's later boxes are renumbered when an earlier one goes, so the
-/// boxes are deleted highest index first within each field.
+/// multi-field selection, by one `EditSession::delete_widgets`. Indices are
+/// as selected; the engine orders the deletions so renumbering never shifts
+/// a target.
 pub(in crate::app::actions) fn widgets(
     doc: &mut OpenDoc,
     widgets: &[crate::app::state::SelectedField],
@@ -93,7 +90,7 @@ pub(in crate::app::actions) fn widgets(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "delete-widgets-applied deleted={}/{} one_step={}",
+            "delete-widgets-applied deleted={}/{} one_step={} engine=delete_widgets",
             report.0,
             order.len(),
             report.1
@@ -102,45 +99,24 @@ pub(in crate::app::actions) fn widgets(
     clear_selection_if_edited(doc, before);
 }
 
-/// Delete each box in `order`, then fold. `report` is (deleted, folded), set
-/// even when a verb refuses part-way, since what was deleted stays deleted.
+/// One `delete_widgets` call over `order`; all-or-nothing, one undo entry.
+/// `report` is (deleted, folded).
 fn commit(
     session: &mut pdfcer_core::edit::EditSession,
     order: &[(&str, usize)],
     report: &mut (usize, bool),
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
-    use crate::app::actions::foldeach::{OnRefusal, fold_each};
-    use pdfcer_core::edit::{CommandKind, EditError};
-    let mut fields_removed = 0_usize;
-    let done = fold_each(
-        session,
-        order.iter().copied(),
-        CommandKind::DeleteFormField,
-        OnRefusal::Stop,
-        |session, (field, widget)| {
-            let gone = session.delete_widget(field, widget)?;
-            fields_removed += usize::from(gone.field_removed);
-            Ok::<_, EditError>(Some(Vec::new()))
-        },
-    )?;
-    let (pushed, folded, failure) = (done.run.pushed, done.folded, done.run.failure);
-    *report = (pushed, folded);
+    crate::app::actions::foldeach::within_undo_depth(order.len())?;
+    let gone = session.delete_widgets(order)?;
+    let fields_removed = gone.iter().filter(|d| d.field_removed).count();
+    let orphaned: usize = gone.iter().map(|d| d.action_targets_orphaned).sum();
+    *report = (gone.len(), true);
     let mut said = vec![crate::text::forms::form_widgets_deleted(
-        pushed,
+        gone.len(),
         fields_removed,
     )];
-    if let Some(e) = failure {
-        if pushed == 0 {
-            return Err(e);
-        }
-        said.push(crate::text::forms::form_widgets_partly_deleted(
-            pushed,
-            order.len(),
-            &e.to_string(),
-        ));
-    }
-    if !folded {
-        said.push(crate::text::markup::deleted_not_one_undo().to_owned());
+    if orphaned > 0 {
+        said.push(crate::text::forms::form_fields_actions_orphaned(orphaned));
     }
     Ok(said)
 }

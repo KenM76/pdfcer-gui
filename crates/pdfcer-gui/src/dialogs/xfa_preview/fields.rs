@@ -192,7 +192,7 @@ pub(super) struct Overlay<'a> {
     pub scale: f32,
     /// `false` while a redraw is in flight: a click then opens nothing.
     pub enabled: bool,
-    pub choices: [bool; 5],
+    pub choices: pdfcer_gui_base::formpreview::ReadingChoices,
     pub actions: &'a mut Vec<Action>,
 }
 

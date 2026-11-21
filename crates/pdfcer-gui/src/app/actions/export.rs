@@ -3,6 +3,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/export.md`.
 
+mod plates;
+
 use crate::app::state::OpenDoc;
 
 /// Write each page's vector geometry as an ASCII DXF: one page to the chosen
@@ -425,6 +427,29 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         };
         let target = imageexport::output_path(&chosen, plan.format, page_index, multi);
         let number = page_index.saturating_add(1);
+        if plan.plates {
+            let at = plates::Target {
+                chosen: &chosen,
+                page_index,
+                multi,
+            };
+            match plates::page(&view, page, &options, plan, &at) {
+                Ok(done) => {
+                    if written.is_empty() {
+                        // One file: its line leads; many: `wrote_many` does.
+                        let lead = usize::from(done.files.len() == 1);
+                        first_line = done.notes.first().cloned();
+                        notes.extend(done.notes.into_iter().skip(lead));
+                    }
+                    written.extend(done.files);
+                    continue;
+                }
+                Err(stop) => {
+                    notes.push(stop);
+                    break;
+                }
+            }
+        }
 
         // A `match` on the format, NOT `if plan.format.is_vector()`.
         //

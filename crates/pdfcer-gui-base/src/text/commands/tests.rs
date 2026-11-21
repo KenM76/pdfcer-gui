@@ -58,6 +58,7 @@ fn all() -> Vec<CommandText> {
         view_guides(),
         view_line_weights(),
         view_skip_tiny_details(),
+        view_highlight_fields(),
         view_overprint_preview(),
         view_page_boxes(),
         view_off_page(),

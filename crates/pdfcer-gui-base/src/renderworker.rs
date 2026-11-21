@@ -309,6 +309,9 @@ pub struct RenderRequest {
     /// `view.overprint_preview`, canvas only; assigned to the options in
     /// `render_on_worker` and nowhere else, like [`Self::stroke_display`].
     pub overprint: pdfcer_render::OverprintPreview,
+    /// `view.highlight_fields`: the tint behind fillable fields, canvas only,
+    /// like [`Self::overprint`]. Never on a print or export render.
+    pub field_highlight: Option<pdfcer_render::FieldHighlight>,
     /// The Output Preview panel's plates, canvas only, like [`Self::overprint`].
     pub separations: Option<pdfcer_render::SeparationPreview>,
     /// How a picture enlarged past its own pixels is drawn — the canvas's
@@ -618,6 +621,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     options.stroke_display = request.stroke_display;
     options.subpixel_culling = request.subpixel_culling;
     options.overprint_preview = request.overprint;
+    options.field_highlight = request.field_highlight;
     options.separation_preview = request.separations.clone();
     options.image_magnify = request.image_magnify;
     // Cloned rather than moved because the worker takes the request by
@@ -688,11 +692,12 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "cmyk_buffer={} refused={} wrong_space={} spots_flattened={} scale={:.3}",
+                    "cmyk_buffer={} refused={} wrong_space={} spots_flattened={} fields_redrawn={} scale={:.3}",
                     rendered.diagnostics.cmyk_buffer_engaged,
                     rendered.diagnostics.cmyk_buffer_refused,
                     rendered.diagnostics.blends_in_wrong_space,
                     rendered.diagnostics.cmyk_spots_flattened,
+                    rendered.diagnostics.widgets_redrawn_for_need_appearances,
                     request.raster_scale
                 )
             });

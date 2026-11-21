@@ -793,7 +793,10 @@ impl PdfcerApp {
                     return;
                 }
                 if let Status::Open(doc) = &self.status {
-                    self.dialogs.link.request(doc.pages.len());
+                    self.dialogs.link.request(crate::dialogs::link::LinkAsk {
+                        page_count: doc.pages.len(),
+                        names: pdfcer_gui_base::linkform::named_destinations(&doc.session.view()),
+                    });
                 }
             }
             // Insert ▸ 3D model: pick the file, then the options window.

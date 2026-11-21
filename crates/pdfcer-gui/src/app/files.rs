@@ -277,7 +277,7 @@ fn native_pick() -> Picked {
 
 /// **Ask which PDF to take pages from** — `pages.insert_from_file`.
 #[must_use]
-pub fn pick_image_source() -> Picked {
+pub fn pick_image_source(title: &str) -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_IMAGE_PATH)) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
@@ -286,7 +286,7 @@ pub fn pick_image_source() -> Picked {
         return answer;
     }
     let answer = crate::filedialog::FileDialog::new()
-        .set_title(crate::text::images::window_title())
+        .set_title(title)
         .add_filter(
             crate::text::files::filter_image(),
             &pdfcer_gui_base::picture::EXTENSIONS,

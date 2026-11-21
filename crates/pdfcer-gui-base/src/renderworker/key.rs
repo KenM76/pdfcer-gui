@@ -97,6 +97,9 @@ pub struct RenderKey {
     /// Whether overprint was simulated (`view.overprint_preview`). Discrete,
     /// like `skip_tiny`.
     overprint: bool,
+    /// Whether fillable fields were tinted (`view.highlight_fields`).
+    /// Discrete, like `skip_tiny`.
+    fields: bool,
     /// The separation preview drawn: 0 for none, else a hash of the hidden
     /// plates with the low bit set ([`separation_bits`]).
     separations: u64,
@@ -168,6 +171,7 @@ impl RenderKey {
             region_bits: None,
             skip_tiny: false,
             overprint: true,
+            fields: false,
             separations: 0,
         }
     }
@@ -198,6 +202,19 @@ impl RenderKey {
     pub fn with_overprint(mut self, simulated: bool) -> Self {
         self.overprint = simulated;
         self
+    }
+
+    /// Mark this key as drawn with fillable fields tinted, or not.
+    #[must_use]
+    pub fn with_fields_highlighted(mut self, tinted: bool) -> Self {
+        self.fields = tinted;
+        self
+    }
+
+    /// Whether this key was drawn with fillable fields tinted.
+    #[must_use]
+    pub fn fields_highlighted(&self) -> bool {
+        self.fields
     }
 
     /// Mark this key as drawn under `preview`.
@@ -249,6 +266,7 @@ impl RenderKey {
         pdfcer_render::font::StrokeDisplay,
         bool,
         bool,
+        bool,
         u64,
     ) {
         (
@@ -264,6 +282,7 @@ impl RenderKey {
             self.stroke_display,
             self.skip_tiny,
             self.overprint,
+            self.fields,
             self.separations,
         )
     }
@@ -292,6 +311,7 @@ impl RenderKey {
         .with_region(request.region)
         .with_tiny_details_skipped(request.subpixel_culling)
         .with_overprint(request.overprint.simulates())
+        .with_fields_highlighted(request.field_highlight.is_some())
         .with_separations(request.separations.as_ref())
     }
 }

@@ -43,7 +43,7 @@ impl Check for ExtraSpotInksAreDisclosed {
 /// A one-page PDF painting `inks` distinct `/Separation` inks, each twice so a
 /// per-fill tally would read 2 rather than 1. Page group CMYK, so the
 /// colorant buffer is engaged.
-fn spots_pdf(inks: usize) -> Vec<u8> {
+pub(crate) fn spots_pdf(inks: usize) -> Vec<u8> {
     let spaces: String = (0..inks)
         .map(|i| {
             format!(

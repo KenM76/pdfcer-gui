@@ -19,13 +19,7 @@ use crate::sign::{Authored, Identity, IdentityFailure, Placement, Refusal, Stand
 use crate::text::protect as tp;
 use crate::text::sign as t;
 
-// ---------------------------------------------------------------------------
-// Named regions
-//
-// Matched LITERALLY by `tools/ui-verify`, so renaming one silently un-aims the
-// check that measures it. `crate::dialogs::protect`'s block records why a
-// dialog needs these when a ribbon control gets its rect for free.
-// ---------------------------------------------------------------------------
+// Named regions, matched literally by `tools/ui-verify`: a rename un-aims its check.
 
 /// The whole window.
 pub(super) const REGION_DIALOG: &str = "sign-dialog"; // ui-text-exempt: trace region name, never displayed
@@ -227,6 +221,8 @@ pub struct SignDialog {
     pick_requested: bool,
     /// The *Create a digital ID* form, while it is open.
     create: Option<create_id::CreateId>,
+    /// The picture a visible signature is drawn with.
+    picture: picture::Picture,
     /// Set by the confirm control, consumed after the closure.
     ///
     /// The two-step every dialog here uses, and load-bearing rather than
@@ -344,6 +340,7 @@ impl SignDialog {
             open_certificate_requested: false,
             pick_requested: false,
             create: None,
+            picture: picture::Picture::default(),
             confirm_requested: false,
             open_signed_requested: false,
             close_requested: false,
@@ -383,6 +380,7 @@ impl SignDialog {
             self.open_identity();
         }
         self.create_id_after(ctx);
+        self.picture.after();
         if std::mem::take(&mut self.confirm_requested) && ready {
             self.commit(doc, actions);
             self.remember_server(prefs);
@@ -620,6 +618,7 @@ impl SignDialog {
                 // after the picker.
                 certify: (self.certify && self.standing.may_certify().is_ok()).then_some(self.mdp),
                 timestamp_server: self.server_requested().map(str::to_owned),
+                appearance_image: self.picture.for_request(self.place != Place::Nothing),
             },
             target,
             replace: self.destination == Destination::ReplaceOriginal,
@@ -730,6 +729,8 @@ impl SignDialog {
                             ui.separator();
                             ui.add_space(6.0);
                             self.placement_section(ui, &theme);
+                            let boxed = self.place != Place::Nothing;
+                            self.picture.show(ui, &theme, boxed);
                             ui.add_space(10.0);
                             ui.separator();
                             ui.add_space(6.0);
@@ -789,6 +790,7 @@ pub(super) fn open_for(
 }
 
 mod create_id;
+mod picture;
 mod sections;
 
 #[cfg(test)]

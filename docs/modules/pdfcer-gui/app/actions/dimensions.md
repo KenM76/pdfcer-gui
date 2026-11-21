@@ -152,21 +152,19 @@ oracle for a unit conversion.
 
 ### `fn add_group`
 
-`AddGroup` carries the new group's whole `NumberFormat` and creates it with
-`EditSession::add_dimension_group_with_format`, one undo entry; a fixed
-denominator is part of that format, never a second edit. With a
-`scale_from` source it then sets the scale to the source's re-expressed in
-the new unit (`ScaleState::in_unit`), and folds both into one undo entry
-with `coalesce_last(2, AddDimension)` — the engine has no create-with-scale
-verb. A fold
-the engine refuses leaves two undo steps and says so
-(`new_group_two_undos`); it is never silent. `author_into` queues the new
+`AddGroup` carries the new group's whole `NumberFormat`. Without a
+`scale_from` source it is created with
+`EditSession::add_dimension_group_with_format`; with one, with
+`EditSession::add_dimension_group_with_scale`, the source's scale
+re-expressed in the new unit (`ScaleState::in_unit`). Either is one undo
+entry; a fixed denominator is part of the format, never a second edit.
+`add_dimension_group_like` is not used because it copies the template's
+format too, and here the operator picks the unit. `author_into` queues the new
 group as the authoring group through `canvas::measure::queue_active_group`,
 because this phase has no `egui::Context`. Traces:
-`dimension-group-scale-copied group= unit= scale= folded=0|1` when a scale
-was copied, then always
-`dimension-group-added group= unit= numbers=<decimal:N|reduced:D|kept:D> undo_depth=`,
-the depth read after any fold.
+`dimension-group-scale-copied group= unit= scale= undo_steps=` when a scale
+was copied (`undo_steps` is the undo-depth change the add made), then always
+`dimension-group-added group= unit= numbers=<decimal:N|reduced:D|kept:D> undo_depth=`.
 
 ### The commit's trace
 

@@ -127,6 +127,9 @@ pub enum ViewChrome {
     /// `view.skip_tiny_details` — leave out drawn pieces too small to see at
     /// this zoom. Reaches the render request, like [`Self::LineWeights`].
     SkipTinyDetails,
+    /// `view.highlight_fields` — tint the fillable form fields. Reaches the
+    /// render request, like [`Self::LineWeights`].
+    HighlightFields,
     /// `view.overprint_preview` — show marks that print over the ink beneath
     /// as they will print. Reaches the render request, like
     /// [`Self::LineWeights`].
@@ -145,6 +148,7 @@ impl ViewChrome {
         ViewChrome::ShowPoints,
         ViewChrome::LineWeights,
         ViewChrome::SkipTinyDetails,
+        ViewChrome::HighlightFields,
         ViewChrome::OverprintPreview,
         ViewChrome::PageBoxes,
         ViewChrome::OffPage,
@@ -161,6 +165,7 @@ impl ViewChrome {
             ViewChrome::ShowPoints => view.show_points,
             ViewChrome::LineWeights => view.line_weights,
             ViewChrome::SkipTinyDetails => view.skip_tiny_details,
+            ViewChrome::HighlightFields => view.highlight_fields,
             ViewChrome::OverprintPreview => view.overprint_preview,
             ViewChrome::PageBoxes => view.page_boxes,
             ViewChrome::OffPage => view.off_page,
@@ -181,6 +186,7 @@ impl ViewChrome {
             ViewChrome::ShowPoints => view.show_points = on,
             ViewChrome::LineWeights => view.line_weights = on,
             ViewChrome::SkipTinyDetails => view.skip_tiny_details = on,
+            ViewChrome::HighlightFields => view.highlight_fields = on,
             ViewChrome::OverprintPreview => view.overprint_preview = on,
             ViewChrome::PageBoxes => view.page_boxes = on,
             ViewChrome::OffPage => view.off_page = on,

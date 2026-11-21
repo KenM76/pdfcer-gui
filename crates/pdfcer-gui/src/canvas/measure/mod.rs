@@ -233,8 +233,9 @@ pub fn finish(ctx: &egui::Context) -> bool {
     }
 }
 
-/// **Take the completed calibration line's measured length, once.**
-pub fn take_completed_scale_line(ctx: &egui::Context) -> Option<f64> {
+/// **Take the completed calibration line once**: its length in the page's
+/// user-space units and the index of the page it was drawn on.
+pub fn take_completed_scale_line(ctx: &egui::Context) -> Option<(f64, usize)> {
     // Read the stored state DIRECTLY rather than through `load`, deliberately.
     // `load` synchronises the kind and the page and will happily build a fresh
     // state when there is none — which is exactly wrong for a question that
@@ -243,10 +244,11 @@ pub fn take_completed_scale_line(ctx: &egui::Context) -> Option<f64> {
     // `MeasureState::set_kind`'s docs name.
     let id = egui::Id::new(MEASURE_MEMORY_KEY);
     let mut st = ctx.data_mut(|d| d.get_temp::<MeasureState>(id))?;
-    let measured = st.scale.drawn_pdf_length?;
+    let measured = st.scale.measured?;
+    let page = st.page_index;
     st.scale.clear();
     store(ctx, st);
-    Some(measured)
+    Some((measured, page))
 }
 
 /// **Abandon a pick in progress**, reporting whether there was one.
@@ -561,7 +563,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     format!(
                         "measure-scale-line pdf_length={:.3}",
-                        st.scale.drawn_pdf_length.unwrap_or(0.0)
+                        st.scale.measured.unwrap_or(0.0)
                     )
                 });
             }

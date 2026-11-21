@@ -311,6 +311,8 @@ pub mod tool;
 /// see on the canvas.
 pub mod unembed;
 pub mod workaround;
+/// The Form preview window's Reading choices.
+pub mod xfachoices;
 /// A dynamic XFA form: its open-time sentence and the form preview window.
 pub mod xfapreview;
 
@@ -341,6 +343,9 @@ pub mod evidence;
 /// not check about a signature that already exists).
 #[cfg(feature = "signing")]
 pub mod sign;
+/// The Sign window's picture in a visible signature.
+#[cfg(feature = "signing")]
+pub mod sign_picture;
 /// **What this shell says about a digital signature before and after it
 /// writes.** The claim-bearing area of the catalog: every sentence is a
 /// translation of a distinction `pdfcer-core`'s `signature` module draws, and
@@ -435,6 +440,8 @@ pub mod embed;
 pub mod export_image;
 /// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
 pub mod export_keeptext;
+/// The EMF separation-plates choice and its receipt.
+pub mod export_plates;
 /// The FORM-FIELD clipboard's sentences — five refusals and the paste's
 /// off-canvas loss note. Separate from [`clipboard`] because the loss note is
 /// not a refusal: the paste worked, and the sentence exists because part of the

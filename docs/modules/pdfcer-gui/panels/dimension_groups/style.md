@@ -4,13 +4,15 @@ the count that stops them being a surprise
 ## What this draws
 
 The **middle tier** of `pdfcer-core`'s three-tier style cascade
-(factory → group → ce dimension). Seven properties, each an `Option` on
+(factory → group → ce dimension). Nine properties, each an `Option` on
 `GroupStyle`, and **the `Option` is the operator's checkbox**: clear means
 *this group has not spoken, so pdfcer's own default applies*, ticked means
 *this group says this*.
 
-Two of the seven — `tolerance` and `tolerance_places` — are not drawn here
-and the reason is at [`show`].
+Seven are drawn, in three helpers by kind: `size_rows` (text height, line
+width, arrow length), `shape_rows` (arrow form, colour) and `stroke_rows`
+(line style, opacity). Two — `tolerance` and `tolerance_places` — are not
+drawn here and the reason is at [`show`].
 
 ## The count beside every control, and why it is not the engine's
 
@@ -143,6 +145,15 @@ picker's popup publishes no regions, so a check can assert the swatch was
 drawn and driven but cannot aim at a hue inside it."* Any group of controls
 containing a colour picker therefore needs a numeric neighbour the harness
 **can** move, and this is it.
+
+### `fn stroke_rows`
+
+Line style and opacity use `dimensionoverrides::dash_editor` and
+`dimensionoverrides::opacity_editor`, the editors a single ce dimension's
+override block draws, so the two tiers offer the same four dash patterns and
+the same whole-percent opacity. Both checkboxes and both editors publish
+regions (`REGION_DASH_SET`, `REGION_DASH`, `REGION_OPACITY_SET`,
+`REGION_OPACITY`) for `a_groups_line_style_and_opacity_reach_its_members`.
 
 ### `fn show`
 

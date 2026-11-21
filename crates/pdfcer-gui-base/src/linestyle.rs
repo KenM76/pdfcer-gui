@@ -77,6 +77,17 @@ impl LineStyle {
             .find(|s| s.pattern() == Some(pattern))
     }
 
+    /// A stable token for region names and traces.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Solid => "solid",
+            Self::Dashed => "dashed",
+            Self::LongDash => "long-dash",
+            Self::DashDot => "dash-dot",
+        }
+    }
+
     /// What the operator reads for this entry.
     #[must_use]
     pub const fn label(self) -> &'static str {
@@ -201,19 +212,40 @@ pub fn read<G: pdfcer_core::graph::ObjectGraph + ?Sized>(
 
 /// **The chooser**, drawn once and used by all three surfaces.
 pub fn chooser(ui: &mut Ui, id_salt: &str, current: DashReading, width: f32) -> Option<LineStyle> {
+    chooser_in(ui, id_salt, None, current, width)
+}
+
+/// [`chooser`], publishing its box as `{region}.combo` and each open entry as
+/// `{region}.option.{token}` when `region` is given.
+pub fn chooser_in(
+    ui: &mut Ui,
+    id_salt: &str,
+    region: Option<&str>,
+    current: DashReading,
+    width: f32,
+) -> Option<LineStyle> {
     let mut picked = None;
-    egui::ComboBox::from_id_salt(id_salt)
+    let combo = egui::ComboBox::from_id_salt(id_salt)
         .width(width)
         .selected_text(current.label())
         .show_ui(ui, |ui| {
             let selected = current.selected();
             for &style in LineStyle::ALL {
                 let is_current = selected == Some(style);
-                if ui.selectable_label(is_current, style.label()).clicked() && !is_current {
+                let entry = ui.selectable_label(is_current, style.label());
+                if let Some(region) = region {
+                    // ui-text-exempt: trace region name, never displayed
+                    crate::diag::ui_rect(&format!("{region}.option.{}", style.token()), entry.rect);
+                }
+                if entry.clicked() && !is_current {
                     picked = Some(style);
                 }
             }
         });
+    if let Some(region) = region {
+        // ui-text-exempt: trace region name, never displayed
+        crate::diag::ui_rect(&format!("{region}.combo"), combo.response.rect);
+    }
     picked
 }
 

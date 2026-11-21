@@ -187,6 +187,8 @@ pub(super) const REGION_LOAD_ANOMALIES: &str = "status-group:load-anomalies"; //
 pub(super) const REGION_BLEND_SPACE: &str = "status-group:blend-space"; // ui-text-exempt: trace region name, never displayed
 /// The "some spot inks are drawn as process colour" line.
 pub(super) const REGION_SPOTS_FLATTENED: &str = "status-group:spots-flattened"; // ui-text-exempt: trace region name, never displayed
+/// The "form fields drawn from their values" line (`/NeedAppearances`).
+pub(super) const REGION_FIELDS_REDRAWN: &str = "status-group:fields-redrawn"; // ui-text-exempt: trace region name, never displayed
 /// The "the picture is still being drawn" line (`OPERATOR_REQUESTS.md` O63).
 pub(super) const REGION_CATCHING_UP: &str = "status-group:catching-up"; // ui-text-exempt: trace region name, never displayed
 /// The "your typing is shown in a stand-in font" line, while a draft is open.

@@ -213,13 +213,6 @@ pub const fn new_scale_hint() -> &'static str {
      group's unit."
 }
 
-/// The disclosure when the new group and its copied scale are two undo steps.
-#[must_use]
-pub const fn new_group_two_undos() -> &'static str {
-    "The new group and its scale were added as two steps; undo takes two \
-     presses to remove both."
-}
-
 /// The Tool options label over the group the next dimension joins.
 #[must_use]
 pub const fn tool_group_label() -> &'static str {
@@ -370,7 +363,7 @@ pub fn members_that_will_move(moving: usize, total: usize) -> String {
     }
 }
 
-/// The names of the seven group-level appearance properties.
+/// The names of the group-level appearance properties.
 #[must_use]
 pub const fn prop_text_height() -> &'static str {
     "Text height"
@@ -398,6 +391,30 @@ pub const fn prop_arrow_form() -> &'static str {
 #[must_use]
 pub const fn prop_color() -> &'static str {
     "Colour"
+}
+
+/// See [`prop_text_height`].
+#[must_use]
+pub const fn prop_dash() -> &'static str {
+    "Line style"
+}
+
+/// See [`prop_text_height`].
+#[must_use]
+pub const fn prop_opacity() -> &'static str {
+    "Opacity"
+}
+
+/// The factory line style, for the caption that stands in for the chooser.
+#[must_use]
+pub const fn dash_factory_value() -> &'static str {
+    "solid"
+}
+
+/// An opacity (`0.0..=1.0`) as the caption's whole percentage.
+#[must_use]
+pub fn percent_value(v: f64) -> String {
+    format!("{}%", (v * 100.0).round())
 }
 
 /// A point-valued property's inherited value, for the caption that stands in

@@ -22,6 +22,16 @@ colour is read by `EditSession::marker_color`; the swatch shows its `/C` as
 written, so an absent, empty or malformed entry is no colour rather than the
 subtype's default.
 
+## Colour and icon, read-only
+
+`facts_row` is drawn for a `Reach::Neither` mark that is not a marker: one no
+restyle verb reads, such as a text box with no `/DA` or a subtype pdfcer does
+not author. It finds the annotation in `annot::page_annotations` and shows
+`Annotation::color` as a swatch (one component gray, three RGB, four CMYK; any
+other count, or no `/C`, shows none) and `Annotation::icon` as the raw name.
+Nothing is written. It traces `annot-facts-shown id= colour= icon=` once per
+change, each value `none` when absent.
+
 ## The redraw offer
 
 `offer_row` reads `OpenDoc::redraw_offer`. When the last restyle of the
@@ -34,4 +44,4 @@ clears it.
 ## Regions
 
 `properties.markup.any.opacity`, `.marker` (plus `.marker.picker` while
-open), `.redraw`.
+open), `.facts`, `.redraw`.

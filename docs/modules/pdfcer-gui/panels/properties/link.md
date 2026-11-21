@@ -17,7 +17,9 @@ markup section stands aside for links.
   `LinkAction::SetBorder`. Each is one undo entry.
 - Regions: `properties.link`, `properties.link.apply-target`,
   `properties.link.apply-border`, and the form's `properties.link.page`,
-  `.web`, `.named`, `.field`, `.border`, `.colour`.
+  `.web`, `.named`, `.field`, `.border`, `.colour`, `.names.<i>`.
+- The Named choice's list is read when the form is seeded, so it is re-read
+  whenever the link's reading changes.
 
 # Reaching a link
 

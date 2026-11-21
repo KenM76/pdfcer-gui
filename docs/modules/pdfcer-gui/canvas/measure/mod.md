@@ -194,13 +194,14 @@ have.
 
 ### `fn take_completed_scale_line`
 
-Returns `Some(points)` on the single frame after the two-point pick
-completes, and `None` on every other frame — the length is cleared from the
+Returns `Some((measured, page))` on the single frame after the two-point
+pick completes — the line's length in the page's user-space units and the
+index of the page it was drawn on — and `None` on every other frame — the length is cleared from the
 state as it is read.
 
 # Read-and-clear, because the alternative re-opens the dialog forever
 
-`ScalePick::drawn_pdf_length` stays `Some` for as long as the pick holds a
+`ScalePick::measured` stays `Some` for as long as the pick holds a
 completed line; that is what keeps the reference line drawn on the page
 while the operator types. A caller that merely *observed* it would therefore
 see it `Some` on every subsequent frame and re-open the Set-scale dialog

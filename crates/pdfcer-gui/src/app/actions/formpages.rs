@@ -53,7 +53,11 @@ impl Refusal for UseError {
 
 /// Lay the form out with `choices` and write its pages over the stand-ins,
 /// keeping its fields fillable when `fillable`.
-pub(super) fn apply(doc: &mut OpenDoc, choices: [bool; 5], fillable: bool) {
+pub(super) fn apply(
+    doc: &mut OpenDoc,
+    choices: pdfcer_gui_base::formpreview::ReadingChoices,
+    fillable: bool,
+) {
     let env = crate::app::settings::SettingsExt::render_options(&doc.settings).fonts;
     let fonts = pdfcer_render::font::xfa_fonts(&env);
     let choices = Choices(choices);
@@ -196,7 +200,7 @@ pub(super) fn fill(
     path: &[usize],
     value: &str,
     name: Option<&str>,
-    choices: [bool; 5],
+    choices: pdfcer_gui_base::formpreview::ReadingChoices,
 ) {
     let opts = Choices(choices).merge();
     super::apply::vector_edit(doc, "form-fill", 0, 0, |session| {

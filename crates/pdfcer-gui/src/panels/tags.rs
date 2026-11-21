@@ -4,13 +4,16 @@
 //! The tree is flattened each frame into the rows its open set shows and
 //! drawn through `ScrollArea::show_rows`, so a document of ten thousand
 //! paragraphs costs the rows on screen. Picking a row raises
-//! [`Action::PickTag`] with the element's boxes and turns to the first; the
-//! canvas draws them as a selection outline.
+//! [`Action::PickTag`] with the element's painted boxes (text, paths, images
+//! and placed objects alike) and turns to the first; the canvas draws them as
+//! a selection outline.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/tags.md`.
 
 use std::collections::HashSet;
 
+use pdfcer_core::page_tree::Rect;
+use pdfcer_core::structure_bounds::read_painted_bounds;
 use pdfcer_core::structure_tree::{StructElement, StructKid, StructureTree};
 use pdfcer_gui_base::tagtree::{TagPick, TagRead, no_box_reason};
 
@@ -264,9 +267,18 @@ fn facts(ui: &mut egui::Ui, doc: &OpenDoc, tree: &StructureTree, i: usize) {
     }
 }
 
+/// Element `i`'s painted extent per page: text, paths, images, shadings and
+/// placed objects, or its glyph hull when the pages cannot be walked.
+fn painted(doc: &OpenDoc, tree: &StructureTree, i: usize) -> Vec<(usize, Rect)> {
+    match read_painted_bounds(&doc.session.view(), tree) {
+        Ok(painted) => tree.element_painted_bounds(i, &painted),
+        Err(_) => tree.element_bbox(i),
+    }
+}
+
 /// Pick element `i`: record its boxes, turn to the first page, reveal it.
 fn pick(doc: &OpenDoc, tree: &StructureTree, i: usize, actions: &mut Vec<Action>) {
-    let boxes = tree.element_bbox(i);
+    let boxes = painted(doc, tree, i);
     let kind = tree
         .elements
         .get(i)

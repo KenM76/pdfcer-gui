@@ -35,17 +35,18 @@ and markup branches, and `Group::fields` first in its form-field arm.
 
 One rectangle per member that will move, its box translated by the drag delta,
 in `Previews::group`. A locked member gets none. A ce dimension's ghost is its
-box translated, while the commit places it by `dimdrag::placed`, which keeps it
-on what it measures, so its box can land short of its ghost.
+box translated, while the commit has the engine re-place it by the drag rule
+(`move_annotations_each`), which keeps it on what it measures, so its box can
+land short of its ghost.
 
 ## Commit
 
 The release raises one `VectorAction::MoveMixed { gesture: "drag" }` with every
 member and one page-space delta; `app::actions::movemixed` applies it and folds
 it into one undo step. Locked annotations are sent as well so the engine
-refuses each by name and the status line says how many moved. The delta is
-converted on the page the caller passes: the current page for annotations, the
-group's page for fields. Batch verbs owed: G189 (widgets), G190 (annotations).
+refuses the batch by name and the status line says which kind did not move.
+The delta is converted on the page the caller passes: the current page for
+annotations, the group's page for fields.
 
 ## Trace
 

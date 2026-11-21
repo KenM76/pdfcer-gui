@@ -177,6 +177,9 @@ pub struct ImagePlan {
     /// The rendering standard applied over a copy of the operator's settings
     /// for this export only, or `None` for the settings as they stand.
     pub standard: Option<RenderStandard>,
+    /// EMF only: one metafile per ink rather than one per page. Named by
+    /// [`plate_path`].
+    pub plates: bool,
 }
 
 impl ImagePlan {
@@ -377,6 +380,28 @@ pub fn output_path(chosen: &Path, format: ImageFormat, page_index: usize, multi:
     path
 }
 
+/// **What one separation plate's file is called**: the page's own name
+/// ([`output_path`]) with the ink after a hyphen. Characters a filename
+/// cannot carry become `_`.
+#[must_use]
+pub fn plate_path(chosen: &Path, page_index: usize, multi: bool, ink: &str) -> PathBuf {
+    let page = output_path(chosen, ImageFormat::Emf, page_index, multi);
+    let stem = page
+        .file_stem()
+        .map_or_else(|| "page".to_owned(), |s| s.to_string_lossy().into_owned());
+    let ink: String = ink
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == ' ' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    page.with_file_name(format!("{stem}-{}.emf", ink.trim()))
+}
+
 /// Where the save dialog opens, and what it calls the file.
 #[must_use]
 pub fn suggested_path(document: &Path, format: ImageFormat) -> PathBuf {
@@ -403,7 +428,17 @@ mod tests {
             keep_text: false,
             background: Rgb::WHITE,
             standard: None,
+            plates: false,
         }
+    }
+
+    /// A plate's file carries the page's name and the ink, made safe.
+    #[test]
+    fn a_plate_file_is_named_for_its_page_and_ink() {
+        let one = plate_path(Path::new("d/drawing.emf"), 0, false, "Cyan");
+        assert_eq!(one, Path::new("d/drawing-Cyan.emf"));
+        let many = plate_path(Path::new("d/drawing.emf"), 2, true, "PANTONE 185/C");
+        assert_eq!(many, Path::new("d/drawing-p3-PANTONE 185_C.emf"));
     }
 
     /// A raster renders clear for kept transparency or a non-white background,

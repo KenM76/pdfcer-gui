@@ -124,6 +124,14 @@ fn tilt(
     }
 
     into_view(ctx, session, pointer, UPRIGHT)?;
+    // Stand upright is drawn only while the box reads as tilted: its absence
+    // is the defect, not the SKIP a failed `press` would file.
+    if declared_in(&session.trace()?, ui_rect_event(ctx)?, UPRIGHT).is_none() {
+        return Ok(Some(format!(
+            "the box was tilted and Properties drew no `{UPRIGHT}`: the field's angle was              not read. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
     let mark = session.trace()?.mark();
     press(ctx, session, pointer, UPRIGHT)?;
     session.settle(30);

@@ -1,33 +1,21 @@
 //! # `app::actions::forms::radiogroup` — putting a radio button into a group
 //!
-//! Two routes reach it: `Ctrl+Shift+V` over a copied radio button (another
-//! button of the copied group), and Properties ▸ *Radio group* (move the
-//! selected button into the named group, or into a new one).
+//! Properties ▸ *Radio group* moves the selected button into the named group,
+//! or into a new one. (Another button pasted into its group is
+//! `super::paste`'s, by `paste_field`.)
 //!
-//! Both author the new member through `EditSession::add_radio_button`, which
-//! joins an existing group when the name is taken (§12.7.3.2: a shared name
-//! is what makes radios exclusive), with an export value no member of the
-//! group carries. `paste_field`'s `AdditionalWidget` cannot do this: it adds
-//! the copied widget with the copied export value, which the engine refuses
-//! as `RadioExportValueTaken` on every radio, because two members sharing an
-//! on-state select together. Moving a button deletes the old widget in the
-//! same undo step (`coalesce_last`).
-//!
-//! The new member takes the source button's mark, colours and border; the
-//! group's own `/Ff`, `/DA` and value are the group's.
+//! Into an existing group it is the engine's `move_widget_to_field`, which
+//! picks an on-state no member uses (§12.7.3.2: a shared name is what makes
+//! radios exclusive). Into a new name it is `add_radio_button`, which takes
+//! the source button's mark, colours and border, then `delete_widget`, folded
+//! into one undo step (`coalesce_last`).
 
 use pdfcer_core::annot_author::{CheckStyle, WidgetChrome};
 use pdfcer_core::edit::{BorderSpec, BorderStyle, CommandKind, NewRadioButton, TooltipChoice};
-use pdfcer_core::forms::{ButtonKind, Field, FieldFlags, FieldType, Widget};
+use pdfcer_core::forms::{Field, FieldFlags, Widget};
 use pdfcer_core::page_tree::Rect;
 
 use crate::app::state::{OpenDoc, SelectedField};
-
-/// Whether `fqn` names a radio-button field in `doc`.
-#[must_use]
-pub fn is_radio(doc: &OpenDoc, fqn: &str) -> bool {
-    with_field(doc, fqn, radio).unwrap_or(false)
-}
 
 /// Every export value the radio group `fqn` uses, empty when there is none.
 #[must_use]
@@ -55,61 +43,62 @@ struct Look {
     visibility: Option<pdfcer_core::edit::Visibility>,
 }
 
-/// **Add another button to the radio group `group`** at `rect` on `page`,
-/// drawn like the group's widget whose size matches `rect` (the one copied).
-pub(super) fn add_member(doc: &mut OpenDoc, group: &str, page: usize, rect: Rect) {
-    let Some((spec, export)) = member(doc, group, page, rect, &[]) else {
-        return;
-    };
-    let before = doc.edit_epoch;
-    crate::app::actions::apply::vector_edit(doc, "radio-paste", page, 1, |session| {
-        session.add_radio_button(&spec).map(|_| {
-            trace_join("radio-paste", group, &export, page);
-            vec![crate::text::radiogroup::joined(group, &export)]
-        })
-    });
-    select_last(doc, before, group, page);
-}
-
-/// The spec and export value for a new member of `group` at `rect`, drawn
-/// like the group's widget of the same size. `pending` names exports a batch
-/// has already claimed and not yet written.
-pub(super) fn member(
-    doc: &OpenDoc,
-    group: &str,
-    page: usize,
-    rect: Rect,
-    pending: &[String],
-) -> Option<(NewRadioButton, String)> {
-    let look = with_field(doc, group, |f| {
-        let w = f
-            .widgets
-            .iter()
-            .find(|w| w.rect.is_some_and(|r| same_size(r, rect)))
-            .or_else(|| f.widgets.first())?;
-        Some(look_of(f, w))
-    })
-    .flatten()?;
-    let mut taken = exports(doc, group);
-    taken.extend_from_slice(pending);
-    let export = free_export(&look.export, &taken);
-    Some((spec(page, group, rect, &look, &export), export))
-}
-
 /// **Move the button `from`'s widget `widget` into the radio group `to`**,
 /// creating `to` when no field bears that name. One undo step.
+///
+/// Into an existing group it is one `move_widget_to_field`: the widget keeps
+/// its object and its look, and the engine picks a free on-state. Into a new
+/// name it is `add_radio_button` then `delete_widget`, folded, because the
+/// engine's verb needs a target field that exists.
 pub(super) fn move_to(doc: &mut OpenDoc, from: &SelectedField, to: &str) {
     let to = to.trim();
     if to.is_empty() || to == from.field {
         return;
     }
+    if with_field(doc, to, |_| ()).is_some() {
+        regroup(doc, from, to);
+    } else {
+        move_to_new(doc, from, to);
+    }
+}
+
+/// [`move_to`] into the existing field `to`.
+fn regroup(doc: &mut OpenDoc, from: &SelectedField, to: &str) {
+    let page = from.page;
+    let (field, widget) = (from.field.clone(), from.widget);
+    let before = doc.edit_epoch;
+    crate::app::actions::apply::vector_edit(doc, "radio-move", page, 1, |session| {
+        let done = session.move_widget_to_field(&field, widget, to)?;
+        let export = done.on_state.clone().unwrap_or_default();
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!(
+                "radio-move-applied group={to} export={export} page={page} \
+                 engine=move_widget_to_field source_removed={} orphaned={}",
+                done.source_removed, done.action_targets_orphaned
+            )
+        });
+        let mut lines = vec![crate::text::radiogroup::moved(to, &export)];
+        lines.extend(done.disclosures);
+        if done.action_targets_orphaned > 0 {
+            lines.push(crate::text::forms::form_field_actions_orphaned(
+                done.action_targets_orphaned,
+            ));
+        }
+        Ok::<_, pdfcer_core::edit::EditError>(lines)
+    });
+    select_last(doc, before, to, page);
+}
+
+/// [`move_to`] into a group that does not exist yet.
+fn move_to_new(doc: &mut OpenDoc, from: &SelectedField, to: &str) {
     let Some(Some((look, rect))) = with_field(doc, &from.field, |f| {
         let w = f.widgets.get(from.widget)?;
         Some((look_of(f, w), w.rect?))
     }) else {
         return;
     };
-    let export = free_export(&look.export, &exports(doc, to));
+    let export = free_export(&look.export, &[]);
     let page = from.page;
     let (field, widget) = (from.field.clone(), from.widget);
     let before = doc.edit_epoch;
@@ -218,15 +207,6 @@ pub fn free_export(preferred: &str, taken: &[String]) -> String {
         .map(|n| format!("{stem}{n}"))
         .find(|c| !taken.iter().any(|t| t == c))
         .unwrap_or_else(|| format!("{stem}{}", taken.len() + 2))
-}
-
-fn radio(f: &Field) -> bool {
-    f.field_type == Some(FieldType::Button) && f.button_kind == Some(ButtonKind::Radio)
-}
-
-fn same_size(a: Rect, b: Rect) -> bool {
-    ((a.urx - a.llx) - (b.urx - b.llx)).abs() < 0.01
-        && ((a.ury - a.lly) - (b.ury - b.lly)).abs() < 0.01
 }
 
 fn with_field<T>(doc: &OpenDoc, fqn: &str, read: impl FnOnce(&Field) -> T) -> Option<T> {

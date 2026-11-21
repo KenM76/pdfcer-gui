@@ -16,7 +16,9 @@ let the operator see which content each one owns (O410, X077).
   cells Scope, Headers, RowSpan, ColSpan; the pages it is outlined on, or the
   reason it has none.
 
-**Picking** raises `Action::PickTag` with the element's boxes, turns to the
+**Picking** reads the engine's painted bounds (`read_painted_bounds`, so a
+figure, rule or fill is outlined as well as text; the glyph hull when the
+pages cannot be walked) and raises `Action::PickTag` with the element's boxes, turns to the
 first page and reveals the first box (`RevealRect`, why `tags-pick`). The
 canvas outlines every box on every drawn page (`canvas::tagoutline`).
 

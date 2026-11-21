@@ -15,7 +15,7 @@ use crate::text::panels::buttonicon as t;
 /// cancelled picker changes nothing; an unreadable file or a drawing changes
 /// nothing and says why.
 pub(super) fn pick(doc: &mut OpenDoc, field: &str, widget: usize) {
-    let Picked::Path(source) = pick_image_source() else {
+    let Picked::Path(source) = pick_image_source(crate::text::images::window_title()) else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!("button-icon-cancelled field={field} widget={widget}")

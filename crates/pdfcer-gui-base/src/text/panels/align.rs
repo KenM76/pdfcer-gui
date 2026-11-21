@@ -248,18 +248,6 @@ pub const fn dimensions_stay_attached() -> &'static str {
      line and value moved and its extension lines stretched."
 }
 
-/// A selected dimension has no measurement record to move it by.
-#[must_use]
-pub const fn dimension_not_found() -> &'static str {
-    "A dimension's measurement could not be found, so it was left where it is."
-}
-
-/// A selected dimension is of a kind that cannot be moved as a whole.
-#[must_use]
-pub const fn dimension_not_placeable() -> &'static str {
-    "This kind of dimension cannot be moved as a whole, so it was left where it is."
-}
-
 /// Said when an Align or Distribute applied but could not be grouped.
 #[must_use]
 pub const fn not_one_undo() -> &'static str {

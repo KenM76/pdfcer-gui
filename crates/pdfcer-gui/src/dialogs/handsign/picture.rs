@@ -100,7 +100,9 @@ impl PictureTab {
     /// can be: a scanned signature's paper is what the operator least wants
     /// over the form.
     fn pick(&mut self) {
-        let crate::app::files::Picked::Path(path) = crate::app::files::pick_image_source() else {
+        let crate::app::files::Picked::Path(path) =
+            crate::app::files::pick_image_source(crate::text::images::window_title())
+        else {
             return;
         };
         match std::fs::read(&path) {

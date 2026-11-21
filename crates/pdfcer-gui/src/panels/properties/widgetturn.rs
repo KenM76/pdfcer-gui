@@ -12,12 +12,10 @@ use egui::Ui;
 use pdfcer_core::edit::WidgetEdit;
 use pdfcer_core::forms::{Field, Widget};
 use pdfcer_gui_base::entry;
-use pdfcer_gui_base::widgetread::{self, FreeTurn};
 
 use super::widgetedit::{ROTATE_LEFT_REGION, ROTATE_RIGHT_REGION, ROTATION_REGION};
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
-use crate::app::state::OpenDoc;
 use crate::canvas::markup::linestyle::DashReading;
 use crate::text::panels::formfield as t;
 use crate::text::panels::widgetturn as tt;
@@ -29,25 +27,25 @@ pub const UPRIGHT_REGION: &str = "properties.widget_edit.upright";
 // ui-text-exempt: trace region name, never displayed
 pub const OPACITY_REGION: &str = "properties.widget_edit.opacity";
 
-/// What the widget section reads from the file beyond `forms::Widget`.
+/// What the widget section shows beyond the rows `forms::Widget` fills alone.
 #[derive(Clone, Copy)]
 pub struct WidgetFacts {
     /// The border's dash, as the border rows show it.
     pub dash: DashReading,
-    /// The free tilt, `None` upright.
-    pub turn: Option<FreeTurn>,
-    /// `/CA`, `None` when unset.
+    /// `Widget::free_angle`: counterclockwise degrees, `None` upright.
+    pub turn: Option<f64>,
+    /// `Widget::opacity` (`/CA`), `None` when unset.
     pub opacity: Option<f64>,
 }
 
 impl WidgetFacts {
     /// Read for widget `index` of `field`.
-    pub(super) fn read(doc: &OpenDoc, field: &Field, index: usize, dash: DashReading) -> Self {
+    pub(super) fn read(field: &Field, index: usize, dash: DashReading) -> Self {
         let widget = field.widgets.get(index);
         Self {
             dash,
-            turn: widget.and_then(|w| widgetread::free_turn(&doc.session, w)),
-            opacity: widget.and_then(|w| widgetread::opacity(&doc.session, w)),
+            turn: widget.and_then(|w| w.free_angle),
+            opacity: widget.and_then(|w| w.opacity),
         }
     }
 }
@@ -56,14 +54,14 @@ impl WidgetFacts {
 pub(super) fn rotation_row(
     ui: &mut Ui,
     widget: &Widget,
-    tilt: Option<FreeTurn>,
+    tilt: Option<f64>,
     (fqn, index): (&str, usize),
     actions: &mut Vec<Action>,
 ) {
     let current = widget.rotation.unwrap_or(0);
     ui.label(t::widget_rotation_label(widget.rotation));
     if let Some(tilt) = tilt {
-        ui.label(tt::turned(tilt.degrees));
+        ui.label(tt::turned(tilt));
     }
 
     let quarter = |ui: &mut Ui, label: &str, region: &str, delta: i64| {

@@ -423,6 +423,11 @@ pub(super) fn band() -> Vec<Command> {
         command("view.skip_tiny_details", t::view_skip_tiny_details(), 237)
             .with_icon("skip-tiny")
             .enabled_when("doc.pages"),
+        // The engine's editor tint behind fillable fields, drawn ones and
+        // undrawn ones alike. Canvas only; never printed or exported.
+        command("view.highlight_fields", t::view_highlight_fields(), 248)
+            .with_icon("form-field")
+            .enabled_when("doc.pages"),
         // Acrobat's Overprint Preview, on by default. Canvas only; the status
         // bar says when it is off and the page asks for overprint.
         command("view.overprint_preview", t::view_overprint_preview(), 238)

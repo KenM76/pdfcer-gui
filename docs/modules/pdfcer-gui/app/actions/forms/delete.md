@@ -241,21 +241,15 @@ operator pressed, so it is said out loud.
 ### `fn widgets` — several boxes as one undo step
 
 What Delete raises when `FieldSet::all` holds more than one box
-(`FieldAction::delete_selected` picks `DeleteWidget` for one). The engine
-deletes one box per command (G192), so each box goes by `delete_widget` and the
-commands pushed are folded with `coalesce_last(n, CommandKind::DeleteFormField)`.
+(`FieldAction::delete_selected` picks `DeleteWidget` for one). One
+`EditSession::delete_widgets` call takes every box, with the indices as
+selected: the engine deletes each field's boxes highest index first, so
+renumbering never shifts a target, and it is all-or-nothing, one undo entry.
 
-**Order is load-bearing.** `delete_widget` renumbers the later boxes of the same
-field, so the selection's indices are valid only if each field's boxes go
-highest index first; the list is sorted by field name, then by descending
-widget index, and deduplicated. Deleting lowest first deletes the first radio
-button and then refuses the second with `WidgetIndexOutOfRange`.
-
-A refusal part-way breaks the loop: what was deleted is folded and stays, and
-the status line says how many of how many went (nothing is rolled back, for
-G189's reason). A refusal before any delete is the funnel's ordinary `Err`.
-Over `MAX_UNDO_DEPTH` boxes it refuses with `SelectionTooLargeForOneUndo`
-before deleting anything. The selection clears only if the epoch moved,
+A refusal deletes nothing and is the funnel's ordinary `Err`. Over
+`MAX_UNDO_DEPTH` boxes it refuses with `SelectionTooLargeForOneUndo` before
+deleting anything. Button actions left naming a removed field are counted
+and said. The selection clears only if the epoch moved,
 like [`widget`]; clearing the primary invalidates the `FieldSet` with it.
 
 Trace: `delete-widgets-applied deleted=k/n one_step=`.

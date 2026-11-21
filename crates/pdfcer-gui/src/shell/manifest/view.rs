@@ -258,6 +258,7 @@ pub(super) fn tab() -> Tab {
                     // Beside line weights: the other switch that changes the
                     // drawing itself rather than adding furniture.
                     icon_only("view.skip_tiny_details"),
+                    icon_only("view.highlight_fields"),
                     icon_only("view.overprint_preview"),
                     // Beside overprint preview: the other print-production view.
                     icon_only("view.page_boxes"),

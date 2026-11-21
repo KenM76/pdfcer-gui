@@ -15,9 +15,11 @@ tree; this module reads it once per `edit_epoch` and holds what they share.
   over edited content.
 - `no_box_reason(tree, i)` says why an element has no box: no content kids,
   a page that did not resolve, an MCID the page does not hold, or content that
-  is not text (the engine's `element_bbox` measures text runs).
+  is found but paints nothing.
 
-**Why the boxes come from `element_bbox`.** It is the engine's own answer and
-it unions descendants, so a container outlines its whole content. Painted
-bounds (`structure_bounds`) replace it at the pin move that brings them; the
-GUI computes no bounds of its own.
+**Why the boxes come from `element_painted_bounds`.** It is the engine's own
+answer, it unions descendants, so a container outlines its whole content, and
+it counts paths, images, shadings and `/OBJR` placements as well as text, so a
+figure with no text is outlined. The Tags panel reads `read_painted_bounds`
+when an element is picked and falls back to the glyph hull (`element_bbox`)
+when the pages cannot be walked; the GUI computes no bounds of its own.

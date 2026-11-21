@@ -280,7 +280,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         // types what it represents — which is the picture that makes the
         // question answerable: *this* line is how long?
         MeasureKind::Scale => {
-            if st.scale.drawn_pdf_length.is_some() {
+            if st.scale.measured.is_some() {
                 // Complete: hold the committed line still while the operator
                 // types. `placing_preview` is fed the pointer only so it can
                 // answer at all; with both points picked the segment it

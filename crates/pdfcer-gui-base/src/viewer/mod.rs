@@ -255,6 +255,10 @@ pub struct ViewState {
     /// default, canvas only, and disclosed with the count it skipped. Part of
     /// the render key for the reason [`Self::line_weights`] is.
     pub skip_tiny_details: bool,
+    /// **`view.highlight_fields`** — tint fillable form fields
+    /// (`RenderOptions::field_highlight`). Off by default, canvas only, part
+    /// of the render key for the reason [`Self::line_weights`] is.
+    pub highlight_fields: bool,
     /// **`view.overprint_preview`** — composite marks that ask to overprint
     /// (`RenderOptions::overprint_preview`), as Acrobat's *Overprint Preview*
     /// does. On by default, which is the engine's default; turning it off
@@ -376,6 +380,7 @@ impl Default for ViewState {
             // named for the weights rather than for the hairline.
             line_weights: true,
             skip_tiny_details: false,
+            highlight_fields: false,
             overprint_preview: true,
             page_boxes: false,
             // Off, and this is the one default that is routinely

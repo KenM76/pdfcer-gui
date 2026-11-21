@@ -11,26 +11,27 @@
 //! field types a value into the form's data (`fields`); the window redraws
 //! whenever the document's edit epoch moves, so an undo shows too.
 //!
-//! The "Reading choices" are the merge and paint options where the XFA
-//! standard leaves the answer open; changing one redraws on a new worker while
-//! the previous pages stay shown.
+//! The Reading choices (`choices`) are the views, merge, layout and paint
+//! settings where the XFA standard leaves the answer open; changing one
+//! redraws on a new worker while the previous pages stay shown. A part the
+//! chosen views exclude is named in the disclosures.
 
 use std::sync::{Arc, Mutex};
 
 use egui_shell::theme::Theme;
 use pdfcer_core::edit::EditSession;
-use pdfcer_core::xfa::{
-    BareRef, CheckCaption, DataAttributes, LayoutOptions, MergeOptions, MergeWarningKind,
-    PaintNoteKind, PaintOptions, ScopeSearch, ThreeDStroke,
-};
+use pdfcer_core::xfa::{MergeWarningKind, PaintNoteKind, Template};
 
 use pdfcer_gui_base::formpreview::FormPreviewAction;
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
-use crate::text::xfapreview::{self as t, ChoiceKey};
+use crate::text::xfapreview as t;
 
+mod choices;
 mod fields;
+
+pub(crate) use choices::Choices;
 
 /// Named region: the whole dialog body.
 const REGION_BODY: &str = "dialog:form-preview"; // ui-text-exempt: trace region name, never displayed
@@ -46,72 +47,6 @@ const SCALE: f32 = 1.5;
 
 /// Pages drawn at most; the rest are counted in the trace and the heading.
 const MAX_PAGES: usize = 50;
-
-/// Every open choice, in display order.
-const CHOICES: [ChoiceKey; 5] = [
-    ChoiceKey::ScopeSearch,
-    ChoiceKey::BareRef,
-    ChoiceKey::DataAttributes,
-    ChoiceKey::ThreeDStroke,
-    ChoiceKey::CheckCaption,
-];
-
-/// The operator's answers, indexed as [`CHOICES`]: `true` is the second
-/// (non-default) answer.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub(crate) struct Choices(pub(crate) [bool; 5]);
-
-impl Choices {
-    fn get(self, key: ChoiceKey) -> bool {
-        CHOICES
-            .iter()
-            .position(|k| *k == key)
-            .is_some_and(|i| self.0[i])
-    }
-
-    pub(crate) fn merge(self) -> MergeOptions {
-        let scope = if self.get(ChoiceKey::ScopeSearch) {
-            ScopeSearch::Children
-        } else {
-            ScopeSearch::Upward
-        };
-        let bare = if self.get(ChoiceKey::BareRef) {
-            BareRef::DataRef
-        } else {
-            BareRef::Ignore
-        };
-        let attributes = if self.get(ChoiceKey::DataAttributes) {
-            DataAttributes::Ignore
-        } else {
-            DataAttributes::Load
-        };
-        MergeOptions::new()
-            .with_scope_search(scope)
-            .with_bare_ref(bare)
-            .with_data_attributes(attributes)
-    }
-
-    pub(crate) fn paint(self) -> PaintOptions {
-        let stroke = if self.get(ChoiceKey::ThreeDStroke) {
-            ThreeDStroke::Plain
-        } else {
-            ThreeDStroke::Bevel
-        };
-        let caption = if self.get(ChoiceKey::CheckCaption) {
-            CheckCaption::Remainder
-        } else {
-            CheckCaption::Fit
-        };
-        PaintOptions::new()
-            .with_three_d_stroke(stroke)
-            .with_check_caption(caption)
-    }
-
-    /// The trace's spelling: one digit per choice, `0` the default.
-    fn code(self) -> String {
-        self.0.iter().map(|b| if *b { '1' } else { '0' }).collect()
-    }
-}
 
 /// One drawn page, ready to upload.
 struct PagePixels {
@@ -129,6 +64,8 @@ struct Drawn {
     value_count: usize,
     merge_warning_count: usize,
     approximated: usize,
+    /// The dotted name of each part the chosen views leave out.
+    left_out: Vec<String>,
     notes: Vec<String>,
     warnings: Vec<String>,
 }
@@ -276,6 +213,11 @@ impl XfaPreviewDialog {
                 let (pages, notes, warnings) = (d.total_pages, d.notes.len(), d.warnings.len());
                 let (values, merged) = (d.value_count, d.merge_warning_count);
                 let (approximated, choices) = (d.approximated, self.choices.code());
+                let excluded = d.left_out.len();
+                for path in &d.left_out {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    crate::diag::trace(|| format!("form-preview-left-out path={path}"));
+                }
                 crate::diag::trace(|| {
                     // Lets a driven check see the drawn pixels change: the
                     // window's viewport cannot be screenshotted.
@@ -290,7 +232,7 @@ impl XfaPreviewDialog {
                     format!(
                         "form-preview pages={pages} notes={notes} warnings={warnings} \
                          values={values} merge_warnings={merged} \
-                         approximated={approximated} choices={choices} digest={digest:016x}"
+                         approximated={approximated} choices={choices} excluded={excluded}                          digest={digest:016x}"
                     )
                 });
                 Shown::Pages {
@@ -318,64 +260,73 @@ impl XfaPreviewDialog {
         crate::diag::ui_rect(REGION_BODY, ui.max_rect());
         ui.label(egui::RichText::new(t::caveat()).color(theme.palette.text_muted));
         ui.add_space(6.0);
-        if self.choices_ui(ui) {
-            self.spawn(ui.ctx(), session);
-        }
-        ui.add_space(6.0);
         const FOOTER_RESERVE: f32 = 40.0;
         const LIST_FLOOR: f32 = 48.0;
+        let mut changed = false;
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .max_height((ui.available_height() - FOOTER_RESERVE).max(LIST_FLOOR))
-            .show(ui, |ui| match &self.shown {
-                None => {
+            .show(ui, |ui| {
+                changed = choices::show(ui, &mut self.choices);
+                ui.add_space(6.0);
+                self.shown_ui(ui, &theme, actions);
+            });
+        if changed {
+            self.spawn(ui.ctx(), session);
+        }
+        ui.separator();
+        self.footer(ui, actions);
+    }
+
+    /// The worker's answer: a spinner, the failure, or the pages.
+    fn shown_ui(&mut self, ui: &mut egui::Ui, theme: &Theme, actions: &mut Vec<Action>) {
+        match &self.shown {
+            None => {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Spinner::new().color(theme.palette.text));
+                    ui.label(t::working());
+                });
+            }
+            Some(Shown::Failed(why)) => {
+                ui.label(why.as_str());
+            }
+            Some(Shown::Pages {
+                textures,
+                fields,
+                total_pages,
+                values,
+                notes,
+                warnings,
+            }) => {
+                if self.pending {
                     ui.horizontal(|ui| {
                         ui.add(egui::Spinner::new().color(theme.palette.text));
                         ui.label(t::working());
                     });
                 }
-                Some(Shown::Failed(why)) => {
-                    ui.label(why.as_str());
-                }
-                Some(Shown::Pages {
-                    textures,
-                    fields,
-                    total_pages,
-                    values,
-                    notes,
-                    warnings,
-                }) => {
-                    if self.pending {
-                        ui.horizontal(|ui| {
-                            ui.add(egui::Spinner::new().color(theme.palette.text));
-                            ui.label(t::working());
-                        });
-                    }
-                    ui.label(values.as_str());
-                    disclosures(ui, notes, warnings);
-                    for (i, texture) in textures.iter().enumerate() {
-                        ui.add_space(8.0);
-                        ui.label(t::page_heading(i + 1, *total_pages));
-                        let size = texture.size_vec2() / SCALE;
-                        let width = ui.available_width().min(size.x);
-                        let fitted = egui::vec2(width, size.y * width / size.x);
-                        let image = ui.image((texture.id(), fitted)).rect;
-                        if let Some((page_width, boxes)) = fields.get(i) {
-                            let o = fields::Overlay {
-                                page: i,
-                                image,
-                                scale: image.width() / page_width,
-                                enabled: !self.pending,
-                                choices: self.choices.0,
-                                actions,
-                            };
-                            fields::overlay(ui, o, boxes, &mut self.editing);
-                        }
+                ui.label(values.as_str());
+                disclosures(ui, notes, warnings);
+                for (i, texture) in textures.iter().enumerate() {
+                    ui.add_space(8.0);
+                    ui.label(t::page_heading(i + 1, *total_pages));
+                    let size = texture.size_vec2() / SCALE;
+                    let width = ui.available_width().min(size.x);
+                    let fitted = egui::vec2(width, size.y * width / size.x);
+                    let image = ui.image((texture.id(), fitted)).rect;
+                    if let Some((page_width, boxes)) = fields.get(i) {
+                        let o = fields::Overlay {
+                            page: i,
+                            image,
+                            scale: image.width() / page_width,
+                            enabled: !self.pending,
+                            choices: self.choices.0,
+                            actions,
+                        };
+                        fields::overlay(ui, o, boxes, &mut self.editing);
                     }
                 }
-            });
-        ui.separator();
-        self.footer(ui, actions);
+            }
+        }
     }
 
     /// Use these pages and its fillable switch, when the pages are drawn, and
@@ -407,37 +358,6 @@ impl XfaPreviewDialog {
     }
 }
 
-impl XfaPreviewDialog {
-    /// The open choices as radio pairs. Returns `true` when one changed.
-    fn choices_ui(&mut self, ui: &mut egui::Ui) -> bool {
-        let mut changed = false;
-        egui::CollapsingHeader::new(t::choices_heading())
-            .id_salt("form-preview-choices") // ui-text-exempt: widget id, never displayed
-            .default_open(true)
-            .show(ui, |ui| {
-                ui.label(t::choices_caveat());
-                for (i, key) in CHOICES.into_iter().enumerate() {
-                    let (label, answers) = t::choice(key);
-                    ui.horizontal_wrapped(|ui| {
-                        ui.label(label);
-                        for (n, answer) in answers.into_iter().enumerate() {
-                            let on = self.choices.0[i] == (n == 1);
-                            let r = ui.radio(on, answer);
-                            // ui-text-exempt: trace region name, never displayed
-                            let region = format!("form-preview.choice.{i}.{n}");
-                            crate::diag::ui_rect(&region, r.rect);
-                            if r.clicked() && !on {
-                                self.choices.0[i] = n == 1;
-                                changed = true;
-                            }
-                        }
-                    });
-                }
-            });
-        changed
-    }
-}
-
 /// The list of what the preview leaves out, above the pages.
 fn disclosures(ui: &mut egui::Ui, notes: &[String], warnings: &[String]) {
     ui.label(egui::RichText::new(t::notes_heading()).heading());
@@ -449,23 +369,46 @@ fn disclosures(ui: &mut egui::Ui, notes: &[String], warnings: &[String]) {
     }
 }
 
-/// Read the form, drop what its own views keep off the screen, and merge its
-/// data. The views must precede the merge so a dropped element binds nothing.
+/// A merged form, its layout, and the dotted name of each part the chosen
+/// views leave out.
+type LaidOut = (
+    pdfcer_core::xfa::MergedForm,
+    pdfcer_core::xfa::XfaLayout,
+    Vec<String>,
+);
+
+/// Read the form, drop what the chosen views exclude, and merge its data.
+/// The views must precede the merge so a dropped element binds nothing.
 fn merge(
     view: &pdfcer_core::view::DocumentView<'_>,
     choices: Choices,
-) -> Result<pdfcer_core::xfa::MergedForm, String> {
+) -> Result<(pdfcer_core::xfa::MergedForm, Vec<String>), String> {
     let xdp = pdfcer_core::xfa::read_xdp(view)
         .map_err(|e| t::failed(&e.to_string()))?
         .ok_or_else(|| t::no_template().to_owned())?;
     let mut template = pdfcer_core::xfa::read_template(&xdp)
         .map_err(|e| t::failed(&e.to_string()))?
         .ok_or_else(|| t::no_template().to_owned())?;
-    let views =
-        pdfcer_core::xfa::Views::from_config(&xdp).map_err(|e| t::failed(&e.to_string()))?;
-    template.exclude_irrelevant(&views);
-    pdfcer_core::xfa::merge_data(&template, &xdp, &choices.merge())
-        .map_err(|e| t::failed(&e.to_string()))
+    let own = pdfcer_core::xfa::Views::from_config(&xdp).map_err(|e| t::failed(&e.to_string()))?;
+    let read = template.clone();
+    let left_out = template
+        .exclude_irrelevant(&choices.views(own))
+        .iter()
+        .map(|path| dotted_name(&read, path))
+        .collect();
+    let merged = pdfcer_core::xfa::merge_data(&template, &xdp, &choices.merge())
+        .map_err(|e| t::failed(&e.to_string()))?;
+    Ok((merged, left_out))
+}
+
+/// The names from the root subform down to the node at `path`, dot
+/// separated; a node with no name is named by its element.
+fn dotted_name(template: &Template, path: &[usize]) -> String {
+    (1..=path.len())
+        .filter_map(|n| template.node_at(&path[..n]))
+        .map(|node| node.name().unwrap_or(&node.tag))
+        .collect::<Vec<_>>()
+        .join(".")
 }
 
 /// Merge the form's data and lay out its pages, measuring text in `fonts` —
@@ -476,16 +419,21 @@ pub(crate) fn lay_out(
     fonts: &pdfcer_core::xfa::XfaFonts,
     choices: Choices,
 ) -> Result<(pdfcer_core::xfa::MergedForm, pdfcer_core::xfa::XfaLayout), String> {
-    let merged = merge(view, choices)?;
+    lay_out_naming(view, fonts, choices).map(|(merged, layout, _)| (merged, layout))
+}
+
+/// [`lay_out`], with the parts the chosen views leave out.
+fn lay_out_naming(
+    view: &pdfcer_core::view::DocumentView<'_>,
+    fonts: &pdfcer_core::xfa::XfaFonts,
+    choices: Choices,
+) -> Result<LaidOut, String> {
+    let (merged, left_out) = merge(view, choices)?;
     let images = pdfcer_core::xfa::XfaImages::from_view(view);
-    let layout = pdfcer_core::xfa::layout_template_with(
-        &merged.template,
-        &LayoutOptions::new(),
-        &images,
-        fonts,
-    )
-    .map_err(|e| t::failed(&e.to_string()))?;
-    Ok((merged, layout))
+    let layout =
+        pdfcer_core::xfa::layout_template_with(&merged.template, &choices.layout(), &images, fonts)
+            .map_err(|e| t::failed(&e.to_string()))?;
+    Ok((merged, layout, left_out))
 }
 
 /// Lay out and draw every computed page with the operator's render settings.
@@ -497,7 +445,7 @@ fn draw(
 ) -> Result<Drawn, String> {
     let view = session.view();
     let fonts = pdfcer_render::font::xfa_fonts(&options.fonts);
-    let (merged, layout) = lay_out(&view, &fonts, choices)?;
+    let (merged, layout, left_out) = lay_out_naming(&view, &fonts, choices)?;
     let template = &merged.template;
     let images = pdfcer_core::xfa::XfaImages::from_view(&view);
     let paint = choices.paint();
@@ -529,9 +477,10 @@ fn draw(
             None => by_kind.push((w.kind, 1)),
         }
     }
-    let mut warnings: Vec<String> = by_kind
-        .into_iter()
-        .map(|(k, n)| t::merge_warning(k, n))
+    let mut warnings: Vec<String> = left_out
+        .iter()
+        .map(|path| crate::text::xfachoices::left_out_by_views(path))
+        .chain(by_kind.into_iter().map(|(k, n)| t::merge_warning(k, n)))
         .collect();
     for w in &layout.warnings {
         let line = t::layout_warning(w).to_owned();
@@ -556,6 +505,7 @@ fn draw(
         value_count: merged.bound.len(),
         merge_warning_count: merged.warnings.len(),
         approximated,
+        left_out,
         notes: counts
             .into_iter()
             .map(|(k, n)| t::paint_note(k, n))

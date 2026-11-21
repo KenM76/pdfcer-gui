@@ -11,7 +11,7 @@ use egui::Ui;
 use pdfcer_core::edit::LinkReading;
 use pdfcer_core::object::ObjId;
 use pdfcer_gui_base::linkaction::LinkAction;
-use pdfcer_gui_base::linkform::{LinkForm, Regions};
+use pdfcer_gui_base::linkform::{LinkForm, NamedDest, Regions};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -32,13 +32,16 @@ pub const REGIONS: Regions = Regions {
     field: "properties.link.field", // ui-text-exempt: trace region name, never displayed
     border: "properties.link.border", // ui-text-exempt: trace region name, never displayed
     colour: "properties.link.colour", // ui-text-exempt: trace region name, never displayed
+    names: "properties.link.names", // ui-text-exempt: trace region name, never displayed
 };
 
-/// The form, and the reading it was seeded from.
+/// The form, the reading it was seeded from, and the document's named
+/// destinations read at that seeding.
 #[derive(Debug, Clone)]
 struct Draft {
     seed: LinkReading,
     form: LinkForm,
+    names: Vec<NamedDest>,
 }
 
 /// **Draw the selected link's controls, or nothing.** Returns whether it
@@ -81,9 +84,10 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         .unwrap_or_else(|| Draft {
             form: LinkForm::from_reading(&reading),
             seed: reading.clone(),
+            names: pdfcer_gui_base::linkform::named_destinations(&doc.session.view()),
         });
 
-    draft.form.goes_ui(ui, pages.len(), REGIONS);
+    draft.form.goes_ui(ui, pages.len(), &draft.names, REGIONS);
     match draft.form.target(pages.len()) {
         Err(reason) => {
             ui.colored_label(ui.visuals().error_fg_color, reason);

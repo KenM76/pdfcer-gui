@@ -48,6 +48,7 @@ fn filling() -> SignDialog {
         open_certificate_requested: false,
         pick_requested: false,
         create: None,
+        picture: super::picture::Picture::default(),
         confirm_requested: false,
         open_signed_requested: false,
         close_requested: false,

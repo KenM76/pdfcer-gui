@@ -2,8 +2,9 @@
 //!
 //! Opacity for an annotation outside `set_markup_style`'s family
 //! (`set_annot_opacity`), the icon colour of a caret, attachment, sound or
-//! screen mark (`set_marker_style`), and the redraw offer a refused restyle
-//! of the selected annotation leaves behind.
+//! screen mark (`set_marker_style`), the colour and icon any other mark
+//! carries (read-only, from `annot::Annotation`), and the redraw offer a
+//! refused restyle of the selected annotation leaves behind.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/markup/anyannot.md`.
 
@@ -15,6 +16,7 @@ use pdfcer_gui_base::redrawoffer::{RedrawOffer, Why};
 
 use crate::app::actions::Action;
 use crate::app::actions::annot::AnnotAction;
+use crate::app::state::OpenDoc;
 use crate::canvas::selection::annot::AnnotTarget;
 use crate::text::panels::properties as t;
 use crate::text::panels::textannotstyle as ts;
@@ -23,6 +25,8 @@ use crate::text::panels::textannotstyle as ts;
 pub(super) const OPACITY_REGION: &str = "properties.markup.any.opacity"; // ui-text-exempt: trace region name, never displayed
 /// The marker colour swatch's region.
 pub(super) const MARKER_REGION: &str = "properties.markup.any.marker"; // ui-text-exempt: trace region name, never displayed
+/// The read-only colour and icon row's region.
+pub(super) const FACTS_REGION: &str = "properties.markup.any.facts"; // ui-text-exempt: trace region name, never displayed
 /// The redraw button's region.
 pub(super) const REDRAW_REGION: &str = "properties.markup.any.redraw"; // ui-text-exempt: trace region name, never displayed
 
@@ -85,6 +89,69 @@ pub(super) fn marker_row(
             }));
         }
     });
+}
+
+/// **The colour and icon the mark carries**, read-only: `/C` and `/Name` as
+/// `annot::Annotation::color` and `annot::Annotation::icon` report them, for a
+/// mark no restyle verb reads. The swatch is the colour as written, so an
+/// absent or malformed `/C` shows as none rather than a subtype default.
+pub(super) fn facts_row(ui: &mut Ui, doc: &OpenDoc, target: &AnnotTarget) {
+    let Some(page) = doc.pages.get(target.page) else {
+        return;
+    };
+    let Some(annot) = pdfcer_core::annot::page_annotations(&doc.session.graph(), page.id)
+        .into_iter()
+        .find(|a| a.id == Some(target.id))
+    else {
+        return;
+    };
+    let colour = annot.color.as_deref().and_then(device);
+    let response = ui.horizontal(|ui| {
+        ui.label(t::facts_colour_label());
+        match colour {
+            Some(c) => {
+                let (rect, _) =
+                    ui.allocate_exact_size(egui::vec2(18.0, 12.0), egui::Sense::hover());
+                let fill = pdfcer_gui_base::colourpick::Ink::from(c).screen();
+                ui.painter().rect_filled(rect, 2.0, fill);
+            }
+            None => {
+                ui.label(egui::RichText::new(t::facts_no_colour()).weak());
+            }
+        }
+        if let Some(icon) = &annot.icon {
+            ui.separator();
+            ui.label(t::facts_icon_label());
+            ui.label(String::from_utf8_lossy(icon));
+        }
+    });
+    crate::diag::ui_rect_visible(FACTS_REGION, response.response.rect, ui.clip_rect());
+    crate::diag::trace_changed(FACTS_REGION, || {
+        let none = || "none".to_owned(); // ui-text-exempt: trace token
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed
+            "annot-facts-shown id={} colour={} icon={}",
+            target.id.num,
+            annot.color.as_ref().map_or_else(none, |c| {
+                c.iter().map(f64::to_string).collect::<Vec<_>>().join(",")
+            }),
+            annot
+                .icon
+                .as_ref()
+                .map_or_else(none, |i| String::from_utf8_lossy(i).into_owned()),
+        )
+    });
+}
+
+/// `/C`'s components as the device colour their count names (Table 164): one
+/// gray, three RGB, four CMYK; any other count names none.
+fn device(c: &[f64]) -> Option<Color> {
+    match *c {
+        [g] => Some(Color::Gray(g)),
+        [r, g, b] => Some(Color::Rgb(r, g, b)),
+        [c, m, y, k] => Some(Color::Cmyk(c, m, y, k)),
+        _ => None,
+    }
 }
 
 /// **The redraw offer** for the selected annotation, when its last restyle

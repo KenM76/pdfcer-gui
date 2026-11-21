@@ -1,14 +1,13 @@
 //! Dragging several selected form fields, or several selected annotations,
 //! together. A press on any member that will move picks the group up; the
 //! release raises one [`VectorAction::MoveMixed`] with gesture `drag`, which
-//! `app::actions::movemixed` applies as one undo step (batch verbs owed:
-//! G189 for widgets, G190 for annotations).
+//! `app::actions::movemixed` applies as one undo step.
 //!
 //! A locked annotation stays in the action so the engine refuses it by name
 //! and the status line says how many moved; it gets no ghost and cannot pick
 //! the group up. Selected fields on a page other than the primary's do not
 //! move: the operator cannot see them follow. A ce dimension's ghost is its
-//! box translated, while the commit places it by `dimdrag::placed`.
+//! box translated, while the engine re-places it by the drag rule.
 //!
 //! Design: `docs/modules/pdfcer-gui/canvas/itemgroup.md`.
 

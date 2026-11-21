@@ -652,6 +652,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(signing::ADocumentCanBeSignedAndTheSignatureIsInTheFile),
         Box::new(signing::timestamp::ATimestampedSignatureIsTimestampedOrNotWritten),
         Box::new(signing::archive::AnArchiveTimestampSealsACopy),
+        Box::new(signing::sign_image::AVisibleSignatureCarriesItsPicture),
         Box::new(signing::sign_box::ClickingASignatureBoxOpensSign),
         Box::new(signing::hand_sign::ADrawnSignatureLandsInItsBox),
         Box::new(digital_id::DigitalIdCreatedAndChosen),

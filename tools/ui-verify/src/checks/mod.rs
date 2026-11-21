@@ -5,6 +5,8 @@
 /// O263: Align left edges moves every box, in one undo.
 pub mod align_left;
 pub mod annot_angle_typed;
+/// Reading a selected mark's colour and icon on any subtype.
+pub mod annot_facts;
 
 pub mod annot_delete_gate;
 
@@ -16,7 +18,10 @@ pub mod blend_space;
 pub mod calibrated_cmyk_setting;
 pub mod card_pages;
 pub mod export_keep_text;
+/// View ▸ Display ▸ Highlight fields tints every fillable field, canvas only.
+pub mod field_highlight;
 pub mod field_outline;
+pub mod fields_redrawn;
 pub mod merge_runs;
 pub mod ocr_colour_setting;
 pub mod ocr_layer_view;
@@ -178,6 +183,8 @@ pub mod vector_paste_cut;
 pub mod export_image_emf;
 /// File ▸ Export image writes JPEG XL.
 pub mod export_image_jxl;
+/// File > Export image writes one EMF per separation plate.
+pub mod export_image_plates;
 pub mod highlight_shapes;
 pub mod page_crop_boxes;
 pub mod page_crop_even;
@@ -220,6 +227,7 @@ pub mod form_part_copy;
 pub mod form_part_delete;
 pub mod form_style;
 pub mod form_text_reshape;
+pub mod group_dash_opacity;
 pub mod group_fraction_reduces;
 pub mod group_in_form;
 pub mod group_markups;
@@ -239,6 +247,7 @@ pub mod replaceimage;
 pub mod restack;
 /// The annotations a saved file finally lists on its pages.
 mod savedannots;
+pub mod scale_user_unit;
 pub mod snap_markup;
 pub mod stroke_style;
 /// A markup text box is typed on the page.
@@ -479,6 +488,7 @@ pub mod edit_never_blanks;
 /// An encrypted file edits under its password, or offers its owner password.
 pub mod encrypted_edit;
 pub mod field_extras;
+pub mod field_notes;
 /// A text field calculated from others and given a range, from Properties.
 pub mod field_scripts;
 pub mod field_text_cmyk;
@@ -486,6 +496,7 @@ pub mod form_fill;
 pub mod form_fillable;
 pub mod form_pages;
 pub mod form_preview;
+pub mod form_preview_choices;
 pub mod form_widgets;
 pub mod forms_spotlight;
 /// Forms ▸ Style's width reaches the next placed field.
@@ -1195,6 +1206,8 @@ pub mod field_multiselect;
 pub mod fieldbandmerge;
 /// Arrow keys over several annotations, several form fields, or a ce dimension.
 pub mod groupnudge;
+/// Picking a named destination for a link from a list.
+pub mod link_named;
 /// Moving, resizing, copying and deleting a link, its quads following its box.
 pub mod link_quads;
 /// Drawing a link and repointing a selected one.

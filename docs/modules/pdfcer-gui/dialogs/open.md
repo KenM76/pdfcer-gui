@@ -222,7 +222,10 @@ constructor.
 ### `fn deliver_scale_length`
 
 Answers `true` when a window was there to take it, which is the caller's
-signal that the fallback above is not needed.
+signal that the fallback above is not needed. Both it and
+`open_scale_calibrated` build a `measure::scale::Reference` from the page the
+line was drawn on (`reference_on`), so the dialog converts the line through
+that page's `/UserUnit`; a page index the document lacks delivers nothing.
 
 The window is not reopened, **because it was never closed** — the same
 sentence [`DialogsState::deliver_placement`] carries, and now the second

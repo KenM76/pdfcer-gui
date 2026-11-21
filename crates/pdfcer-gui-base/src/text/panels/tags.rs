@@ -155,10 +155,7 @@ pub fn no_box(why: NoBox) -> &'static str {
         NoBox::McidNotFound => {
             "No outline: its marked content is not declared on the page it names."
         }
-        NoBox::NothingTextual => {
-            "No outline: its content paints no text. This build outlines text and annotations \
-             only, so a rule, a fill or an image is not outlined yet."
-        }
+        NoBox::NothingPainted => "No outline: its content is found but paints nothing on the page.",
     }
 }
 

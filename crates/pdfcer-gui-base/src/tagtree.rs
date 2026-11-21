@@ -69,9 +69,9 @@ pub enum NoBox {
     PageUnresolved,
     /// Marked content names an MCID no page declares.
     McidNotFound,
-    /// Its content paints no text, and no annotation rectangle: the outline
-    /// in this build follows text runs and `/OBJR` rectangles only.
-    NothingTextual,
+    /// Its content is found but paints nothing: an empty sequence, paint
+    /// wholly clipped away, or an `/OBJR` target never placed.
+    NothingPainted,
 }
 
 /// Why `index` has no box. Walks kids only forward (`c > i`), the engine's
@@ -108,7 +108,7 @@ pub fn no_box_reason(tree: &StructureTree, index: usize) -> NoBox {
         (false, ..) => NoBox::NoContent,
         (_, true, _) => NoBox::PageUnresolved,
         (_, _, true) => NoBox::McidNotFound,
-        _ => NoBox::NothingTextual,
+        _ => NoBox::NothingPainted,
     }
 }
 

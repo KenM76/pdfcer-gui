@@ -454,6 +454,15 @@ pub const fn view_skip_tiny_details() -> CommandText {
     )
 }
 
+/// `view.highlight_fields`
+#[must_use]
+pub const fn view_highlight_fields() -> CommandText {
+    CommandText::new(
+        "Highlight fields",
+        "Tint every form field you can fill in, including one the file stores no drawing for,          and outline the required ones in red. Printing and exporting never show the tint.",
+    )
+}
+
 /// `view.overprint_preview`
 #[must_use]
 pub const fn view_overprint_preview() -> CommandText {
