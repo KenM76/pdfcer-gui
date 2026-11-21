@@ -16,9 +16,6 @@ use super::{Anchor, Draft};
 use crate::app::state::OpenDoc;
 use crate::panels::properties::face::{FaceChoice, FaceOrigin};
 
-/// How many stand-in characters are carried; the face must take each.
-const PLACEHOLDERS: usize = 3;
-
 const KEY: &str = "textedit-reface"; // ui-text-exempt: a memory key, never displayed.
 
 /// The face planned for the open draft's foreign keys.
@@ -30,8 +27,6 @@ struct Planned {
     epoch: u64,
     /// Every key planned so far, in the order first typed.
     chars: Vec<char>,
-    /// Characters of the run's own text that can stand in for the keys.
-    placeholders: Vec<char>,
     /// The face nearest the run's own among those taking every key.
     face: FaceChoice,
 }
@@ -66,7 +61,7 @@ pub(super) fn plan(
     missing: &[char],
     base_font: &str,
 ) -> Option<String> {
-    let Anchor::Run { run, original } = &draft.anchor else {
+    let Anchor::Run { run, .. } = &draft.anchor else {
         return None;
     };
     let held = read(ctx, draft.page, *run);
@@ -82,15 +77,8 @@ pub(super) fn plan(
     {
         return Some(held.face.label);
     }
-    let mut placeholders: Vec<char> = Vec::new();
-    for c in original.chars() {
-        if c.is_alphanumeric() && !chars.contains(&c) && !placeholders.contains(&c) {
-            placeholders.push(c);
-        }
-    }
-    placeholders.truncate(PLACEHOLDERS);
-    let (face, route) = nearest(doc, draft.page, *run, &chars, &placeholders, base_font)?;
-    let line = trace_line(draft.page, *run, &chars, &face, route);
+    let face = nearest(doc, draft.page, *run, &chars, base_font)?;
+    let line = trace_line(draft.page, *run, &chars, &face);
     crate::diag::trace(|| line);
     let label = face.label.clone();
     let planned = Planned {
@@ -98,7 +86,6 @@ pub(super) fn plan(
         run: *run,
         epoch: doc.edit_epoch,
         chars,
-        placeholders,
         face,
     };
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(KEY), planned));
@@ -122,49 +109,19 @@ pub(super) fn take(ctx: &egui::Context, draft: &Draft) -> Option<Reface> {
         face: held.face.selector.clone(),
         label: held.face.label.clone(),
         chars,
-        placeholders: held.placeholders.clone(),
     })
 }
 
-/// How a planned face was confirmed.
-#[derive(Clone, Copy)]
-enum Route {
-    /// The engine, given the face as its fallback, accepts every key.
-    Engine,
-    /// The face also takes the placeholders the multi-operator route needs.
-    Placeholders,
-}
-
-impl Route {
-    const fn token(self) -> &'static str {
-        match self {
-            Self::Engine => "engine",
-            Self::Placeholders => "placeholders",
-        }
-    }
-}
-
-/// The face nearest `base_font` for `chars`: one the engine's fallback takes
-/// them in, else one that also takes every placeholder (a placeholder token
-/// is moved to the face before it is overwritten).
+/// The face nearest `base_font` among those that take `chars`, when the
+/// engine's fallback sets every one of them in it for the run.
 fn nearest(
     doc: &OpenDoc,
     page: usize,
     run: usize,
     chars: &[char],
-    placeholders: &[char],
     base_font: &str,
-) -> Option<(FaceChoice, Route)> {
-    if let Some(face) = pick(doc, page, run, chars, base_font)
-        && engine_takes(doc, page, run, &face, chars)
-    {
-        return Some((face, Route::Engine));
-    }
-    if placeholders.is_empty() {
-        return None;
-    }
-    let both: Vec<char> = chars.iter().chain(placeholders).copied().collect();
-    pick(doc, page, run, &both, base_font).map(|face| (face, Route::Placeholders))
+) -> Option<FaceChoice> {
+    pick(doc, page, run, chars, base_font).filter(|face| engine_takes(doc, page, run, face, chars))
 }
 
 /// Whether the engine, given `face` as the fallback, sets every one of
@@ -208,15 +165,14 @@ fn pick(
         .cloned()
 }
 
-fn trace_line(page: usize, run: usize, chars: &[char], face: &FaceChoice, route: Route) -> String {
+fn trace_line(page: usize, run: usize, chars: &[char], face: &FaceChoice) -> String {
     let named: Vec<String> = chars
         .iter()
         .map(|c| format!("U+{:04X}", u32::from(*c)))
         .collect();
     format!(
-        "text-edit-reface-planned page={page} run={run} characters={} face={} route={}", // ui-text-exempt: diagnostic trace
+        "text-edit-reface-planned page={page} run={run} characters={} face={} route=engine", // ui-text-exempt: diagnostic trace
         named.join(","),
-        face.selector,
-        route.token()
+        face.selector
     )
 }
