@@ -297,10 +297,14 @@ fn trace_distance(d: &Result<EntityDistance, String>) {
             let centres = d
                 .centres
                 .map_or_else(|| "-".to_owned(), |c| format!("{:.6}", c.length));
+            let side = |s: Option<FaceSource>| s.map_or("-", source_word);
             format!(
                 "model-select-distance minimum={:.6} maximum={:.6} centres={centres} \
-                 dx={dx:.6} dy={dy:.6} dz={dz:.6}",
-                d.minimum.length, d.maximum.length
+                 dx={dx:.6} dy={dy:.6} dz={dz:.6} a_source={} b_source={}",
+                d.minimum.length,
+                d.maximum.length,
+                side(d.a_source),
+                side(d.b_source)
             )
         }
         Err(why) => format!("model-select-distance-refused why={why}"),
@@ -406,6 +410,19 @@ fn distance_lines(
     ];
     if let Some(c) = d.centres {
         lines.push(t::centres(c.length, unit));
+    }
+    // A face side is measured from the triangles its figures describe, so a
+    // grown patch or the whole part owes the same disclosure here as there.
+    let sources = [d.a_source, d.b_source];
+    if sources.contains(&Some(FaceSource::Grown)) {
+        lines.push(t::GROWN_FACE.to_owned());
+    }
+    if sources
+        .iter()
+        .flatten()
+        .any(|s| !matches!(s, FaceSource::File | FaceSource::Grown))
+    {
+        lines.push(t::WHOLE_PART.to_owned());
     }
     lines
 }
