@@ -1,4 +1,4 @@
-//! # `panels::forms::edit` — the eight things a Forms panel can ask for
+//! # `panels::forms::edit` — the things a Forms panel can ask for
 //!
 //! One enum and one function. The enum is the complete vocabulary of what
 //! filling a form means in this build; the function is the only place any of
@@ -232,6 +232,7 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
 fn scope_of(doc: &OpenDoc, edit: &FormEdit) -> Option<usize> {
     let field_name = match edit {
         FormEdit::FillText { field, .. }
+        | FormEdit::FillRichText { field, .. }
         | FormEdit::ConvertRichTextToPlain { field, .. }
         | FormEdit::FillTextStoringPassword { field, .. }
         | FormEdit::SetButtonState { field, .. }
@@ -339,6 +340,43 @@ fn disclosure_of(field: &str, value: &str, out: &FillOutcome) -> FillDisclosure 
     }
 }
 
+/// `text` as the XHTML rich value `fill_rich_text_field` takes: one `<p>`
+/// per line, unstyled, so each line takes the field's `/DS`.
+fn rich_value_of(text: &str) -> String {
+    let mut rv = String::from("<body>");
+    for line in text.split('\n') {
+        rv.push_str("<p>");
+        for c in line.chars() {
+            match c {
+                '&' => rv.push_str("&amp;"),
+                '<' => rv.push_str("&lt;"),
+                '>' => rv.push_str("&gt;"),
+                '\r' => {}
+                _ => rv.push(c),
+            }
+        }
+        rv.push_str("</p>");
+    }
+    rv.push_str("</body>");
+    rv
+}
+
+/// The runs `field`'s stored `/RV` holds, parsed without `/DS`, so only the
+/// formatting a fill would replace is set. Empty when it has none.
+fn rich_runs_of(session: &EditSession, field: &str) -> Vec<pdfcer_core::richtext::Run> {
+    let view = session.view();
+    pdfcer_core::forms::parse_acroform(&view)
+        .and_then(|form| {
+            let f = form
+                .fields
+                .into_iter()
+                .find(|f| f.fully_qualified_name == field)?;
+            let rv = pdfcer_core::edit::decode_text_string(f.rich_value.as_deref()?).text;
+            pdfcer_core::richtext::parse(&rv, None).ok()
+        })
+        .unwrap_or_default()
+}
+
 /// Run `edit` against `session`, returning how many **undo commands** it
 /// pushed.
 fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError> {
@@ -349,6 +387,19 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
                 commands: 1,
                 disclosed: Some(disclosure_of(field, value, &out)),
                 redrawn: Vec::new(),
+            })
+        }
+        FormEdit::FillRichText { field, value } => {
+            let before = rich_runs_of(session, field);
+            let out = session.fill_rich_text_field(
+                field,
+                &rich_value_of(value),
+                pdfcer_core::richtext::FlatText::ParagraphLines,
+            )?;
+            Ok(Applied {
+                commands: 1,
+                disclosed: Some(disclosure_of(field, value, &out.fill)),
+                redrawn: crate::text::forms::rich_fill_notes(field, &before, &out.notes),
             })
         }
         FormEdit::ConvertRichTextToPlain { field, value } => {
@@ -468,6 +519,10 @@ mod tests {
                 field: String::new(),
                 value: String::new(),
             },
+            FormEdit::FillRichText {
+                field: String::new(),
+                value: String::new(),
+            },
             FormEdit::ConvertRichTextToPlain {
                 field: String::new(),
                 value: String::new(),
@@ -496,7 +551,7 @@ mod tests {
             );
             seen.push(label);
         }
-        assert_eq!(seen.len(), 8, "a variant was added without a label");
+        assert_eq!(seen.len(), 9, "a variant was added without a label");
     }
 
     /// **A trace label never carries an operand.**
@@ -743,5 +798,40 @@ mod tests {
             "an empty disclosure must draw no sentence"
         );
         record_fill_disclosure(None);
+    }
+
+    /// **A typed rich-text fill stays rich text and names the bold it
+    /// replaced.**
+    #[test]
+    fn a_rich_fill_keeps_the_field_rich_and_names_what_it_replaced() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/rich-field.pdf");
+        let doc = pdfcer_core::document::Document::load(std::path::Path::new(path))
+            .expect("the fixture loads");
+        let mut session = EditSession::new(doc);
+        let out = run(
+            &mut session,
+            &FormEdit::FillRichText {
+                field: "Note".to_owned(),
+                value: "A & B\nsecond".to_owned(),
+            },
+        )
+        .expect("a rich fill succeeds");
+        assert_eq!(out.commands, 1);
+        assert!(
+            out.redrawn.iter().any(|n| n.contains("bold")),
+            "{:?}",
+            out.redrawn
+        );
+        let view = session.view();
+        let form = pdfcer_core::forms::parse_acroform(&view).expect("a form");
+        let f = &form.fields[0];
+        assert!(f.is_rich_text(), "the field is still rich text");
+        assert_eq!(f.value.display_text(), "A & B\nsecond");
+        let runs = rich_runs_of(&session, "Note");
+        assert!(
+            runs.iter()
+                .all(|r| r.style == pdfcer_core::richtext::Style::default()),
+            "no run is styled now: {runs:?}"
+        );
     }
 }

@@ -692,6 +692,16 @@ pub struct OpenDoc {
     /// makes the mismatch impossible rather than merely unlikely.
     pub raster_region: Option<(usize, pdfcer_core::page_tree::Rect)>,
 
+    /// The button under the pointer while filling, in the rollover or down
+    /// look its `/AP` carries: `(page index, widget, look)`. Written by the
+    /// canvas every frame; reaches only that page's canvas render, never a
+    /// print, export or save.
+    pub widget_look: Option<(
+        usize,
+        pdfcer_core::object::ObjId,
+        pdfcer_core::annot::AppearanceKind,
+    )>,
+
     /// **What the operator has selected on the canvas.**
     ///
     /// # Why it is a field of the document rather than a value in `egui::Memory`
@@ -1150,6 +1160,7 @@ impl OpenDoc {
             pasteboard_overhang: egui::Vec2::ZERO,
             // Whole page until the canvas says otherwise.
             raster_region: None,
+            widget_look: None,
             // Empty, like everything else here — and that is the entire
             // mechanism by which a selection can never refer to a previous
             // file. See the field's own docs.

@@ -103,6 +103,36 @@ pub fn field_display_notes(notes: &DisplayNotes) -> Vec<(FieldNoteKind, String)>
     out
 }
 
+/// What a rich-text fill of `field` owes the status line: the formatting
+/// its earlier value held that the typed text replaced (`before`, parsed
+/// without `/DS`, which the fill keeps), then what drawing the new value
+/// reported.
+#[must_use]
+pub fn rich_fill_notes(
+    field: &str,
+    before: &[pdfcer_core::richtext::Run],
+    notes: &DisplayNotes,
+) -> Vec<String> {
+    let mut out = Vec::new();
+    let replaced = crate::text::richtext::formatting(before);
+    if !replaced.is_empty() {
+        out.push(format!(
+            "{field}: the typed text replaced the formatting it held ({}); it now takes the \
+             field's default style.",
+            replaced.join(", ")
+        ));
+    }
+    for (kind, sentence) in field_display_notes(notes) {
+        if matches!(
+            kind,
+            FieldNoteKind::RichIgnored | FieldNoteKind::RichFonts | FieldNoteKind::RichUnreadable
+        ) {
+            out.push(format!("{field}: {sentence}"));
+        }
+    }
+    out
+}
+
 fn signature_notes(notes: &DisplayNotes, out: &mut Vec<(FieldNoteKind, String)>) {
     if !notes.signature_text.is_empty() {
         out.push((

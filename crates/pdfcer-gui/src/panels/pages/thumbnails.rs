@@ -687,6 +687,7 @@ fn thumbnail_request(doc: &OpenDoc, page_index: usize, page: &Page, scale: f32) 
         subpixel_culling: false,
         overprint: pdfcer_render::OverprintPreview::Simulate,
         field_highlight: None,
+        appearance_states: Vec::new(),
         separations: None,
         image_magnify: pdfcer_core::settings::MagnifyFilter::default(),
         settings: doc.settings.clone(),

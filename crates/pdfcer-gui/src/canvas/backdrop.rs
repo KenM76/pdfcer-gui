@@ -147,4 +147,22 @@ pub(super) fn publish_coverage(
                 .map_or(0, |t| u8::from(t.key.fields_highlighted()))
         )
     });
+    // A button's rollover or down look: asked for, whether the texture on
+    // screen was drawn with it, and how many asked looks fell back to `/N`.
+    crate::diag::trace_on_change("canvas-widget-look", || {
+        let drawn = doc.page_texture.as_ref().map_or((0, 0), |t| {
+            let owed = pdfcer_gui_base::renderworker::look_bits(&doc.looks_for(t.key.page()));
+            (
+                u8::from(t.key.look() == owed),
+                t.diagnostics.annotations_state_fallback,
+            )
+        });
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "{} drawn={} fallback={}",
+            crate::canvas::forms::looks::describe(doc.widget_look),
+            drawn.0,
+            drawn.1
+        )
+    });
 }

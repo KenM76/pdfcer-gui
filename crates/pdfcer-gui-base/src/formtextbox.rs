@@ -31,6 +31,7 @@ use pdfcer_core::vartext::Quadding;
 use crate::formeditortext::{editor_align, editor_font_size};
 
 /// Everything [`lay`] needs that is not the draft itself.
+#[derive(Clone, Copy)]
 pub struct Spec<'a> {
     /// The editor's `egui` id — [`super::Focus::editor_id`] for both callers,
     /// so the caret state survives between frames.
@@ -48,6 +49,19 @@ pub struct Spec<'a> {
     /// The field's name, when this frame is the one that should report what
     /// the tint resolved to. `None` on every other frame — see [`lay`]'s .
     pub trace: Option<&'a str>,
+    /// The caller paints the text, caret and selection itself from the
+    /// field's own layout: the editor's text is transparent and its box is
+    /// opaque — the `/MK /BG` tint, or white like the page under a field
+    /// without one.
+    pub engine_drawn: bool,
+}
+
+/// The ink a `/MK /BG` tint pairs with, when the widget has one.
+#[must_use]
+pub fn ink(ctx: &egui::Context, spec: &Spec<'_>) -> Option<egui::Color32> {
+    spec.fill
+        .and_then(|srgb| egui_shell::theme::Theme::foreign_fill_pair(ctx, srgb))
+        .map(|(_, ink)| ink)
 }
 
 /// Build the editor, dress it from the document, and place it.
@@ -73,6 +87,12 @@ pub fn lay(ui: &mut Ui, draft: &mut String, spec: &Spec<'_>) -> egui::Response {
     .font(egui::FontSelection::from(font));
     if let Some((fill, ink)) = tint {
         edit = edit.background_color(fill).text_color(ink);
+    }
+    if spec.engine_drawn {
+        let fill = tint.map_or(egui::Color32::WHITE, |(fill, _)| fill);
+        edit = edit
+            .background_color(fill)
+            .text_color(egui::Color32::TRANSPARENT);
     }
 
     if let Some(field) = spec.trace {

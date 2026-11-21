@@ -1,4 +1,4 @@
-# `panels::forms::edit` — the eight things a Forms panel can ask for
+# `panels::forms::edit` — the things a Forms panel can ask for
 
 One enum and one function. The enum is the complete vocabulary of what
 filling a form means in this build; the function is the only place any of
@@ -202,7 +202,7 @@ is "prove it or say `None`", and the four whole-form verbs never even ask.
 
 | verb | answer | why |
 |---|---|---|
-| `FillText`, `ConvertRichTextToPlain`, `SetButtonState`, `SetChoice` | the field's page, if its widgets share one | one `/T`, and §12.7.3.1 lets one field have widgets on several sheets — so this is checked, not assumed |
+| `FillText`, `FillRichText`, `ConvertRichTextToPlain`, `FillTextStoringPassword`, `SetButtonState`, `SetChoice` | the field's page, if its widgets share one | one `/T`, and §12.7.3.1 lets one field have widgets on several sheets — so this is checked, not assumed |
 | `Recompute` | `None` | N fields, N undo entries, no reason to think they share a page |
 | `Reset` | `None` | every eligible field in the document |
 | `RegenerateAppearances` | `None` | every field's `/AP`, and `/NeedAppearances` on the catalog |

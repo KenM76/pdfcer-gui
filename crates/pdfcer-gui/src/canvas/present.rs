@@ -494,6 +494,7 @@ fn show_in(
         // Its whole output is `doc.raster_region`, which `OpenDoc::region_for`
         // feeds into both the cache key and the engine request — so the draw
         // loop below needs to be told nothing.
+        doc.widget_look = crate::canvas::forms::looks::take(ui.ctx());
         tier::decide(
             doc,
             &layout,

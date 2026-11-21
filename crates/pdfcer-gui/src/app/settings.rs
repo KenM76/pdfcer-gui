@@ -786,4 +786,31 @@ mod tests {
         assert_eq!(crate::render::worker::RenderKey::of(&request), tinted);
         assert_eq!(doc.settings.render_options().field_highlight, None);
     }
+
+    /// A button's hover look reaches only its own page's canvas request and
+    /// key, and the export and print funnel carries none.
+    #[test]
+    fn a_widget_look_reaches_its_page_and_no_export() {
+        use pdfcer_core::annot::AppearanceKind;
+        let mut doc = crate::app::state::open_local_fixture("button-looks.pdf");
+        let plain = doc.render_key_for(0, 2.0);
+        let widget = pdfcer_core::object::ObjId {
+            num: 4,
+            generation: 0,
+        };
+        doc.widget_look = Some((0, widget, AppearanceKind::Rollover));
+        let request = doc.render_request_for(0, 2.0).expect("a first page");
+        assert_eq!(
+            request.appearance_states,
+            vec![(widget, AppearanceKind::Rollover)]
+        );
+        let looked = doc.render_key_for(0, 2.0);
+        assert_ne!(plain.discrete_inputs(), looked.discrete_inputs());
+        assert_eq!(crate::render::worker::RenderKey::of(&request), looked);
+        assert!(
+            doc.looks_for(1).is_empty(),
+            "another page asked for the look"
+        );
+        assert!(doc.settings.render_options().appearance_states.is_empty());
+    }
 }

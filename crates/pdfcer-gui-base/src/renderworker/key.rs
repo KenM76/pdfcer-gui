@@ -13,6 +13,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/renderworker/key.md`.
 
 use super::RenderRequest;
+use pdfcer_core::annot::AppearanceKind;
+use pdfcer_core::object::ObjId;
 
 /// What a render is *of* — the staleness keys, as one comparable value.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -100,9 +102,24 @@ pub struct RenderKey {
     /// Whether fillable fields were tinted (`view.highlight_fields`).
     /// Discrete, like `skip_tiny`.
     fields: bool,
+    /// The widget look drawn: 0 for none, else [`look_bits`].
+    look: u64,
     /// The separation preview drawn: 0 for none, else a hash of the hidden
     /// plates with the low bit set ([`separation_bits`]).
     separations: u64,
+}
+
+/// A key component for widget looks: 0 for none, otherwise a hash of them
+/// with the low bit set, never 0.
+#[must_use]
+pub fn look_bits(states: &[(ObjId, AppearanceKind)]) -> u64 {
+    use std::hash::{Hash, Hasher};
+    if states.is_empty() {
+        return 0;
+    }
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    states.hash(&mut h);
+    h.finish() | 1
 }
 
 /// A key component for a separation preview: 0 for none, otherwise a hash of
@@ -172,6 +189,7 @@ impl RenderKey {
             skip_tiny: false,
             overprint: true,
             fields: false,
+            look: 0,
             separations: 0,
         }
     }
@@ -215,6 +233,20 @@ impl RenderKey {
     #[must_use]
     pub fn fields_highlighted(&self) -> bool {
         self.fields
+    }
+
+    /// Mark this key as drawn with `states` (the widget under the pointer in
+    /// its rollover or down look), or none.
+    #[must_use]
+    pub fn with_look(mut self, states: &[(ObjId, AppearanceKind)]) -> Self {
+        self.look = look_bits(states);
+        self
+    }
+
+    /// The widget look this key was drawn with, as [`look_bits`].
+    #[must_use]
+    pub fn look(&self) -> u64 {
+        self.look
     }
 
     /// Mark this key as drawn under `preview`.
@@ -268,6 +300,7 @@ impl RenderKey {
         bool,
         bool,
         u64,
+        u64,
     ) {
         (
             self.page_index,
@@ -283,6 +316,7 @@ impl RenderKey {
             self.skip_tiny,
             self.overprint,
             self.fields,
+            self.look,
             self.separations,
         )
     }
@@ -312,6 +346,7 @@ impl RenderKey {
         .with_tiny_details_skipped(request.subpixel_culling)
         .with_overprint(request.overprint.simulates())
         .with_fields_highlighted(request.field_highlight.is_some())
+        .with_look(&request.appearance_states)
         .with_separations(request.separations.as_ref())
     }
 }

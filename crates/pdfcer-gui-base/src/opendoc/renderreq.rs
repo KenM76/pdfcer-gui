@@ -51,6 +51,7 @@ impl OpenDoc {
         .with_tiny_details_skipped(self.view.skip_tiny_details)
         .with_overprint(self.view.overprint_preview)
         .with_fields_highlighted(self.view.highlight_fields)
+        .with_look(&self.looks_for(page_index))
         .with_separations(self.separations.as_ref())
     }
 
@@ -61,6 +62,22 @@ impl OpenDoc {
         self.raster_region
             .filter(|(page, _)| *page == page_index)
             .map(|(_, rect)| rect)
+    }
+
+    /// The widget looks to draw on `page_index`: the canvas's
+    /// [`OpenDoc::widget_look`] when it is on that page, else none.
+    #[must_use]
+    pub fn looks_for(
+        &self,
+        page_index: usize,
+    ) -> Vec<(
+        pdfcer_core::object::ObjId,
+        pdfcer_core::annot::AppearanceKind,
+    )> {
+        self.widget_look
+            .filter(|(page, _, _)| *page == page_index)
+            .map(|(_, id, kind)| vec![(id, kind)])
+            .unwrap_or_default()
     }
 
     /// Everything a worker needs to rasterize `page_index`, or `None` if there
@@ -101,6 +118,7 @@ impl OpenDoc {
                 .view
                 .highlight_fields
                 .then(pdfcer_render::FieldHighlight::default),
+            appearance_states: self.looks_for(page_index),
             separations: self.separations.clone(),
             image_magnify: self.prefs.pictures.magnify(),
             layers: self.layer_visibility(),
