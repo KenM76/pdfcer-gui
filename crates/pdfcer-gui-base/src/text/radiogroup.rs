@@ -43,5 +43,8 @@ pub fn moved(group: &str, export: &str) -> String {
     format!("Moved the button into radio group {group}. It turns on as \u{201c}{export}\u{201d}.")
 }
 
-/// Said when the move could not be folded into one undo entry.
-pub const TWO_UNDOS: &str = "Undoing the move takes two presses rather than one.";
+/// Said when the move made the group, because no field bore its name.
+#[must_use]
+pub fn created(group: &str) -> String {
+    format!("No field was named {group}, so the move made a new radio group.")
+}

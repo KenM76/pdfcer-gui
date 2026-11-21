@@ -277,16 +277,34 @@ impl Reading<'_> {
         };
         report.note(format!("box to tube-b on YZ: {}", on_yz.raw));
         report.note(format!("box to tube-b on XY: {}", on_xy.raw));
-        let right = near(number(&on_xy, "minimum"), BOX_TO_TUBE)
-            && near(number(&on_xy, "out"), 0.0)
-            && near(number(&on_yz, "minimum"), 0.0)
-            && near(number(&on_yz, "out").abs(), BOX_TO_TUBE);
+        // Each side is measured from its face's triangles (grown or whole),
+        // so the span is the distance line's own delta; the projection must
+        // split that delta into the plane's part and the part square to it.
+        let Some(span) = self
+            .drive()
+            .session
+            .trace()?
+            .events(DISTANCE)
+            .last()
+            .cloned()
+        else {
+            return Ok(Some("★★★ two picks measured no distance.".to_owned()));
+        };
+        report.note(format!("box to tube-b span: {}", span.raw));
+        let [dx, dy, dz] = ["dx", "dy", "dz"].map(|k| number(&span, k));
+        let whole = span.get("a_source") != Some("grown") && span.get("b_source") != Some("grown");
+        let whole_right = !whole || (near(dx.abs(), BOX_TO_TUBE) && near(dy, 0.0) && near(dz, 0.0));
+        let right = whole_right
+            && near(number(&on_xy, "minimum"), dx.hypot(dy))
+            && near(number(&on_xy, "out"), dz)
+            && near(number(&on_yz, "minimum"), dy.hypot(dz))
+            && near(number(&on_yz, "out"), dx);
         Ok((!right).then(|| {
             format!(
-                "★★★ the box and tube-b, {BOX_TO_TUBE} apart along X, projected `{}` on XY and \
-                 `{}` on YZ; it must be minimum={BOX_TO_TUBE} out=0 on XY and minimum=0 \
-                 out=±{BOX_TO_TUBE} on YZ.",
-                on_xy.raw, on_yz.raw
+                "★★★ the box and tube-b spanned `{}` and projected `{}` on XY and `{}` on YZ; \
+                 XY must keep the X-Y part with Z out, YZ the Y-Z part with X out (whole parts \
+                 are {BOX_TO_TUBE} apart along X).",
+                span.raw, on_xy.raw, on_yz.raw
             )
         }))
     }

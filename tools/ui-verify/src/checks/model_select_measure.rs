@@ -254,22 +254,41 @@ impl Selecting<'_> {
             ));
         };
         report.note(format!("box to tube-b: {}", line.raw));
-        // `entity_distance` measures the file's face, which in this file is the
-        // whole part whether the figures were grown or not.
-        let whole = [a, b].iter().all(|l| l.line.get("source") != Some("file"));
-        if !whole {
-            return Ok(Some(format!(
-                "the box and tube-b picked as faces that are not their whole parts: the check's \
-                 distance oracle is for whole parts. `{}`",
-                line.raw
-            )));
+        // Each side is measured from the triangles its figures describe, and
+        // says which: the pick line's `source` and the distance's per-side
+        // source must agree.
+        for (l, key) in [(a, "a_source"), (b, "b_source")] {
+            if l.line.get("source") != line.get(key) {
+                return Ok(Some(format!(
+                    "★★★ a pick traced source `{}` but its distance side `{key}` is `{}`. `{}`",
+                    l.line.get("source").unwrap_or("-"),
+                    line.get(key).unwrap_or("-"),
+                    line.raw
+                )));
+            }
         }
-        let right = near(&line, "minimum", BOX_TO_TUBE_NEAREST)
+        let grown = [a, b].iter().any(|l| l.line.get("source") == Some("grown"));
+        let whole_pair = near(&line, "minimum", BOX_TO_TUBE_NEAREST)
             && near(&line, "maximum", BOX_TO_TUBE_FARTHEST);
-        Ok((!right).then(|| {
+        if !grown {
+            return Ok((!whole_pair).then(|| {
+                format!(
+                    "★★★ the box and tube-b measured `{}` as whole parts; the smallest distance \
+                     must be {BOX_TO_TUBE_NEAREST} and the largest {BOX_TO_TUBE_FARTHEST}.",
+                    line.raw
+                )
+            }));
+        }
+        // A grown patch is a subset of its part, so its span lies inside the
+        // whole parts' span. On this fixture the patches exclude the parts'
+        // nearest pair, so measuring the whole parts is the defect.
+        // A missing number is NaN, which fails both comparisons.
+        let (min, max) = (number(&line, "minimum"), number(&line, "maximum"));
+        let inside = min >= BOX_TO_TUBE_NEAREST - 1e-6 && max <= BOX_TO_TUBE_FARTHEST + 1e-6;
+        Ok((!inside || whole_pair).then(|| {
             format!(
-                "★★★ the box and tube-b measured `{}`; the smallest distance must be \
-                 {BOX_TO_TUBE_NEAREST} and the largest {BOX_TO_TUBE_FARTHEST}.",
+                "★★★ grown faces measured `{}`: the span must lie inside the whole parts' \
+                 {BOX_TO_TUBE_NEAREST}..{BOX_TO_TUBE_FARTHEST} and not be that pair.",
                 line.raw
             )
         }))

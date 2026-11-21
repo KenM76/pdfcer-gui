@@ -34,6 +34,8 @@ const CLIPBOARD_ENV: &str = "PDFCER_DIAG_CLIPBOARD_DIR"; // ui-text-exempt: an e
 
 /// The fixture's one radio group: two members, on-states `A` and `B`.
 const GROUP: &str = "RadioGroup"; // ui-text-exempt: a field name in the fixture
+/// A group name no field in the fixture bears.
+const NEW_GROUP: &str = "RadioGroupNew"; // ui-text-exempt: a field name typed into the file
 /// Inside member `A`, `[170 452 186 468]`.
 const ON_A: (f64, f64) = (178.0, 460.0);
 /// Empty page, left of every field; where the paste is aimed.
@@ -321,23 +323,30 @@ fn join_from_properties(
     if let Some(failure) = place(ctx, report, session, pointer, SWEEP_ONE)? {
         return Ok(Some(failure));
     }
-    let mark = session.trace()?.mark();
-    type_without_enter(ctx, session, pointer, GROUP_NAME, GROUP)?;
-    into_view(ctx, session, pointer, GROUP_MOVE)?;
-    press(ctx, session, pointer, GROUP_MOVE)?;
-    session.settle(30);
-    let moved = step!(after(session, MOVED, mark, "Move to group was pressed"));
-    report.note(format!("by the row: {}", moved.raw));
-    // One engine command that keeps the widget and removes its now-empty
-    // field; an add-then-delete fold traces neither.
-    if moved.get("engine") != Some("move_widget_to_field")
-        || moved.get("source_removed") != Some("true")
-    {
-        return Ok(Some(format!(
-            "Move to group traced `{}`: engine=move_widget_to_field and \
-             source_removed=true (the new button's own field emptied) were wanted.",
-            moved.raw
-        )));
+    // A name no field bears makes a new group; the move into the existing
+    // group then empties it. Both are the one engine verb.
+    for (to, created) in [(NEW_GROUP, true), (GROUP, false)] {
+        let mark = session.trace()?.mark();
+        type_without_enter(ctx, session, pointer, GROUP_NAME, to)?;
+        into_view(ctx, session, pointer, GROUP_MOVE)?;
+        press(ctx, session, pointer, GROUP_MOVE)?;
+        session.settle(30);
+        let moved = step!(after(session, MOVED, mark, "Move to group was pressed"));
+        report.note(format!("by the row into {to}: {}", moved.raw));
+        // One engine command that keeps the widget and removes its now-empty
+        // field; an add-then-delete fold traces neither.
+        let want_created = if created { "true" } else { "false" };
+        if moved.get("engine") != Some("move_widget_to_field")
+            || moved.get("source_removed") != Some("true")
+            || moved.get("target_created") != Some(want_created)
+        {
+            return Ok(Some(format!(
+                "Move to group {to} traced `{}`: engine=move_widget_to_field, \
+                 source_removed=true (the button's own field emptied) and \
+                 target_created={want_created} were wanted.",
+                moved.raw
+            )));
+        }
     }
 
     // --- another, joined by renaming it to the group's name.
