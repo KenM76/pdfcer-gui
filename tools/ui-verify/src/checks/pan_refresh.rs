@@ -4,13 +4,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/pan_refresh.md`.
 
 use crate::checks::driving;
+use crate::checks::scripteddrive::{at_fraction, offscreen, shot, wheel_times};
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
-
-/// `VK_CONTROL`, held while the wheel rolls to make it a zoom.
-const VK_CONTROL: u16 = 0x11;
 
 /// The canvas viewport.
 const CANVAS_REGION: &str = "canvas-viewport";
@@ -98,12 +95,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no --pdf. There is nothing to pan."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check zooms and pans the canvas. Reported as \
-             SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -119,20 +110,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "pan-refresh")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(50);
-    let driver = Driver::new(session.window());
 
     let trace = session.trace()?;
     let canvas = driving::declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
     let frame = session.frame()?;
-    let centre = frame.declared_at(canvas, 0.5, 0.5);
+    let centre = at_fraction(canvas, 0.5, 0.5);
 
     // --- 1: get above the raster crossover ----------------------------------
-    driver.scroll_at_held(centre, &[VK_CONTROL], 1, ZOOM_NOTCHES)?;
+    wheel_times(&session, &pointer, centre, 1.0, true, ZOOM_NOTCHES)?;
     session.settle(200);
 
     let zoom = session
@@ -160,7 +152,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: pan well past the overscan --------------------------------------
     let renders_before = renders_done(&session)?;
-    driver.scroll_at(centre, PAN_NOTCHES)?;
+    #[allow(clippy::cast_precision_loss)]
+    pointer.wheel(&session, centre, PAN_NOTCHES as f32, false)?;
     // Generous: a region render at this depth re-interprets the content stream,
     // and the debounce has to expire first. A settle that is too short does
     // not fail this check, it makes its evidence ambiguous — "no render yet" and
@@ -198,7 +191,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let path = ctx.out("pan-refresh.png");
-    let image = match crate::capture::window_to_png(&session, &path) {
+    let image = match shot(&session, &pointer, &path) {
         Ok(image) => image,
         Err(e) => return Err(Error::new(format!("the window capture failed: {e}"))),
     };
@@ -234,7 +227,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // broken.
     let before_zoom_out = renders_done(&session)?;
     let region_before_out = wanted_region(&session)?.unwrap_or_default();
-    driver.scroll_at_held(centre, &[VK_CONTROL], -1, ZOOM_OUT_NOTCHES)?;
+    wheel_times(&session, &pointer, centre, -1.0, true, ZOOM_OUT_NOTCHES)?;
     session.settle(260);
 
     let region_after_out = wanted_region(&session)?.unwrap_or_default();
@@ -263,7 +256,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let out_path = ctx.out("pan-refresh-zoomed-out.png");
-    let out_image = match crate::capture::window_to_png(&session, &out_path) {
+    let out_image = match shot(&session, &pointer, &out_path) {
         Ok(image) => image,
         Err(e) => return Err(Error::new(format!("the window capture failed: {e}"))),
     };
@@ -283,6 +276,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "the canvas shows {} distinct tone(s) after zooming out",
         out_uniformity.distinct
     ));
+    pointer.gone(&session)?;
 
     Ok(None)
 }

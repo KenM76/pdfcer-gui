@@ -4,16 +4,13 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/off_sheet.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
+use crate::checks::scripteddrive::{at_fraction, offscreen_at, wheel_times};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
-
-/// `VK_CONTROL`, held while the wheel rolls to make it a zoom.
-const VK_CONTROL: u16 = 0x11;
 
 /// The fixture, relative to the workspace root.
 const FIXTURE: &str = "fixtures/four-pages.pdf";
@@ -21,8 +18,10 @@ const FIXTURE: &str = "fixtures/four-pages.pdf";
 /// The commands to ring once at startup, one per frame, via `PDFCER_DIAG_INVOKE`.
 const INVOKE: &str = "mode.review,view.page_single,view.zoom_fit_page";
 
-/// The window size, so the arithmetic below is quoted against a known canvas.
-const VIEWPORT: &str = "0,0,1600,1380";
+/// The window's place and size: off the desktop, so no OS input reaches it,
+/// and of a known size, so the arithmetic below is quoted against a known
+/// canvas.
+const VIEWPORT: &str = "-4200,-4200,1600,1380";
 
 /// The canvas's own state line, read for `zoom=`, `display=` and `drawn=`.
 const CANVAS_EVENT: &str = "canvas"; // ui-text-exempt: a trace event name, never displayed
@@ -171,13 +170,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check rolls the wheel with Ctrl held for a \
-             hundred and sixty notches and has no static form. Reported as SKIPPED rather than \
-             passed: a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -227,9 +219,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    if let Some(name) = ctx.profile.viewport_env {
-        spec.env.push((name.to_owned(), VIEWPORT.to_owned()));
-    } else {
+    if ctx.profile.viewport_env.is_none() {
         return Err(Error::new(format!(
             "the `{}` profile declares no viewport override, so this check cannot fix the window \
              size — and every margin figure in it is quoted against a canvas of known height. \
@@ -237,6 +227,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.name
         )));
     }
+    let pointer = offscreen_at(ctx, &mut spec, "off-sheet", VIEWPORT)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -246,6 +237,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         pdf.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     // Generous: `INVOKE` rings one command per frame and the last of the three
     // is a Fit, which is applied by draining the action queue at the end of the
     // frame that raised it.
@@ -287,8 +279,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    let driver = Driver::new(session.window());
-    let frame = session.frame()?;
     let canvas = declared(&trace, ui_rect, VIEWPORT_REGION)
         .ok_or_else(|| Error::new(format!("no `{VIEWPORT_REGION}`; is the document open?")))?;
     if !canvas.is_substantial() {
@@ -310,10 +300,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          the sheet from about ten points to about four hundred — at Fit there is nowhere above \
          this A1 sheet to put the pointer"
     ));
-    driver.scroll_at_held(
-        frame.declared_at(canvas, 0.5, 0.5),
-        &[VK_CONTROL],
-        -1,
+    wheel_times(
+        &session,
+        &pointer,
+        at_fraction(canvas, 0.5, 0.5),
+        -1.0,
+        true,
         ZOOM_OUT_NOTCHES,
     )?;
     session.settle(32);
@@ -332,9 +324,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // and becomes a NEGATIVE `DeepAnchor` page y — see the module header's note
     // on the sign flip, which is why the measured anchor read `-0.54`.
     let above = page.height_pt * (1.0 + OFF_PAGE_FRACTION);
-    let at_off_sheet = frame.to_screen(
-        mapping.doc_to_window_off_page(DocPoint::new(0, page.width_pt / 2.0, above), viewport)?,
-    );
+    let at_off_sheet =
+        mapping.doc_to_window_off_page(DocPoint::new(0, page.width_pt / 2.0, above), viewport)?;
     report.note(format!(
         "aiming the climb at document point (x = half the page width, y = {above:.1}), which is \
          {:.0} points ABOVE the sheet's {:.1}-point top edge — the pointer is over grey \
@@ -354,7 +345,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut notches = 0;
     while notches < CLIMB_NOTCHES {
         let batch = CLIMB_BATCH.min(CLIMB_NOTCHES - notches);
-        driver.scroll_at_held(at_off_sheet, &[VK_CONTROL], 1, batch)?;
+        wheel_times(&session, &pointer, at_off_sheet, 1.0, true, batch)?;
         notches += batch;
         session.settle(SETTLE_PER_BATCH);
         climb = survey(&session.trace()?, mark);
@@ -399,8 +390,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          canvas this is `canvas::escape::offer` -> `zoom::wheel_step`, the only gesture above \
          the blank-frame early return that can reduce the zoom"
     ));
-    driver.scroll_at_held(at_off_sheet, &[VK_CONTROL], -1, RECOVER_NOTCHES)?;
+    wheel_times(
+        &session,
+        &pointer,
+        at_off_sheet,
+        -1.0,
+        true,
+        RECOVER_NOTCHES,
+    )?;
     session.settle(64);
+    pointer.gone(&session)?;
     let after = session.trace()?;
     let recovered = after
         .last_after(CANVAS_EVENT, recover_mark)

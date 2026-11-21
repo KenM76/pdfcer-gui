@@ -8,10 +8,12 @@ use crate::checks::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -143,7 +145,7 @@ fn opened_pages(trace: &Trace) -> Option<usize> {
 /// Click a ribbon tab and confirm the shell reported it.
 fn click_tab(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     (region, id): (&str, &str),
 ) -> Result<()> {
@@ -162,7 +164,7 @@ fn click_tab(
         .events(TAB_EVENT)
         .filter(|l| l.get("tab") == Some(id))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(14);
     if shell_trace(session)?
         .events(TAB_EVENT)
@@ -203,14 +205,14 @@ fn control(trace: &Trace, ui_rect: &str, name: &str) -> Result<LRect> {
 /// Click a band control and confirm the **shell** reported the invoke.
 fn click_command(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     (region, id): (&str, &str),
     settle: u32,
 ) -> Result<()> {
     let rect = control(&session.trace()?, ui_rect, region)?;
     let before = invokes(session, id)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(settle);
     if invokes(session, id)? <= before {
         return Err(Error::new(format!(
@@ -271,14 +273,15 @@ fn resyncs(session: &Session) -> Result<usize> {
     Ok(session.trace()?.events(RESYNC_EVENT).count())
 }
 
-/// Launch one process with both diagnostic channels armed and the save seam set.
+/// Launch one process off the desktop with both diagnostic channels armed
+/// and the save seam set, and the scripted pointer that drives it.
 fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
     pdf: &Path,
     target: &Path,
     trace_name: &str,
-) -> Result<Session> {
+) -> Result<(Session, ScriptedPointer)> {
     let mut spec = LaunchSpec::new(
         ctx.resolve_exe().ok_or_else(|| {
             Error::new(format!(
@@ -299,6 +302,7 @@ fn launch(
         .push((SAVE_PATH_ENV.to_owned(), target.display().to_string()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, trace_name.trim_end_matches(".trace.txt"))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -308,6 +312,7 @@ fn launch(
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     if !session.trace()?.started(ctx.profile.vocab.start_event) {
@@ -320,7 +325,7 @@ fn launch(
             session.trace_path().display()
         )));
     }
-    Ok(session)
+    Ok((session, pointer))
 }
 
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
@@ -334,13 +339,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              than the feature.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is six clicks across two processes. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -388,8 +386,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // =======================================================================
     let pages_before;
     {
-        let session = launch(ctx, report, &pdf, &target, "page_ops.trace.txt")?;
-        let driver = Driver::new(session.window());
+        let (session, pointer) = launch(ctx, report, &pdf, &target, "page_ops.trace.txt")?;
 
         // --- PHASE A: the baseline every later count is measured against ---
         pages_before = opened_pages(&session.trace()?).ok_or_else(|| {
@@ -414,13 +411,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             before_digest.1
         ));
 
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, PAGES_TAB)?;
+        click_tab(&session, &pointer, ui_rect, PAGES_TAB)?;
 
         // --- PHASE B: rotate the current page ----------------------------
         let seen = resyncs(&session)?;
-        click_command(&session, &driver, ui_rect, ROTATE, 24)?;
+        click_command(&session, &pointer, ui_rect, ROTATE, 24)?;
         if session.trace()?.last(ROTATE_APPLIED).is_none() {
             return Ok(Some(no_effect(&session, ROTATE, ROTATE_APPLIED)?));
         }
@@ -449,7 +446,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         // --- PHASE C: send the current page one place later --------------
         let seen = resyncs(&session)?;
-        click_command(&session, &driver, ui_rect, MOVE_DOWN, 24)?;
+        click_command(&session, &pointer, ui_rect, MOVE_DOWN, 24)?;
         if session.trace()?.last(REORDER_APPLIED).is_none() {
             return Ok(Some(no_effect(&session, MOVE_DOWN, REORDER_APPLIED)?));
         }
@@ -482,7 +479,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         // --- PHASE D: delete the current page ----------------------------
         let seen = resyncs(&session)?;
-        click_command(&session, &driver, ui_rect, DELETE, 28)?;
+        click_command(&session, &pointer, ui_rect, DELETE, 28)?;
         if session.trace()?.last(DELETE_APPLIED).is_none() {
             return Ok(Some(no_effect(&session, DELETE, DELETE_APPLIED)?));
         }
@@ -516,8 +513,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         report.note(format!("delete: `{}`", line.raw));
 
         // --- PHASE E: save a copy ------------------------------------------
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
-        click_command(&session, &driver, ui_rect, SAVE, 40)?;
+        click_tab(&session, &pointer, ui_rect, FILE_TAB)?;
+        click_command(&session, &pointer, ui_rect, SAVE, 40)?;
         let trace = session.trace()?;
         let Some(saved) = trace.last(SAVED_EVENT) else {
             return Ok(Some(format!(
@@ -624,7 +621,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note(format!(
         "★ the saved copy's appended revision carries `{}` {rotated} time(s), and the source \
-         carries no `/Rotate` at all — the turn an OS-injected click asked for is in the file",
+         carries no `/Rotate` at all — the turn a scripted click asked for is in the file",
         String::from_utf8_lossy(ROTATED_90)
     ));
 
@@ -632,7 +629,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // PHASE I — THE ROUND TRIP: re-open the file that came out
     // =======================================================================
     let reopened_pages = {
-        let session = launch(
+        let (session, _pointer) = launch(
             ctx,
             report,
             &target,
