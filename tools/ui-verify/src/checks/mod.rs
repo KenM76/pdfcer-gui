@@ -718,6 +718,8 @@ pub mod dropped_pdf;
 pub mod dropped_text;
 /// A form's pages inserted into a plain document bring their fields.
 pub mod insert_fields;
+/// Pages inserted from a file bring their bookmarks and named destinations.
+pub mod insert_outline;
 /// In Review a copied picture pastes as a stamp.
 pub mod paste_stamp;
 

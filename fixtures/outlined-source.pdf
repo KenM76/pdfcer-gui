@@ -1,0 +1,58 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Outlines 5 0 R /Names << /Dests 8 0 R >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /Helv << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 9 0 R >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /Helv << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 10 0 R >>
+endobj
+5 0 obj
+<< /Type /Outlines /First 6 0 R /Last 7 0 R /Count 2 >>
+endobj
+6 0 obj
+<< /Title (Source sheet A) /Parent 5 0 R /Next 7 0 R /Dest [3 0 R /Fit] >>
+endobj
+7 0 obj
+<< /Title (Source sheet B) /Parent 5 0 R /Prev 6 0 R /Dest [4 0 R /XYZ 0 792 0] >>
+endobj
+8 0 obj
+<< /Names [(sheet) [3 0 R /Fit]] >>
+endobj
+9 0 obj
+<< /Length 75 >>
+stream
+0 G 1 w 36 36 540 720 re S
+BT /Helv 24 Tf 72 700 Td (SOURCE SHEET A) Tj ET
+endstream
+endobj
+10 0 obj
+<< /Length 75 >>
+stream
+0 G 1 w 36 36 540 720 re S
+BT /Helv 24 Tf 72 700 Td (SOURCE SHEET B) Tj ET
+endstream
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000015 00000 n 
+0000000106 00000 n 
+0000000169 00000 n 
+0000000346 00000 n 
+0000000524 00000 n 
+0000000595 00000 n 
+0000000685 00000 n 
+0000000783 00000 n 
+0000000834 00000 n 
+0000000958 00000 n 
+trailer
+<< /Size 11 /Root 1 0 R >>
+startxref
+1083
+%%EOF
