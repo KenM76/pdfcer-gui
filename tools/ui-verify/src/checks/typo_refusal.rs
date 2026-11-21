@@ -4,14 +4,14 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/typo_refusal.md`.
 
 use crate::checks::driving::{INVOKE_EVENT, SHELL_DIAG_ENV, declared, declared_names, list};
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::{click_command_traced, offscreen, shot};
+use crate::checks::text_selection::aim_window;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{DocPoint, PageGeometry};
+use crate::coords::{DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// Reset the dock, take Edit mode, arm the **edit** caret — one per frame.
 const INVOKE: &str = "view.reset_layout,mode.edit,edit.text";
@@ -46,8 +46,10 @@ const EDIT_TAB: &str = "edit";
 /// `edit.add_text` — the second door into the text tool, and the one the
 /// negative control uses. It bypasses `resolve_run` entirely.
 const ADD_TEXT: &str = "edit.add_text";
+/// Its band control.
+const ADD_TEXT_ITEM: &str = "ribbon.item.edit.add_text"; // ui-text-exempt: a trace region name, never displayed
 /// Wheel notches per scroll step while hunting for the aim page.
-const NOTCHES: i32 = 3;
+const NOTCHES: f32 = 3.0;
 /// How many scroll steps before giving up on reaching the aim page.
 const MAX_SCROLL_STEPS: usize = 40;
 
@@ -77,13 +79,6 @@ impl Check for HisTypoCanBeCorrectedOnHisOwnFile {
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks page text, commits an edit and \
-             then clicks bare paper for the negative control. Reported as SKIPPED rather than \
-             passed: a check that did not run has learned nothing.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -148,16 +143,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_TYPE".to_owned(), SEED.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "typo-refusal")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
     session.settle(50);
-    let driver = Driver::new(session.window());
 
     // --- 0: the dock reset LANDED ------------------------------------------
     //
@@ -201,16 +197,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // place. The operator's typo is on his page 2, so the check has to get
     // there before it can aim, and the wheel is the only door that needs no
     // panel.
-    scroll_to_page(ctx, &session, &driver, ui_rect, target.page, report)?;
+    scroll_to_page(ctx, &session, &pointer, ui_rect, target.page, report)?;
 
     // --- 2: the positive case — edit text the document arrived with ---------
-    let at = aim(
+    let at = aim_window(
         ctx,
         &session,
         page,
         DocPoint::new(target.page, target.x, target.y),
     )?;
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(26);
 
     let trace = session.trace()?;
@@ -250,7 +246,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     report.note(format!("★ the click placed a caret: `{caret}`"));
 
-    driver.press_chord(&[vk::CONTROL], vk::ENTER)?;
+    pointer.key(&session, None, "Enter", Some("ctrl"))?;
     session.settle(34);
 
     let trace = session.trace()?;
@@ -268,9 +264,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // that was reverted, and this file is the only driven instrument for it.
     if let Some(refused) = trace.events(REFUSED_EVENT).last() {
         let refusal_raw = refused.raw.clone();
-        let shot = ctx.out("typo-refusal-still-refused.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("typo-refusal-still-refused.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
         let pin = trace.events("edit-text-pin").last().map_or_else(
             || "— no `edit-text-pin` line at all".to_owned(),
@@ -418,9 +414,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if trace.lines.iter().any(|r| {
         r.event == "ui-rect" && r.lineno > applied_at && r.get("name") == Some(DECLINE_REGION)
     }) {
-        let shot = ctx.out("typo-declined-a-success.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("typo-declined-a-success.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
         return Ok(Some(format!(
             "★★ THE CORRECTION LANDED AND THE STATUS BAR STILL DECLINED IT. `{applied_raw}` \
@@ -495,18 +491,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ⇒ **A key with a ladder does the rung it reaches, not the rung you meant.**
     // `canvas-escape` publishes which one, which is how this was five minutes
     // rather than an afternoon.
-    crate::checks::ocr::click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
+    crate::checks::ocr::click_tab(&session, &pointer, ui_rect, EDIT_TAB)?;
     session.settle(12);
-    crate::checks::ocr::click_command(&session, &driver, ui_rect, ADD_TEXT)?;
+    click_command_traced(&session, &pointer, ui_rect, (ADD_TEXT_ITEM, ADD_TEXT), 16)?;
     session.settle(14);
 
-    let at = aim(
+    let at = aim_window(
         ctx,
         &session,
         page,
         DocPoint::new(target.page, target.x, target.y),
     )?;
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -530,7 +526,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     let before_commit = session.trace()?.lines.len();
-    driver.press_chord(&[vk::CONTROL], vk::ENTER)?;
+    pointer.key(&session, None, "Enter", Some("ctrl"))?;
     session.settle(34);
 
     let trace = session.trace()?;
@@ -580,6 +576,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          it speaks for the refusal and not for the success",
         trace.lines.len().saturating_sub(before_commit)
     ));
+    pointer.gone(&session)?;
 
     Ok(None)
 }
@@ -588,7 +585,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 fn scroll_to_page(
     ctx: &CheckContext,
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     want: usize,
     report: &mut CheckReport,
@@ -611,10 +608,10 @@ fn scroll_to_page(
             list(&declared_names(&trace, ui_rect, "canvas"))
         ))
     })?;
-    let over = session.frame()?.declared_at(canvas, 0.5, 0.5);
+    let over = WindowPoint::centre_of(canvas);
     let mut seen = shown(session)?;
     for step in 0..MAX_SCROLL_STEPS {
-        driver.scroll_at(over, -NOTCHES)?;
+        pointer.wheel(session, over, -NOTCHES, false)?;
         session.settle(10);
         let now = shown(session)?;
         if now == Some(want) {

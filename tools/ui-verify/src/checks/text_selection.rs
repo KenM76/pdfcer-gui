@@ -5,10 +5,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/text_selection.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
+use crate::checks::scripteddrive::{offscreen, shot};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry, ScreenPoint};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, ScreenPoint, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -55,9 +55,13 @@ pub(crate) const BANDS: [((f64, f64), (f64, f64)); 8] = [
     // 6.4 pt tall and 37 pt apart, so a guess has about a one-in-six chance of
     // touching one, and a miss is a SKIP rather than a failure. Re-derive with
     // `pdfcer.exe find-text --needle <word> <fixture>` if the fixture changes.
-    ((0.62, 0.0878), (0.97, 0.0878)),
-    ((0.62, 0.1097), (0.97, 0.1097)),
-    ((0.62, 0.1333), (0.97, 0.1333)),
+    //
+    // Each starts at 0.7685 (1832.1 pt), inside the first glyph of the row,
+    // which begins at x 1831.18: the PRESS end must land within one
+    // line-height of a line or the sweep has no anchor and selects nothing.
+    ((0.7685, 0.0878), (0.97, 0.0878)),
+    ((0.7685, 0.1097), (0.97, 0.1097)),
+    ((0.7685, 0.1333), (0.97, 0.1333)),
     // Across the middle of the sheet, where view labels and notes sit.
     ((0.10, 0.50), (0.90, 0.50)),
     ((0.10, 0.35), (0.90, 0.35)),
@@ -124,6 +128,18 @@ pub(crate) fn aim(
     page: PageGeometry,
     at: DocPoint,
 ) -> Result<ScreenPoint> {
+    Ok(session
+        .frame()?
+        .to_screen(aim_window(ctx, session, page, at)?))
+}
+
+/// [`aim`] in window-logical points, for the scripted pointer.
+pub(crate) fn aim_window(
+    ctx: &CheckContext,
+    session: &Session,
+    page: PageGeometry,
+    at: DocPoint,
+) -> Result<WindowPoint> {
     let trace = session.trace()?;
     let shown = trace
         .last(ctx.profile.vocab.canvas_event)
@@ -138,7 +154,7 @@ pub(crate) fn aim(
         )));
     }
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, at.page)?;
-    Ok(session.frame()?.to_screen(mapping.doc_to_window(at)?))
+    mapping.doc_to_window(at)
 }
 
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
@@ -157,13 +173,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              selection did about it, so it needs a document with readable text on its first page.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is a real drag across a real canvas and \
-             it needs the pointer and the foreground. Reported as SKIPPED rather than passed: a \
-             check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -205,6 +214,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text-selection")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -217,6 +227,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         SHELL_DIAG_ENV.1
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     let trace = session.trace()?;
@@ -230,17 +241,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
 
     // --- phase A: sweep in Read --------------------------------------------
     let mut unreachable: Vec<String> = Vec::new();
     let mut found: Option<(usize, String)> = None;
 
     for (n, (start, end)) in BANDS.iter().enumerate() {
-        driving::click_mode_segment(&session, &driver, ui_rect, READ)?;
+        driving::click_mode_segment(&session, &pointer, ui_rect, READ)?;
         let from = DocPoint::new(0, start.0 * page.width_pt, start.1 * page.height_pt);
         let to = DocPoint::new(0, end.0 * page.width_pt, end.1 * page.height_pt);
-        let (from, to) = match (aim(ctx, &session, page, from), aim(ctx, &session, page, to)) {
+        let (from, to) = match (
+            aim_window(ctx, &session, page, from),
+            aim_window(ctx, &session, page, to),
+        ) {
             (Ok(a), Ok(b)) => (a, b),
             (Err(e), _) | (_, Err(e)) => {
                 // Not fatal: this band cannot be reached in this mode's layout,
@@ -253,7 +266,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         };
 
         let before = settled(&session.trace()?).1;
-        driver.drag(from, to)?;
+        pointer.drag(&session, from, to, 8)?;
         session.settle(16);
         let after = session.trace()?;
         // The SETTLED line, and it must be read unfiltered — see
@@ -347,10 +360,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // noted and does not fail the check: the assertion above has already held,
     // and refusing a verdict because a screenshot could not be taken would be
     // the harness failing the application for its own limitation.
-    let shot = ctx.out("text_selection.png");
-    match crate::capture::window_to_png(&session, &shot) {
+    let png = ctx.out("text_selection.png");
+    match shot(&session, &pointer, &png) {
         Ok(_) => {
-            report.artifact(shot);
+            report.artifact(png);
             report.note(
                 "the window with the selection on it is saved beside the trace. It is evidence, \
                  not the oracle: at the wash's alpha over a drawing sheet, selected and \
@@ -382,22 +395,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- phase C: the same sweep in Edit ------------------------------------
-    driving::click_mode_segment(&session, &driver, ui_rect, EDIT)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, EDIT)?;
     let (start, end) = BANDS[band - 1];
-    let from = aim(
+    let from = aim_window(
         ctx,
         &session,
         page,
         DocPoint::new(0, start.0 * page.width_pt, start.1 * page.height_pt),
     )?;
-    let to = aim(
+    let to = aim_window(
         ctx,
         &session,
         page,
         DocPoint::new(0, end.0 * page.width_pt, end.1 * page.height_pt),
     )?;
     let before = selections(&session.trace()?).len();
-    driver.drag(from, to)?;
+    pointer.drag(&session, from, to, 8)?;
     session.settle(16);
     let after = session.trace()?;
     let lines = selections(&after);
@@ -433,6 +446,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          find_bar), so all three are covered by unit test alone and the gap is on the record \
          rather than implied by a green result",
     );
+    pointer.gone(&session)?;
     Ok(None)
 }
 
