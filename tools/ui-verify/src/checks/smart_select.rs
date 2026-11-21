@@ -1,14 +1,15 @@
 //! `a_click_selects_the_whole_drawing_and_a_double_click_goes_inside` —
 //! **Smart-Selector, driven on a real wrapped CAD sheet.**
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/smart_select.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::{self, aim};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -66,12 +67,6 @@ impl Check for AClickSelectsTheWholeDrawing {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is two clicks and two keystrokes on the \
-             page.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -109,18 +104,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "smart-select")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(45);
-    let driver = Driver::new(session.window());
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(
             "no `{PAGE_REGION}` region, so no sheet is on screen. Regions beginning `page`: {}.",
@@ -130,7 +126,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: one click must select the CONTAINER ----------------------------
     let at = aim(ctx, &session, page, DocPoint::new(0, POINT.0, POINT.1))?;
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -170,7 +166,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     // --- B: a double-click must go inside ----------------------------------
-    driver.double_click_at(at)?;
+    pointer.double_click(&session, at)?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -209,7 +205,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the selection on the ladder, so this asserts the order as well as the
     // effect: if one press did both, an operator who pressed Escape to drop a
     // selection would silently lose the container they were working inside.
-    driver.press(crate::sys::vk::ESCAPE)?;
+    pointer.key(&session, None, "Escape", None)?;
     session.settle(15);
     if session
         .trace()?
@@ -225,7 +221,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    driver.press(crate::sys::vk::ESCAPE)?;
+    pointer.key(&session, None, "Escape", None)?;
     session.settle(15);
     if !session
         .trace()?
@@ -241,5 +237,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★★★ …and two Escapes stepped back out, in that order");
+    pointer.gone(&session)?;
     Ok(None)
 }

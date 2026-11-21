@@ -1,13 +1,15 @@
 //! `zooming_does_not_throw_away_where_the_operator_panned` — two reports, one
 //! question: *does a zoom keep the view where I put it?*
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/zoom_keeps_place.md`.
 
 use crate::checks::driving;
 use crate::checks::raster_wall::panic_was_converted;
+use crate::checks::scripteddrive::{self, at_fraction};
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 
 /// `VK_CONTROL`, held while the wheel rolls to make it a zoom.
@@ -200,12 +202,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no --pdf. There is nothing to zoom."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check pans and zooms the canvas. Reported as \
-             SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -221,6 +217,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "zoom-keeps-place")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     // This check climbs deliberately past the scale at which tiny-skia's pipeline
@@ -231,22 +228,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // so a worker that genuinely died is still caught.
     session.expect_thread_panic();
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     let trace = session.trace()?;
     let canvas = driving::declared(&trace, ui_rect, CANVAS_REGION)
         .ok_or_else(|| Error::new(format!("no `{CANVAS_REGION}`; is a document open?")))?;
-    let frame = session.frame()?;
-    let centre = frame.declared_at(canvas, 0.5, 0.5);
+    let centre = at_fraction(canvas, 0.5, 0.5);
 
     // --- knock the view off centre, at the starting (page-fit) zoom ----------
     //
-    // The middle button is the operator's own gesture; this harness has no
-    // middle drag, and a primary drag pans only under the hand tool. The wheel
-    // is unconditional and moves the view off the centred position, which is
+    // The middle button is the operator's own gesture, and a primary drag pans
+    // only under the hand tool. The wheel is unconditional and moves the view off the centred position, which is
     // all this check needs in order to be capable of failing.
-    driver.scroll_at(frame.declared_at(canvas, PAN_AT.0, PAN_AT.1), PAN_NOTCHES)?;
+    pointer.wheel(
+        &session,
+        at_fraction(canvas, PAN_AT.0, PAN_AT.1),
+        PAN_NOTCHES as f32,
+        false,
+    )?;
     session.settle(20);
     let knocked = session.trace()?;
     let page_on_screen = knocked
@@ -294,7 +294,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // stage compared eight steps of accumulated rounding against the
         // budget for one, and failed a correct build by 3.17 pt against 2.57.
         for notch in 0..STAGE {
-            driver.scroll_at_held(centre, &[VK_CONTROL], 1, 1)?;
+            pointer.wheel(&session, centre, 1.0, true)?;
 
             // Wait for the notch to LAND. See [`settled`]: egui smooths a
             // Ctrl+wheel notch over about a dozen frames, and a fixed short
@@ -430,5 +430,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Some(bad) = panic_was_converted(&session)? {
         return Ok(Some(bad));
     }
+    pointer.gone(&session)?;
     Ok(None)
 }

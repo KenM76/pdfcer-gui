@@ -2,15 +2,20 @@
 //! Tab-order list draws an insertion caret, and releasing commits the new
 //! `/Annots` order.
 //!
+//! Driven through the scripted pointer on a window placed off the desktop.
+//!
 //! Design and rationale: `docs/modules/ui-verify/checks/tab_order_drag.md`.
 
 use crate::checks::driving::{
     SHELL_DIAG_ENV, declared, declared_names, declared_or_in_overflow, declared_since, list,
 };
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
+use crate::input::{Click, Driver};
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -71,13 +76,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check drags the pointer across a panel. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -114,6 +112,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    // Wide, because at the default window width the Forms panel's sections
+    // collapse and a folded group publishes no region.
+    let pointer = scripteddrive::offscreen_wide(ctx, &mut spec, "tab-order-drag")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -122,17 +123,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    // MAXIMISED, before anything is aimed at. The Forms panel is a docked
-    // pane, and at the default window width its sections collapse — which is
-    // how the OCR check spent a week SKIPping over a working command. A
-    // published region that does not exist because its group folded is
-    // indistinguishable from a feature that was never built.
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
 
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
 
     // --- 1: the Forms panel, then the Tab-order section --------------------
     // ONLY IF IT IS NOT ALREADY THERE — a panel toggle that is already on
@@ -146,7 +140,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // landed on nothing, the Tab-order section stayed collapsed, and the check
     // reported zero rows — which reads as "the feature is not there".
     if declared(&session.trace()?, ui_rect, PANEL_BODY).is_none() {
-        open_from_tab(&session, &driver, ui_rect, "view", PANEL_ITEM)?;
+        open_from_tab(&session, &pointer, ui_rect, "view", PANEL_ITEM)?;
         session.settle(24);
     }
     // GIVE THE PANE ROOM BEFORE OPENING THE SECTION.
@@ -163,8 +157,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // short, it uses regions the dock already publishes, and it leaves the
     // window in a state where the feature under test is actually usable —
     // which is the state worth measuring.
-    enlarge_forms_pane(&session, &driver, ui_rect)?;
-    open_tab_order(&session, &driver, ui_rect)?;
+    enlarge_forms_pane(&session, &pointer, ui_rect)?;
+    open_tab_order(&session, &pointer, ui_rect)?;
 
     // SCROLL THE PANEL UNTIL THE ROWS ARE ON SCREEN, and this is not
     // housekeeping — it is the precondition the whole check rests on.
@@ -181,7 +175,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Scrolled at the panel's own centre, a few notches at a time, stopping as
     // soon as the rows appear. Bounded rather than looping: a panel that never
     // yields a row is a finding, not a reason to spin.
-    scroll_rows_into_view(&session, &driver, ui_rect)?;
+    scroll_rows_into_view(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     let rows = declared_names(&trace, ui_rect, ROW);
@@ -222,9 +216,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // row 0 that is a real move — the two fields swap — and it is outside the
     // dragged row's own two boundaries, so it is not the no-op the panel
     // correctly refuses.
-    let frame = session.frame()?;
-    let start = frame.declared_center(first);
-    let landing = frame.declared_at(second, 0.5, LAND_DOWN);
+    let start = WindowPoint::centre_of(first);
+    let landing = scripteddrive::at_fraction(second, 0.5, LAND_DOWN);
     report.note(format!(
         "dragging row 0 from ({}, {}) to the lower half of row 1 at ({}, {})",
         start.x(),
@@ -232,7 +225,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         landing.x(),
         landing.y()
     ));
-    driver.drag(start, landing)?;
+    pointer.drag(&session, start, landing, 12)?;
     session.settle(24);
 
     // --- 3: the row sensed the drag at all ---------------------------------
@@ -355,11 +348,41 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("no non-widget annotation changed index, so paint order is untouched");
 
+    pointer.gone(&session)?;
     Ok(None)
 }
 
+/// A pointer that can also drag between two logical rectangles: the press at
+/// `from`'s centre, the release at the fractional point `(fx, fy)` of `to`.
+pub(super) trait PaneDrag: Click {
+    /// Drag from `from`'s centre to `to` at `(fx, fy)` of its extent.
+    fn drag_rects(&self, session: &Session, from: LRect, to: (LRect, f32, f32)) -> Result<()>;
+}
+
+impl PaneDrag for Driver {
+    fn drag_rects(&self, session: &Session, from: LRect, to: (LRect, f32, f32)) -> Result<()> {
+        let frame = session.frame()?;
+        self.drag(
+            frame.declared_center(from),
+            frame.declared_at(to.0, to.1, to.2),
+        )
+    }
+}
+
+impl PaneDrag for ScriptedPointer {
+    fn drag_rects(&self, session: &Session, from: LRect, to: (LRect, f32, f32)) -> Result<()> {
+        let end = scripteddrive::at_fraction(to.0, to.1, to.2);
+        self.drag(session, WindowPoint::centre_of(from), end, 12)
+            .map(|_| ())
+    }
+}
+
 /// Drag the dock splitter above the Forms pane upward, so the panel has room.
-pub(super) fn enlarge_forms_pane(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub(super) fn enlarge_forms_pane(
+    session: &Session,
+    driver: &impl PaneDrag,
+    ui_rect: &str,
+) -> Result<()> {
     let trace = session.trace()?;
     let Some(body) = declared(&trace, ui_rect, PANEL_BODY) else {
         return Ok(());
@@ -385,19 +408,16 @@ pub(super) fn enlarge_forms_pane(session: &Session, driver: &Driver, ui_rect: &s
     else {
         return Ok(());
     };
-    let frame = session.frame()?;
-    let from = frame.declared_center(split);
-    // A quarter of the way down the dock: above every splitter, inside the
+    // From the splitter's centre to a quarter of the way down the dock: above every splitter, inside the
     // topmost pane, and far enough that the drag comfortably clears egui's
     // click/drag threshold.
-    let to = frame.declared_at(dock, 0.5, 0.25);
-    driver.drag(from, to)?;
+    driver.drag_rects(session, split, (dock, 0.5, 0.25))?;
     session.settle(20);
     Ok(())
 }
 
 /// Scroll the Forms panel until the tab-order rows publish a visible rectangle.
-fn scroll_rows_into_view(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn scroll_rows_into_view(session: &Session, driver: &impl Click, ui_rect: &str) -> Result<()> {
     const NOTCHES: i32 = -3;
     const TRIES: usize = 12;
     for _ in 0..TRIES {
@@ -426,8 +446,7 @@ fn scroll_rows_into_view(session: &Session, driver: &Driver, ui_rect: &str) -> R
         let target = declared(&trace, ui_rect, HEADER)
             .filter(|h| h.min.y >= body.min.y && h.max.y <= body.max.y)
             .unwrap_or(body);
-        let at = session.frame()?.declared_center(target);
-        driver.scroll_at(at, NOTCHES)?;
+        driver.scroll_rect(session, target, NOTCHES)?;
         session.settle(10);
     }
     Ok(())
@@ -449,7 +468,7 @@ pub(super) fn form_fixture() -> Option<std::path::PathBuf> {
 /// the group has collapsed.
 pub(super) fn open_from_tab(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     tab: &str,
     item: &str,
@@ -461,7 +480,7 @@ pub(super) fn open_from_tab(
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab_region))?;
+    driver.click_rect(session, tab_region)?;
     session.settle(14);
     let found = declared_or_in_overflow(session, driver, ui_rect, item)?.ok_or_else(|| {
         Error::new(format!(
@@ -473,16 +492,16 @@ pub(super) fn open_from_tab(
             ))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(found))?;
+    driver.click_rect(session, found)?;
     session.settle(20);
     Ok(())
 }
 
 /// Expand the Tab-order collapsing header, which ships closed.
-pub(super) fn open_tab_order(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub(super) fn open_tab_order(session: &Session, driver: &impl Click, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     if let Some(header) = declared(&trace, ui_rect, HEADER) {
-        driver.click_at(session.frame()?.declared_center(header))?;
+        driver.click_rect(session, header)?;
         session.settle(20);
     }
     Ok(())
