@@ -122,8 +122,8 @@ is one of the reasons for it.
 
 # Every way this reports SKIP
 
-No binary; `--no-input` (this check is entirely pointer and keyboard); the
-fixture missing; the profile declaring no ui-rect event; the preferences
+No binary; the profile naming no viewport variable to place the window off
+the desktop; the fixture missing; the profile declaring no ui-rect event; the preferences
 file not writable; the Pages panel's controls not declared; the mode segment
 not declared; the control chord producing no `chord-command` line, which
 means no keystroke reached the window and nothing typed below would mean
@@ -156,12 +156,11 @@ change log: reading it the frame after a panel opens answers *where that
 control was*, and a click aimed at a stale coordinate lands on the canvas
 with no error anywhere. This project has that failure on record twice.
 
-And through [`frame_of`] rather than `session.frame()`, which costs
-nothing on a main-window region and survives the day this panel is allowed
-to float into its own OS window — at which point its rectangles become
-relative to *that* window's origin and every click would land hundreds of
-pixels away, with plausible numbers and no error. Thirteen checks learned
-that on one day.
+And into the viewport that declared the region rather than the root one,
+which costs nothing on a main-window region and survives the day this panel
+is allowed to float into its own OS window — at which point its rectangles
+are relative to *that* window's origin and a click aimed at the root would
+land hundreds of pixels away, with plausible numbers and no error.
 
 ### `fn keyboard_reaches_the_window`
 

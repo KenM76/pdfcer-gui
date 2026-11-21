@@ -4,11 +4,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/off_page_census.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, declared, declared_names, frame_of, list, stable_rect,
+    SHELL_DIAG_ENV, declared, declared_in, declared_names, list, stable_rect,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -72,14 +73,6 @@ fn workspace_root() -> std::path::PathBuf {
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check's subject is a press on the Mark \
-             button. The window opening proves only that the command dispatches; a document with \
-             nothing off the sheet draws the same window with the button greyed, which is \
-             correct. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -119,9 +112,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "off-page-census")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} on {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
@@ -129,7 +124,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         pdf.display()
     ));
     session.settle(60);
-    let driver = Driver::new(session.window());
 
     let trace = session.trace()?;
     if !trace.started(ctx.profile.vocab.start_event) {
@@ -231,13 +225,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
 
-    // `frame_of`, never `session.frame()`. This window is a child viewport
-    // and its coordinates are its own; asking the main window yields a point on
-    // the ribbon, and the click lands somewhere plausible and wrong.
-    let trace = session.trace()?;
-    let frame = frame_of(&session, &trace, ui_rect, MARK)?;
-    driver.click_at(frame.declared_center(button))?;
+    // The click goes to the viewport that declared the button. This window is
+    // a child viewport and its coordinates are its own; aimed at the main
+    // window the click lands on the ribbon, somewhere plausible and wrong.
+    let viewport = declared_in(&session.trace()?, ui_rect, MARK).and_then(|(_, vp)| vp);
+    pointer.click_in(
+        &session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(button),
+    )?;
     session.settle(50);
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
     let Some(requested) = trace.events(REQUESTED).last().cloned() else {

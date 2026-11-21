@@ -7,8 +7,9 @@ use std::path::Path;
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, declared, list};
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -88,12 +89,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let pdf = ctx.pdf.clone().ok_or_else(|| {
         Error::new("no --pdf. Every one of these tools needs a page to be armed over.")
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check raises a dock tab when the panel is \
-             behind a sibling. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -132,12 +127,18 @@ fn probe(
         .push(("PDFCER_DIAG_INVOKE".to_owned(), case.invoke.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = crate::checks::scripteddrive::offscreen(
+        ctx,
+        &mut spec,
+        &format!("properties-tool-{index}"),
+    )?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(45);
-    let driver = Driver::new(session.window());
-    raise_properties(&session, &driver, ui_rect, report)?;
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
+    raise_properties(&session, &pointer, ui_rect, report)?;
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
     let missing: Vec<&str> = case
@@ -171,7 +172,7 @@ fn probe(
 /// Put the Properties panel on screen, or SKIP.
 fn raise_properties(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     report: &mut CheckReport,
 ) -> Result<()> {
@@ -180,9 +181,8 @@ fn raise_properties(
         return Ok(());
     }
     if let Some(tab) = declared(&trace, ui_rect, PROPERTIES_TAB) {
-        driver.click_at(
-            driving::frame_of(session, &trace, ui_rect, PROPERTIES_TAB)?.declared_center(tab),
-        )?;
+        let viewport = driving::declared_in(&trace, ui_rect, PROPERTIES_TAB).and_then(|(_, v)| v);
+        pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(tab))?;
         session.settle(20);
         if declared(&session.trace()?, ui_rect, PROPERTIES_BODY).is_some() {
             report.note("raised the Properties panel by its dock header");
