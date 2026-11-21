@@ -114,3 +114,247 @@ pub fn offset(p: WindowPoint, dx: f32, dy: f32) -> WindowPoint {
     };
     WindowPoint::centre_of(LRect { min: q, max: q })
 }
+
+/// The scripted twin of `scale_aim::zoom_to`: Ctrl+wheel at `aim` until the
+/// reported zoom reaches `wanted`, re-aiming onto `target_canvas` (canvas
+/// points, y down) after every rung and keeping the aim inside `viewport`.
+/// Answers the zoom reached.
+pub fn zoom_to(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    aim: &mut WindowPoint,
+    target_canvas: (f32, f32),
+    wanted: f32,
+    viewport: Option<LRect>,
+) -> Result<f32> {
+    use crate::checks::scale_aim::current_zoom;
+    let aimer = Aimer {
+        session,
+        pointer,
+        target_canvas,
+        cap: session.frame()?.client_logical().width() / 3.0,
+        viewport,
+    };
+    let mut zoom = current_zoom(session)?;
+    let mut spins = 0;
+    *aim = aimer.re_aim(*aim, zoom)?;
+    while zoom < wanted && spins < 240 {
+        // Bigger steps while far away, one line when close, so the rung is
+        // approached from below rather than jumped over.
+        let ratio = wanted / zoom.max(0.001);
+        let lines = if ratio > 8.0 {
+            6
+        } else if ratio > 2.0 {
+            2
+        } else {
+            1
+        };
+        for _ in 0..lines {
+            pointer.wheel(session, *aim, 1.0, true)?;
+        }
+        session.settle(8);
+        let now = current_zoom(session)?;
+        if (now - zoom).abs() < f32::EPSILON {
+            break; // the ceiling, or the wheel is not landing
+        }
+        zoom = now;
+        *aim = aimer.re_aim(*aim, zoom)?;
+        spins += 1;
+    }
+    while zoom > wanted * 1.35 && spins < 300 {
+        pointer.wheel(session, *aim, -1.0, true)?;
+        session.settle(8);
+        let now = current_zoom(session)?;
+        if (now - zoom).abs() < f32::EPSILON {
+            break;
+        }
+        zoom = now;
+        *aim = aimer.re_aim(*aim, zoom)?;
+        spins += 1;
+    }
+    // The region raster is slow; let it land before anything is measured.
+    session.settle(60);
+    let zoom = current_zoom(session)?;
+    *aim = aimer.re_aim(*aim, zoom)?;
+    Ok(zoom)
+}
+
+/// The scripted twin of `scale_aim::aim_residual`: how far the pointer at
+/// `aim` is from `target_canvas`, in canvas points, as the application
+/// reports where it is.
+pub fn aim_residual(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    aim: WindowPoint,
+    target_canvas: (f32, f32),
+) -> Result<Option<f32>> {
+    pointer.hover(session, aim)?;
+    session.settle(6);
+    let Some((x, y)) = crate::checks::scale_aim::reported_page_point(session)? else {
+        return Ok(None);
+    };
+    Ok(Some((target_canvas.0 - x).hypot(target_canvas.1 - y)))
+}
+
+/// What [`zoom_to`] steers by: the target, the largest single correction in
+/// logical points and the rect the aim is held inside.
+struct Aimer<'a> {
+    session: &'a Session,
+    pointer: &'a ScriptedPointer,
+    target_canvas: (f32, f32),
+    cap: f32,
+    viewport: Option<LRect>,
+}
+
+impl Aimer<'_> {
+    /// Correct `at` towards the target until a move stops improving the
+    /// residual by a tenth, at most a dozen moves: `scale_aim::re_aim`'s loop.
+    fn re_aim(&self, at: WindowPoint, zoom: f32) -> Result<WindowPoint> {
+        let mut at = at;
+        let mut best = f32::INFINITY;
+        for _ in 0..12 {
+            let next = self.re_aim_once(at, zoom)?;
+            let Some(got) = crate::checks::scale_aim::reported_page_point(self.session)? else {
+                return Ok(next);
+            };
+            let (tx, ty) = self.target_canvas;
+            let residual = ((tx - got.0).hypot(ty - got.1) * zoom).abs();
+            at = next;
+            // `>=` is false for NaN, so a degenerate reading ends the loop.
+            if residual >= best * 0.9 || !residual.is_finite() {
+                break;
+            }
+            best = residual;
+            if residual < 2.0 {
+                break;
+            }
+        }
+        Ok(at)
+    }
+
+    /// One correction: hover, read where the application says the pointer
+    /// is, move by the difference (capped), clamped into the viewport.
+    fn re_aim_once(&self, at: WindowPoint, zoom: f32) -> Result<WindowPoint> {
+        self.pointer.hover(self.session, at)?;
+        self.session.settle(3);
+        let Some(got) = crate::checks::scale_aim::reported_page_point(self.session)? else {
+            return Ok(at);
+        };
+        let dx = (self.target_canvas.0 - got.0) * zoom;
+        let dy = (self.target_canvas.1 - got.1) * zoom;
+        if !dx.is_finite() || !dy.is_finite() {
+            return Ok(at);
+        }
+        let (dx, dy) = (dx.clamp(-self.cap, self.cap), dy.clamp(-self.cap, self.cap));
+        if dx.abs() < 0.5 && dy.abs() < 0.5 {
+            return Ok(at);
+        }
+        let moved = offset(at, dx, dy);
+        // A pointer outside the canvas gets no `canvas-pointer` line, so an aim
+        // that leaves it is held at the edge where the next reading can still
+        // improve it.
+        let Some(vp) = self
+            .viewport
+            .filter(|vp| vp.width() >= 1.0 && vp.height() >= 1.0)
+        else {
+            return Ok(moved);
+        };
+        let fx = (moved.x() - vp.min.x) / vp.width();
+        let fy = (moved.y() - vp.min.y) / vp.height();
+        Ok(at_fraction(vp, fx.clamp(0.03, 0.97), fy.clamp(0.03, 0.97)))
+    }
+}
+
+/// The scripted twin of `save_copy::click_tab`: click the ribbon tab declared
+/// as `region` and require the shell to report `id` activated.
+pub fn click_tab(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    (region, id): (&str, &str),
+) -> Result<()> {
+    use crate::checks::driving::{TAB_EVENT, shell_trace};
+    let trace = session.trace()?;
+    let rect = crate::checks::driving::declared(&trace, ui_rect, region).ok_or_else(|| {
+        Error::new(format!(
+            "the application declared no `{region}` region. Tabs declared: {}.",
+            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
+        ))
+    })?;
+    let activations = |session: &Session| -> Result<usize> {
+        Ok(shell_trace(session)?
+            .events(TAB_EVENT)
+            .filter(|l| l.get("tab") == Some(id))
+            .count())
+    };
+    let before = activations(session)?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
+    session.settle(14);
+    if activations(session)? <= before {
+        return Err(Error::new(format!(
+            "the click on `{region}` produced no new `{TAB_EVENT} tab={id}` line: the tab moved \
+             between the frame that declared its rect and the frame that received the click, \
+             or it did not take the press."
+        )));
+    }
+    Ok(())
+}
+
+/// The scripted twin of `properties_metadata::open_document_properties`: the
+/// File tab, then its Document properties item, on the band or in the overflow.
+pub fn open_document_properties(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+) -> Result<()> {
+    const ITEM: &str = "ribbon.item.file.document_properties"; // ui-text-exempt: a trace region name, never displayed
+    let trace = session.trace()?;
+    let tab =
+        crate::checks::driving::declared(&trace, ui_rect, "ribbon.tab.file").ok_or_else(|| {
+            Error::new(format!(
+                "no `ribbon.tab.file` region. Tabs declared: {}.",
+                list(&declared_names(&trace, ui_rect, "ribbon.tab."))
+            ))
+        })?;
+    pointer.click(session, WindowPoint::centre_of(tab))?;
+    session.settle(14);
+    let Some(item) =
+        crate::checks::driving::declared_or_in_overflow(session, pointer, ui_rect, ITEM)?
+    else {
+        return Err(Error::new(format!(
+            "the File tab declares no `{ITEM}`, on the band or in the overflow, so the Document \
+             properties panel cannot be opened. Items the File tab did declare: {}.",
+            list(&declared_names(
+                &session.trace()?,
+                ui_rect,
+                "ribbon.item.file."
+            ))
+        )));
+    };
+    pointer.click(session, WindowPoint::centre_of(item))?;
+    session.settle(20);
+    Ok(())
+}
+
+/// The scripted twin of `text_selection::aim`: the window point of document
+/// point `at`, refused when the canvas is showing another page.
+pub fn aim(
+    ctx: &CheckContext,
+    session: &Session,
+    page: crate::coords::PageGeometry,
+    at: crate::coords::DocPoint,
+) -> Result<WindowPoint> {
+    let trace = session.trace()?;
+    let shown = trace
+        .last(ctx.profile.vocab.canvas_event)
+        .and_then(|l| l.get_usize("page"));
+    if shown != Some(at.page) {
+        return Err(Error::new(format!(
+            "the canvas is showing page {}, and this check's point is on page {}.",
+            shown.map_or_else(|| "an unreported index".to_owned(), |p| (p + 1).to_string()),
+            at.page + 1
+        )));
+    }
+    crate::coords::CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, at.page)?
+        .doc_to_window(at)
+}

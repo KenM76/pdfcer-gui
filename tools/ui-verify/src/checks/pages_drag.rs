@@ -4,9 +4,11 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/pages_drag.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
+use crate::checks::scripteddrive::{at_fraction, offscreen};
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::Click;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -69,13 +71,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check drags the pointer across a panel. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -94,6 +89,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "pages_drag")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -102,10 +98,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
 
     // --- 1: get the Pages panel on screen ----------------------------------
     //
@@ -113,7 +109,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // does this reach for the ribbon, because pressing a panel toggle that is
     // already on would CLOSE the thing this check needs.
     if declared(&session.trace()?, ui_rect, GRID).is_none() {
-        open_pages_panel(&session, &driver, ui_rect)?;
+        open_pages_panel(&session, &pointer, ui_rect)?;
     }
     let trace = session.trace()?;
     let Some(grid) = declared(&trace, ui_rect, GRID) else {
@@ -155,9 +151,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // edge: the right half means the boundary AFTER page 2, which is gap 2.
     // That is a real move — pages 1 and 2 swap — and it is outside the dragged
     // block, so it is not the no-op case the panel correctly refuses.
-    let frame = session.frame()?;
-    let start = frame.declared_center(from);
-    let landing = frame.declared_at(onto, LAND_ACROSS, 0.5);
+    let start = WindowPoint::centre_of(from);
+    let landing = at_fraction(onto, LAND_ACROSS, 0.5);
     report.note(format!(
         "dragging tile 0 from ({}, {}) to the right half of tile 1 at ({}, {})",
         start.x(),
@@ -165,8 +160,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         landing.x(),
         landing.y()
     ));
-    driver.drag(start, landing)?;
+    pointer.drag(&session, start, landing, 8)?;
     session.settle(24);
+    pointer.gone(&session)?;
 
     // --- 4: the gesture started at all -------------------------------------
     let trace = session.trace()?;
@@ -274,7 +270,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Bring the Pages panel up from the ribbon.
-pub(crate) fn open_pages_panel(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub(crate) fn open_pages_panel(
+    session: &Session,
+    driver: &impl Click,
+    ui_rect: &str,
+) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.view").ok_or_else(|| {
         Error::new(format!(
@@ -282,7 +282,7 @@ pub(crate) fn open_pages_panel(session: &Session, driver: &Driver, ui_rect: &str
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    driver.click_rect(session, tab)?;
     session.settle(14);
     let Some(item) = crate::checks::driving::declared_or_in_overflow(
         session,
@@ -296,7 +296,7 @@ pub(crate) fn open_pages_panel(session: &Session, driver: &Driver, ui_rect: &str
              overflow, so the Pages panel cannot be opened.",
         ));
     };
-    driver.click_at(session.frame()?.declared_center(item))?;
+    driver.click_rect(session, item)?;
     session.settle(20);
     Ok(())
 }

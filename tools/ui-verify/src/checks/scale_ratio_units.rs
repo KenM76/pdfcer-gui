@@ -4,11 +4,13 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/scale_ratio_units.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
+    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_in, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -87,13 +89,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, a ribbon tab \
-             and two dialog controls, and types into a box. Reported as SKIPPED: a check \
-             that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -111,6 +106,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "scale_ratio_units")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched {} as pid {}",
@@ -118,11 +114,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Review, Measure, Set scale ---------------------------------------
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.measure").ok_or_else(|| {
         Error::new(format!(
@@ -130,7 +126,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -140,7 +136,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the click on the Measure tab produced no tab-selected line.",
         ));
     }
-    open_set_scale(&session, &driver, ui_rect)?;
+    open_set_scale(&session, &pointer, ui_rect)?;
 
     // --- 2: the row reads left to right on one line --------------------------
     let trace = session.trace()?;
@@ -196,11 +192,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     let typed = typed_for(&real_unit);
-    let frame = frame_of(&session, &trace, ui_rect, "scale.ratio_real")?;
-    driver.click_at(frame.declared_center(rects[2]))?;
+    let vp = declared_in(&trace, ui_rect, "scale.ratio_real").and_then(|(_, v)| v);
+    pointer.click_in(&session, vp.as_deref(), WindowPoint::centre_of(rects[2]))?;
     session.settle(10);
-    driver.type_ascii(typed)?;
-    driver.press(crate::sys::vk::ENTER)?;
+    pointer.type_text(&session, vp.as_deref(), typed)?;
+    pointer.key(&session, vp.as_deref(), "Enter", None)?; // ui-text-exempt: a key name, never displayed
     session.settle(16);
     report.note(format!(
         "typed `{typed}` into a world box held in {real_unit}"
@@ -209,10 +205,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let accept = declared(&trace, ui_rect, "dialog:set-scale.accept")
         .ok_or_else(|| Error::new("the window declared no `dialog:set-scale.accept` region."))?;
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "dialog:set-scale.accept")?.declared_center(accept),
-    )?;
+    let vp = declared_in(&trace, ui_rect, "dialog:set-scale.accept").and_then(|(_, v)| v);
+    pointer.click_in(&session, vp.as_deref(), WindowPoint::centre_of(accept))?;
     session.settle(20);
+    pointer.gone(&session)?;
     let trace = session.trace()?;
     let Some(line) = trace.events("scale-commit").last() else {
         return Ok(Some(format!(
@@ -250,7 +246,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Click Measure ▸ Scale.
-fn open_set_scale(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn open_set_scale(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     let trace = session.trace()?;
     let item = declared(&trace, ui_rect, "ribbon.item.measure.set_scale").ok_or_else(|| {
         Error::new(format!(
@@ -258,7 +254,7 @@ fn open_set_scale(session: &Session, driver: &Driver, ui_rect: &str) -> Result<(
             list(&declared_names(&trace, ui_rect, "ribbon.item.measure."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(session, WindowPoint::centre_of(item))?;
     session.settle(16);
     Ok(())
 }

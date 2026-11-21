@@ -4,10 +4,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/resize.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::{at_fraction, offscreen};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -76,12 +76,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          one place on that sheet where a grip drag can be measured",
         pdf.display()
     ));
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, clicks page \
-             content and drags a grip. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -111,28 +105,27 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "resize")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Edit, the one mode whose canvas selects content ----------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     // --- 2: select the shape -----------------------------------------------
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
     let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let frame = session.frame()?;
-    let at = frame.to_screen(window_point);
-    driver.click_at(at)?;
+    pointer.click(&session, window_point)?;
     session.settle(16);
 
     let trace = session.trace()?;
@@ -177,8 +170,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // `handles::grip_rects` centres the south-east grip. Not the centre: the
     // centre of a selection box is `Grip::Move`, and a drag from there is a
     // MOVE, which would pass every assertion below for the wrong gesture.
-    let frame = session.frame()?;
-    let from = frame.declared_at(outline, 1.0, 1.0);
+    let from = at_fraction(outline, 1.0, 1.0);
     // Beyond the box, by fractions rather than by adding pixels to a
     // `ScreenPoint`: `coords`' own rule is that a coordinate is produced by a
     // conversion and never assembled, and `declared_at` does not clamp its
@@ -187,12 +179,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // number of screen pixels whatever size the selection is.
     let w = (outline.max.x - outline.min.x).max(1.0);
     let h = (outline.max.y - outline.min.y).max(1.0);
-    let to = frame.declared_at(outline, 1.0 + DRAG_PX / w, 1.0 + DRAG_PX / h);
+    let to = at_fraction(outline, 1.0 + DRAG_PX / w, 1.0 + DRAG_PX / h);
 
     // --- 4: drag it --------------------------------------------------------
     let commits_before = session.trace()?.events(COMMIT_EVENT).count();
-    driver.drag(from, to)?;
+    pointer.drag(&session, from, to, 8)?;
     session.settle(30);
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
     let commit = trace.events(COMMIT_EVENT).nth(commits_before);

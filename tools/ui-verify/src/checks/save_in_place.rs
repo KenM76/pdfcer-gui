@@ -6,10 +6,10 @@
 use std::path::{Path, PathBuf};
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared};
-use crate::checks::save_copy::{click_command, click_tab};
+use crate::checks::save_copy::click_command;
+use crate::checks::scripteddrive::{at_fraction, click_tab, offscreen};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -77,12 +77,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, two ribbon tabs, a \
-             markup tool, the page and the Save control. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -109,18 +103,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "save_in_place")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!("launched as pid {}", session.pid()));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
 
     // --- 1: make an edit worth saving --------------------------------------
-    click_tab(&session, &driver, ui_rect, MARKUP_TAB)?;
-    click_command(&session, &driver, ui_rect, RECTANGLE, 14)?;
-    let frame = session.frame()?;
+    click_tab(&session, &pointer, ui_rect, MARKUP_TAB)?;
+    click_command(&session, &pointer, ui_rect, RECTANGLE, 14)?;
     let trace = session.trace()?;
     let Some(page) = declared(&trace, ui_rect, "page") else {
         return Err(Error::new(
@@ -128,9 +122,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              no way to make the document modified.",
         ));
     };
-    driver.drag(
-        frame.declared_at(page, 0.30, 0.30),
-        frame.declared_at(page, 0.45, 0.45),
+    pointer.drag(
+        &session,
+        at_fraction(page, 0.30, 0.30),
+        at_fraction(page, 0.45, 0.45),
+        8,
     )?;
     session.settle(20);
     if session.trace()?.last(EDIT_EVENT).is_none() {
@@ -143,7 +139,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("a markup was authored, so the document is modified");
 
     // --- 2: Save -------------------------------------------------------
-    click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+    click_tab(&session, &pointer, ui_rect, FILE_TAB)?;
     let trace = session.trace()?;
     if declared(&trace, ui_rect, SAVE.0).is_none() {
         return Ok(Some(format!(
@@ -152,7 +148,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             SAVE.0
         )));
     }
-    click_command(&session, &driver, ui_rect, SAVE, 30)?;
+    click_command(&session, &pointer, ui_rect, SAVE, 30)?;
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
     let Some(line) = trace.last(SAVE_EVENT) else {

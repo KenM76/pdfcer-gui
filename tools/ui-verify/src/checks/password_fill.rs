@@ -5,10 +5,10 @@
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
 use crate::checks::forms_spotlight::open_from_tab;
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -35,8 +35,8 @@ const STORE_LINE: &str = "form-fill-storing-password";
 /// The status bar's fill-disclosure group.
 const BAR_REGION: &str = "status-group:fill-disclosure";
 
-/// `Enter` as a Windows virtual key.
-const VK_RETURN: u16 = 0x0D;
+/// `Enter`, as `egui::Key::from_name` spells it.
+const ENTER: &str = "Enter"; // ui-text-exempt: a key name, never displayed
 
 /// The value typed in.
 const TYPED: &str = "4711";
@@ -108,11 +108,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "--pdf is IGNORED: this check pins {}",
         pdf.display()
     ));
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a field and types into it.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -132,14 +127,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "password_fill")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!("launched as pid {}", session.pid()));
     session.settle(40);
 
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     // --- Fill the field on the canvas ---------------------------------------
@@ -157,7 +153,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Census is canvas space (y down); the mapping takes PDF space (y up).
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, box_page)?;
     let point = mapping.doc_to_window(DocPoint::new(box_page, cx, page.height_pt - cy))?;
-    driver.click_at(session.frame()?.to_screen(point))?;
+    pointer.click(&session, point)?;
     session.settle(25);
     if session.trace()?.last(FOCUS_LINE).is_none() {
         return Ok(Some(format!(
@@ -166,10 +162,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    driver.type_ascii(TYPED)?;
+    pointer.type_text(&session, None, TYPED)?;
     session.settle(20);
     let mark = session.trace()?.mark();
-    driver.press(VK_RETURN)?;
+    pointer.key(&session, None, ENTER, None)?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -201,10 +197,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("the status bar said the password was not saved");
 
     // --- Save it anyway, from the Forms panel -------------------------------
-    click_mode_segment(&session, &driver, ui_rect, PANEL_MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, PANEL_MODE)?;
     session.settle(20);
     if declared(&session.trace()?, ui_rect, PANEL_BODY).is_none() {
-        open_from_tab(&session, &driver, ui_rect, "view", PANEL_ITEM)?;
+        open_from_tab(&session, &pointer, ui_rect, "view", PANEL_ITEM)?;
         session.settle(24);
     }
     let trace = session.trace()?;
@@ -216,8 +212,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     let mark = trace.mark();
-    driver.click_at(session.frame()?.declared_center(button))?;
+    pointer.click(&session, WindowPoint::centre_of(button))?;
     session.settle(30);
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
     let Some(store) = trace.last_after(STORE_LINE, mark) else {

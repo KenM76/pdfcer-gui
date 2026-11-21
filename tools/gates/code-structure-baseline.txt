@@ -8,7 +8,7 @@ dup crates/pdfcer-gui::read in crates/pdfcer-gui/src/app/dispatch/ospaste.rs, cr
 dup crates/pdfcer-gui::shown in crates/pdfcer-gui/src/panels/layers/combine.rs, crates/pdfcer-gui/src/panels/properties/layer.rs
 dup tools/ui-verify::about_centre in tools/ui-verify/src/checks/dimension_circular_label_drag.rs, tools/ui-verify/src/checks/dimension_display_menu.rs
 dup tools/ui-verify::after in tools/ui-verify/src/checks/markup_place.rs, tools/ui-verify/src/checks/radio_group.rs
-dup tools/ui-verify::aim in tools/ui-verify/src/checks/form_selection.rs, tools/ui-verify/src/checks/layers_membership.rs, tools/ui-verify/src/checks/unshare_form.rs
+dup tools/ui-verify::aim in tools/ui-verify/src/checks/form_selection.rs, tools/ui-verify/src/checks/layers_membership.rs
 dup tools/ui-verify::anchor_region in tools/ui-verify/src/checks/bezier_handle.rs, tools/ui-verify/src/checks/deeper_rung_delete.rs
 dup tools/ui-verify::anchor_region in tools/ui-verify/src/checks/multi_node.rs, tools/ui-verify/src/checks/shape_preview.rs
 dup tools/ui-verify::annot_count in tools/ui-verify/src/checks/text_annot.rs, tools/ui-verify/src/checks/text_annot_focus.rs
@@ -30,7 +30,7 @@ dup tools/ui-verify::leading_number in tools/ui-verify/src/checks/dimension_tool
 dup tools/ui-verify::list in tools/ui-verify/src/checks/markup_rectangle.rs, tools/ui-verify/src/checks/move_line_of_text.rs
 dup tools/ui-verify::list_str in tools/ui-verify/src/checks/add_text.rs, tools/ui-verify/src/checks/escape_commits_text.rs, tools/ui-verify/src/checks/navigate_commits_text.rs
 dup tools/ui-verify::local_fixture in tools/ui-verify/src/checks/form_groups.rs, tools/ui-verify/src/checks/smart_select.rs
-dup tools/ui-verify::open_properties in tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/recovery_losses.rs, tools/ui-verify/src/checks/stamp_collection.rs
+dup tools/ui-verify::open_properties in tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/recovery_losses.rs
 dup tools/ui-verify::open_window in tools/ui-verify/src/checks/remove_metadata.rs, tools/ui-verify/src/checks/remove_ocr_pages.rs
 dup tools/ui-verify::resolve_exe in tools/ui-verify/src/checks/graphics_pressure.rs, tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/off_page_ceiling.rs, tools/ui-verify/src/checks/scripted_keys.rs, tools/ui-verify/src/checks/stamp_collection.rs
 dup tools/ui-verify::same in tools/ui-verify/src/checks/model_saved_view.rs, tools/ui-verify/src/checks/model_views_saved.rs
@@ -41,7 +41,6 @@ dup tools/ui-verify::spec_for in tools/ui-verify/src/checks/page_display_pref.rs
 dup tools/ui-verify::strip_box in tools/ui-verify/src/checks/markup_band.rs, tools/ui-verify/src/checks/markup_palette.rs
 dup tools/ui-verify::switch in tools/ui-verify/src/checks/drop_stamp.rs, tools/ui-verify/src/checks/paste_stamp.rs, tools/ui-verify/src/checks/paste_text.rs
 dup tools/ui-verify::ui_rect_event in tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/stamp_collection.rs
-dup tools/ui-verify::undo in tools/ui-verify/src/checks/preview_width.rs, tools/ui-verify/src/checks/scale_sweep.rs
 dup tools/ui-verify::userdata in tools/ui-verify/src/checks/export_remembered.rs, tools/ui-verify/src/checks/print_dismissal.rs, tools/ui-verify/src/checks/print_remembered.rs
 dup tools/ui-verify::workspace_root in tools/ui-verify/src/checks/link_follow.rs, tools/ui-verify/src/checks/ocr_progress.rs, tools/ui-verify/src/checks/page_display_pref.rs, tools/ui-verify/src/checks/point_destination.rs, tools/ui-verify/src/checks/quit_unsaved.rs, tools/ui-verify/src/checks/save_as.rs
 dup tools/ui-verify::workspace_root in tools/ui-verify/src/checks/off_page_census.rs, tools/ui-verify/src/checks/off_page_marquee.rs, tools/ui-verify/src/checks/off_page_toggle.rs, tools/ui-verify/src/checks/off_page_visible.rs, tools/ui-verify/src/checks/off_page_zoom.rs

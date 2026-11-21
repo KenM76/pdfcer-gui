@@ -4,6 +4,7 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/ribbon_captions.md`.
 
 use crate::checks::legibility::{self, PlannedRegion, RegionArea, TraceRegions};
+use crate::checks::scripteddrive::{offscreen, shot};
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowFrame;
 use crate::error::{Error, Result};
@@ -144,6 +145,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     ));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "ribbon_captions")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -202,25 +204,11 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     let plan = legibility::resolve_set(ctx.profile, SET, None, Some(&trace_regions))
         .map_err(Error::new)?;
 
-    // Only now does the harness need the screen. Ordering matters: a run with
-    // --no-input against a ribbon-less binary should report "there is no
-    // ribbon", which is a fact about the application, rather than "input is
-    // disabled", which is a fact about the invocation and tells the reader
-    // nothing they did not already type.
-    if !ctx.allow_input {
-        return Err(Error::new(format!(
-            "input is disabled (--no-input), and capturing the window requires raising it to \
-             the front — which takes the operator's focus. {} caption region(s) were declared \
-             and could have been measured; re-run without --no-input to measure them. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-            plan.regions.len()
-        )));
-    }
-
-    let shot = ctx.out("ribbon_captions.png");
-    let image = crate::capture::window_to_png(&session, &shot)?;
-    report.artifact(shot);
+    // The window's own frame: it is off the desktop, where an OS capture
+    // would photograph whatever is on the screen there.
+    let png = ctx.out("ribbon_captions.png");
+    let image = shot(&session, &pointer, &png)?;
+    report.artifact(png);
     Ok(legibility::assess(
         &image,
         &plan,
