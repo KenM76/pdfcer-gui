@@ -35,6 +35,20 @@ pub struct PageObjectCache {
     /// not be re-decomposed on every frame. That is the same reasoning the
     /// render-error hold in `PdfcerApp::settle_and_rasterize` uses.
     pub provider: RefCell<Option<Result<ObjectModelProvider, String>>>,
+    /// The edit session's own model of the page, read on a frame that held
+    /// the session exclusively, keyed like [`Self::built_for`]: the next
+    /// build for that key takes it instead of decomposing the page again.
+    pub from_session: RefCell<Option<SessionModel>>,
+}
+
+/// A page model `EditSession::page_objects` returned, and how long it took.
+pub struct SessionModel {
+    /// The `(page index, revision)` it describes.
+    pub key: (usize, u64),
+    /// The model, shared with the session's memo.
+    pub objects: std::sync::Arc<pdfcer_core::vector::PageObjects>,
+    /// The time the session's call took (near zero on a memo hit).
+    pub took: std::time::Duration,
 }
 
 /// The current page's **extracted text**, held for as long as the document is

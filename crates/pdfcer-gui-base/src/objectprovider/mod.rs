@@ -32,6 +32,8 @@ mod unseen;
 /// Image masks, so a click passes through an image's clear pixels.
 mod alpha;
 
+use std::sync::Arc;
+
 use egui::{Pos2, Rect};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::{
@@ -115,8 +117,9 @@ pub const FALLBACK_SELECT_TOLERANCE: f64 = 3.0;
 pub struct ObjectModelProvider {
     /// The page this provider answers for; queries for any other index miss.
     page_index: usize,
-    /// The decomposed objects, in PDF user space (paint order).
-    objects: PageObjects,
+    /// The decomposed objects, in PDF user space (paint order); shared with
+    /// the edit session's memo when built from it.
+    objects: Arc<PageObjects>,
     /// PDF user space → canvas space (the render device map at scale 1.0).
     to_canvas: Transform,
     /// Canvas space → PDF user space (the inverse), or `None` for a
@@ -211,17 +214,46 @@ impl ObjectModelProvider {
         let started = std::time::Instant::now();
         let objects =
             decompose_page(view, page, Matrix::IDENTITY).map_err(|err| err.to_string())?;
-        let elapsed = started.elapsed();
+        Ok(Self::assemble(
+            view,
+            page,
+            page_index,
+            Arc::new(objects),
+            (started.elapsed(), "shell"), // ui-text-exempt: a trace value, never displayed
+        ))
+    }
+
+    /// Build from the edit session's own model of the page
+    /// (`EditSession::page_objects`), which took `took` to read.
+    #[must_use]
+    pub fn from_session(
+        view: &DocumentView<'_>,
+        page: &Page,
+        page_index: usize,
+        objects: Arc<PageObjects>,
+        took: std::time::Duration,
+    ) -> Self {
+        Self::assemble(view, page, page_index, objects, (took, "session")) // ui-text-exempt: a trace value, never displayed
+    }
+
+    /// Trace `page-objects-built … source=` and wrap `objects` for `page`.
+    fn assemble(
+        view: &DocumentView<'_>,
+        page: &Page,
+        page_index: usize,
+        objects: Arc<PageObjects>,
+        (elapsed, source): (std::time::Duration, &'static str),
+    ) -> Self {
         let (count, leaves) = (objects.objects.len(), objects.leaves.len());
         crate::diag::trace(move || {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
-                "page-objects-built page={page_index} objects={count} leaves={leaves} ms={}",
+                "page-objects-built page={page_index} objects={count} leaves={leaves} ms={} source={source}",
                 elapsed.as_millis()
             )
         });
         let (w, h, to_canvas) = crate::viewer::canvas_geometry(page);
-        Ok(Self {
+        Self {
             page_index,
             summaries: unfilled(&objects),
             recent_hits: std::sync::Mutex::new(Vec::new()),
@@ -238,7 +270,7 @@ impl ObjectModelProvider {
                 reason = "a page dimension in pixels is far below f32's exact-integer range" // ui-text-exempt: a lint justification
             )]
             page_extent_px: Some(egui::vec2(w as f32, h as f32)),
-        })
+        }
     }
 
     /// Construct directly from parts — the seam the headless unit tests use
@@ -252,7 +284,7 @@ impl ObjectModelProvider {
             recent_hits: std::sync::Mutex::new(Vec::new()),
             unseen: std::sync::Mutex::default(),
             alpha: alpha::PageAlpha::default(),
-            objects,
+            objects: Arc::new(objects),
             to_canvas,
             to_pdf: to_canvas.invert(),
             // Headless tests construct from parts and have no page. `None`
