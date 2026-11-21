@@ -45,7 +45,7 @@ pub(super) fn trace(ladder: &StyleLadder) {
 }
 
 /// The rung as one trace token; `StyleRung`'s `Display` is prose.
-const fn rung_token(rung: StyleRung) -> &'static str {
+pub(crate) const fn rung_token(rung: StyleRung) -> &'static str {
     // ui-text-exempt: trace tokens, never displayed
     match rung {
         StyleRung::RealFaceOnPage => "page-face",

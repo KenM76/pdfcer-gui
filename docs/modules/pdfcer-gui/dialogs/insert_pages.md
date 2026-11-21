@@ -94,6 +94,6 @@ reading.
 Order is preserved and duplicates are kept, because the text is a
 SEQUENCE the operator wrote. Here that is not a quirk to tolerate — it
 is how an operator inserts pages in a different order, or twice, in one
-gesture. A repeat needs one engine call per copy; `app::actions::insertruns`
-makes them and folds them into one undo step. Asserted so that a later "tidy-up" into a sorted set has to
+gesture. The engine copies a repeated index afresh, so the list goes to
+`insert_pages` as written. Asserted so that a later "tidy-up" into a sorted set has to
 argue with a test rather than with nothing.

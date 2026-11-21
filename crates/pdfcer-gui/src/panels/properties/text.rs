@@ -57,8 +57,9 @@ pub const COLOUR_REGION: &str = "properties.text.colour";
 /// changed.
 #[derive(Default)]
 pub struct TextStyleDraft {
-    /// `(page, first run, edit epoch)` the values below were read at.
-    stamp: Option<(usize, usize, u64)>,
+    /// `(page, first run, edit epoch, donor faces)` the values below were
+    /// read at.
+    stamp: Option<(usize, usize, u64, usize)>,
     /// The run's `/BaseFont`, subset tag and all, or `None` when the
     /// provenance carried no font resource.
     face: Option<String>,
@@ -200,7 +201,7 @@ impl TextStyleDraft {
     ///
     /// Returns `true` when there is something to draw — i.e. the run resolved.
     pub(crate) fn sync(&mut self, doc: &OpenDoc, page: usize, run: usize) -> bool {
-        let stamp = (page, run, doc.edit_epoch);
+        let stamp = (page, run, doc.edit_epoch, doc.style_donors.len());
         if self.stamp == Some(stamp) {
             return self.face.is_some();
         }
@@ -611,6 +612,7 @@ fn weight_row(
                 actions,
             );
         }
+        style::donor_button(ui, draft, actions);
     });
 }
 

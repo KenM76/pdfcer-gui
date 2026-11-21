@@ -58,6 +58,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         &[ENLARGE, LANCZOS],
     )?;
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
+    if let Some(failure) =
+        crate::checks::ocr_word_lists::drawn_as_offered(&trace, ui_rect, "true", "false", "false")
+    {
+        return Ok(Some(format!("{failure} Trace: {path}.")));
+    }
     // Ever drawn: the window closes on Run, which retires the region.
     let drawn = trace
         .lines

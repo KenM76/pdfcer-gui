@@ -48,6 +48,18 @@ that is not a listed layer, such as a membership dictionary, is headed
 "Layer combination". Objects on a hidden layer are still listed here and a
 row click still selects them: the list is the way to reach them.
 
+## Placed drawings — how widely each is drawn
+
+Under the summary, `placed::lines` writes one line for each form XObject the
+page places at top level: how many places, on how many pages, it is drawn in
+the whole document, from `pdfcer_core::text_edit::forms::invocation_map`. A
+count the engine could not complete is said as "at least". The map walks
+every page, so it is built once per `(path, edit_epoch)` and kept in egui temp
+data; a page placing no form never builds it. The hover says that editing
+inside the drawing changes every place, and names Give this page its own copy. Traced as
+`objects-placed page= form= places= pages= lower_bound=` and region
+`panel.objects.placed`.
+
 ## The nesting is the LEVEL LADDER, and nothing else
 
 **object → part → point**, which is exactly the ladder the canvas walks

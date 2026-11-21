@@ -55,6 +55,10 @@ pub use engines::{EngineId, OCRCER_MODEL_FILE, available};
 pub mod raster;
 pub use raster::{Enlarged, can_upscale, magnify, raster_options, raster_size};
 
+/// Which reading choices a model takes, asked of the engine one at a time.
+mod offer;
+pub use offer::{ReadingOffer, check_reading, reading_offer};
+
 pub use pdfcer_ocr_host::Dictionaries;
 use pdfcer_ocr_host::{OcrRunner, ProgramPolicy, ProgramSource, RunOptions};
 
@@ -382,49 +386,13 @@ pub struct Request {
     /// choice refuses the run before loading anything, in its own sentence.
     pub dictionaries: Dictionaries,
     /// Read each page region by region with the layout model, so blocks carry
-    /// the region they came from (see [`reads_by_layout`]).
+    /// the region they came from (see [`reading_offer`]).
     pub by_layout: bool,
     /// Enlarge each page raster before reading; `None` reads it as rendered.
     pub upscale: Option<pdfcer_core::ocr::upscale::Upscale>,
     /// The render options each page is rasterised with: the settings funnel's,
     /// through [`raster_options`].
     pub render_options: pdfcer_render::RenderOptions,
-}
-
-/// Whether `model` takes the operator's word files: only Tesseract does, and
-/// every program add-on is Tesseract. Restates the engine's rule (G170).
-#[must_use]
-pub fn takes_word_files(model: &pdfcer_core::ocr::addons::OcrModel) -> bool {
-    model.kind() == pdfcer_core::ocr::addon_manifest::AddonKind::Program
-}
-
-/// Whether `model` can read with its built-in word lists off: all but
-/// PaddleOCR-VL, whose language model cannot be turned off. Restates the
-/// engine's rule (G170).
-#[must_use]
-pub fn can_drop_word_lists(model: &pdfcer_core::ocr::addons::OcrModel) -> bool {
-    // ui-text-exempt: an engine token, never displayed.
-    model.engine != "paddle-vl"
-}
-
-/// Whether `model` can read by layout: `paddle-vl` with the layout model in
-/// its folder. Restates the engine's rule until it can be asked (G170).
-#[must_use]
-pub fn reads_by_layout(model: &pdfcer_core::ocr::addons::OcrModel) -> bool {
-    #[cfg(feature = "ocr-vl")]
-    {
-        // ui-text-exempt: an engine token, never displayed.
-        model.engine == "paddle-vl"
-            && model
-                .folder
-                .join(pdfcer_core::ocr::engine_layout::LAYOUT_MODEL)
-                .is_file()
-    }
-    #[cfg(not(feature = "ocr-vl"))]
-    {
-        let _ = model;
-        false
-    }
 }
 
 /// The worker body. Runs on the spawned thread; touches no GUI type.

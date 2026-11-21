@@ -54,6 +54,10 @@ pub(crate) enum StyleOutlook {
     /// font file, costing about sixty bytes.
     ///
     StandardSibling(String),
+    /// **Rung 3**: no face on the page and no standard-14 sibling can do it,
+    /// and a font file the operator offered can, so pdfcer will embed the
+    /// letters this run uses from it.
+    SuppliedFace(String),
     /// **Rung 4**: no real face is available by any route, so the letters will
     /// be thickened or slanted and the engine will say so afterwards.
     Synthesized,
@@ -110,24 +114,31 @@ impl TextStyleDraft {
         };
         let want = StyleSynthesis::new(bold, !bold);
         let options = FormatOptions::default().with_style_policy(doc.settings.style_policy);
-        let ladder =
-            match doc
-                .session
-                .preview_style_ladder(page, "", Some(read.pin.span), want, &options)
-            {
-                Ok(ladder) => ladder,
-                // The operator's own setting, previewed as their setting. This
-                // is the ONE error worth a sentence: every other failure here is
-                // "the probe could not run", and this one is "the probe ran and the
-                // answer is that pdfcer will decline, because you told it to".
-                Err(FormatError::SynthesisRefusedByPosture { .. }) => {
-                    return Some(StyleForecast {
-                        outlook: StyleOutlook::Declined,
-                        tried: Vec::new(),
-                    });
-                }
-                Err(_) => return None,
-            };
+        let donors = crate::app::actions::textstyle::donor::plans(
+            doc,
+            &crate::app::actions::textstyle::donor::chars_of([read.style.text.as_str()]),
+        );
+        let ladder = match doc.session.preview_style_ladder_with_donors(
+            page,
+            "",
+            Some(read.pin.span),
+            want,
+            &options,
+            &donors,
+        ) {
+            Ok(ladder) => ladder,
+            // The operator's own setting, previewed as their setting. This
+            // is the ONE error worth a sentence: every other failure here is
+            // "the probe could not run", and this one is "the probe ran and the
+            // answer is that pdfcer will decline, because you told it to".
+            Err(FormatError::SynthesisRefusedByPosture { .. }) => {
+                return Some(StyleForecast {
+                    outlook: StyleOutlook::Declined,
+                    tried: Vec::new(),
+                });
+            }
+            Err(_) => return None,
+        };
 
         // The faces the ladder will step over, carried alongside the rung
         // rather than folded into it. `Refusal::character` is the whole reason
@@ -171,17 +182,58 @@ impl TextStyleDraft {
             StyleRung::StandardFourteenSibling => {
                 StyleOutlook::StandardSibling(shorten(ladder.bound.as_deref()?).to_owned())
             }
-            // A named catch-all rather than a fall-through, because
-            // `StyleRung` is `#[non_exhaustive]`: rung 3 (`--font-dir` donors,
-            // `Pass 142.0`) is not built in this shell and a fifth rung is
-            // possible. A variant this build has never seen must land somewhere
-            // honest, and "nothing is known" is the one answer that is true of
-            // it. It renders the conditional hint, which is what was said
-            // before any of this existed.
+            StyleRung::SuppliedFaceEmbedded => {
+                StyleOutlook::SuppliedFace(shorten(ladder.bound.as_deref()?).to_owned())
+            }
+            // `StyleRung` is `#[non_exhaustive]`: a rung this build has never
+            // seen renders the conditional hint, the one answer true of it.
             _ => return None,
         };
+        trace_forecast(bold, ladder.rung, donors.len());
         Some(StyleForecast { outlook, tried })
     }
+}
+
+/// The *Bold/Italic from a font file…* button's region.
+pub const DONOR_REGION: &str = "properties.text.style-donor";
+
+/// The button beside Bold and Italic that offers a donor face, drawn when
+/// either button would fake its style, decline, or already uses a donor.
+pub(super) fn donor_button(
+    ui: &mut egui::Ui,
+    draft: &TextStyleDraft,
+    actions: &mut Vec<crate::app::actions::Action>,
+) {
+    let wants = |f: Option<&StyleForecast>| {
+        f.is_some_and(|f| {
+            matches!(
+                f.outlook,
+                StyleOutlook::Synthesized | StyleOutlook::Declined | StyleOutlook::SuppliedFace(_)
+            )
+        })
+    };
+    if !wants(draft.bold_outlook()) && !wants(draft.italic_outlook()) {
+        return;
+    }
+    let button = ui
+        .button(crate::text::panels::face::style_donor_button())
+        .on_hover_text(crate::text::panels::face::style_donor_hover());
+    crate::diag::ui_rect_visible(DONOR_REGION, button.rect, ui.clip_rect());
+    if button.clicked() {
+        actions.push(crate::app::actions::Action::AddStyleDonor);
+    }
+}
+
+/// Trace the rung one axis's forecast reached and how many donors it was
+/// offered, for the check that compares it with the commit's
+/// `text-style-ladder` line.
+fn trace_forecast(bold: bool, rung: pdfcer_core::text_edit::StyleRung, donors: usize) {
+    let axis = if bold { "bold" } else { "italic" };
+    let rung = crate::app::actions::textstyle::rung_token(rung);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("text-style-forecast axis={axis} rung={rung} donors={donors}")
+    });
 }
 
 /// The Bold button's hover text, given what the engine says would happen.
@@ -232,6 +284,13 @@ fn hint(forecast: Option<&StyleForecast>, bold: bool) -> String {
                 t::text_bold_hint_standard_sibling(face)
             } else {
                 t::text_italic_hint_standard_sibling(face)
+            }
+        }
+        StyleOutlook::SuppliedFace(face) => {
+            if bold {
+                crate::text::panels::face::text_bold_hint_supplied_face(face)
+            } else {
+                crate::text::panels::face::text_italic_hint_supplied_face(face)
             }
         }
         StyleOutlook::Synthesized => {

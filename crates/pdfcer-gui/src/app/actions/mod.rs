@@ -126,9 +126,12 @@ mod handsign;
 /// Stepping the command log, in both directions — `Direction`, its four
 /// per-direction answers, and `history_step`.
 mod history;
+/// A moved document's undo history, replayed in the window it reaches.
+mod historymove;
 pub use chrome::ViewChrome;
-/// Inserting a page list that repeats a source page, as one undo step.
-mod insertruns;
+pub(crate) use historymove::import_history;
+/// Pages ▸ Insert blank…, as copies of a one-page blank document.
+mod insertblank;
 /// The four page verbs' bodies, and the structural resync every edit owes.
 pub mod pages;
 /// **Changing the paper an open drawing sits on** — `set_media_boxes`, and
@@ -165,7 +168,7 @@ mod redact;
 mod restylebatch;
 /// Line width, dash and opacity of page objects, in points.
 mod strokestyle;
-pub(crate) use strokestyle::{object_of as styled_object, scale_of as stroke_scale};
+pub(crate) use strokestyle::object_of as styled_object;
 /// Commit Group and Ungroup.
 pub mod group;
 /// Group and Ungroup inside a placed drawing.

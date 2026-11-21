@@ -117,6 +117,10 @@ fn drawn_elsewhere(text: &PageText, run: usize, operator: &GlyphProvenance) -> b
 
 /// Whether a refusal of the line request is worth the narrowed retry: the
 /// engine found nothing to edit, and the pin itself was not stale.
+///
+/// Every `NotFoundReason` retries, `NoSuchText` included: a whole-line find
+/// misses when the extractor wrote a kerning gap as a space no operator holds,
+/// and the narrowed request names the operators rather than the text.
 #[must_use]
 pub fn retries(error: &EditError) -> bool {
     error.refusal_kind() == RefusalKind::NotFound

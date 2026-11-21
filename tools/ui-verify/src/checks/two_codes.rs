@@ -85,7 +85,11 @@ fn type_into(
 }
 
 /// Save in place and answer whether it saved and the revision it appended.
-fn save(d: &Driven, doc: &std::path::Path, source_len: usize) -> Result<(bool, Vec<u8>)> {
+pub(super) fn save(
+    d: &Driven,
+    doc: &std::path::Path,
+    source_len: usize,
+) -> Result<(bool, Vec<u8>)> {
     d.pointer.key(&d.session, None, "S", Some("ctrl"))?;
     d.session.settle(40);
     let saved = d

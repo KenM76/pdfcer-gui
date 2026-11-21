@@ -50,6 +50,8 @@ pub mod compare;
 pub mod objects;
 /// The Output Preview panel: separations, ink by ink.
 pub mod output_preview;
+/// The Objects panel's placed-drawing lines: where each drawing on the page is drawn.
+pub mod placed;
 
 /// **Every sentence pdfcer says about which layer a selection is on** — the
 /// panel's long form and the status bar's short clause, generated from one

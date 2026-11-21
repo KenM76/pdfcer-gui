@@ -9,7 +9,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/blocks.md`.
 
-use pdfcer_core::text_edit::{BlockRecognitionOptions, EditableTextModel, TextPosition};
+use pdfcer_core::text_edit::{EditableTextModel, TextPosition};
+use pdfcer_core::text_extract::PageText;
 
 use super::{Anchor, Draft, commit_into, store};
 use crate::app::state::OpenDoc;
@@ -28,7 +29,7 @@ pub enum Vertical {
 #[must_use]
 pub fn neighbour(doc: &OpenDoc, run: usize, caret: usize, dir: Vertical) -> Option<(usize, usize)> {
     let text = doc.page_text()?;
-    let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+    let model = model_of(doc, &text)?;
     // CHARACTERS in, BYTES to the model, characters out.
     //
     // `Draft::caret` is a character index — its own docs are explicit, and the
@@ -57,7 +58,7 @@ pub fn neighbour(doc: &OpenDoc, run: usize, caret: usize, dir: Vertical) -> Opti
 #[must_use]
 pub fn line_end(doc: &OpenDoc, run: usize, caret: usize, end: bool) -> Option<(usize, usize)> {
     let text = doc.page_text()?;
-    let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
+    let model = model_of(doc, &text)?;
     let here = TextPosition::new(run, byte_offset(&text, run, caret)?);
     let (start, stop) = model.line_range_at(here)?;
     let there = if end { stop } else { start };
@@ -67,12 +68,15 @@ pub fn line_end(doc: &OpenDoc, run: usize, caret: usize, end: bool) -> Option<(u
     Some((there.run, char_offset(&text, there.run, there.byte_offset)?))
 }
 
+/// The current page's block model as the engine's block verbs build it
+/// (`engine_model::recognise`): cell-aware, so Up and Down inside a ruled
+/// table walk its cells. `None` when the page's cells cannot be read.
+fn model_of<'t>(doc: &OpenDoc, text: &'t PageText) -> Option<EditableTextModel<'t>> {
+    super::engine_model::recognise(text, &doc.session.view(), doc.view.page_index)
+}
+
 /// A character index into run `run`, as a byte offset.
-fn byte_offset(
-    text: &pdfcer_core::text_extract::PageText,
-    run: usize,
-    caret: usize,
-) -> Option<usize> {
+fn byte_offset(text: &PageText, run: usize, caret: usize) -> Option<usize> {
     let s = &text.runs.get(run)?.text;
     Some(
         s.char_indices()
@@ -82,11 +86,7 @@ fn byte_offset(
 }
 
 /// A byte offset into run `run`, as a character index.
-fn char_offset(
-    text: &pdfcer_core::text_extract::PageText,
-    run: usize,
-    byte_offset: usize,
-) -> Option<usize> {
+fn char_offset(text: &PageText, run: usize, byte_offset: usize) -> Option<usize> {
     let s = &text.runs.get(run)?.text;
     let clamped = byte_offset.min(s.len());
     Some(s[..clamped].chars().count())

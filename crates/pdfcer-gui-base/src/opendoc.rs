@@ -1031,6 +1031,10 @@ pub struct OpenDoc {
     /// as usual, `Some` composites in ink and leaves the hidden plates off.
     /// Canvas only and part of the render key; never saved.
     pub separations: Option<pdfcer_render::SeparationPreview>,
+    /// Font files offered to Bold and Italic as rung-3 donor faces
+    /// (`StyleRung::SuppliedFaceEmbedded`), in the order added. For this
+    /// session; never saved.
+    pub style_donors: Vec<PathBuf>,
 }
 
 /// A fresh [`OpenDoc::serial`].
@@ -1184,6 +1188,7 @@ impl OpenDoc {
             redraw_offer: None,
             models_trusted_once: false,
             separations: None,
+            style_donors: Vec::new(),
         }
     }
 

@@ -1267,6 +1267,10 @@ pub enum Action {
         /// entry — see the type's own docs.
         change: crate::editactions::StyleChange,
     },
+    /// **Offer a font file to Bold and Italic as a donor face.** The apply arm
+    /// asks which file and adds it to `OpenDoc::style_donors`; no document
+    /// changes until Bold or Italic is pressed.
+    AddStyleDonor,
     /// **A text-bearing annotation has been placed and now needs its words.**
     ///
     /// Raised by the canvas on the release (or click) that finishes the

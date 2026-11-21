@@ -40,3 +40,7 @@ drawn indented can come from a tree the panel built some other way.
 A region layer that still holds words when the removal runs (it is kept by
 the trial delete's undo); tables, figures and formulas, which this fixture
 does not contain.
+
+# The choices drawn are the engine's
+
+The dialog traces `ocr-reading-offer` with what `check_options` accepts for the chosen model (`ocr::reading_offer`). `ocr_word_lists::drawn_as_offered` asserts the answer for this model kind and that the regions ever drawn match it exactly. Falsified by drawing *Add word file…* whatever the answer: red on `ocrs`.

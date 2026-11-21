@@ -95,6 +95,36 @@ fn record_edit_text(why: crate::text::textedit::EditRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::EditText(why)));
 }
 
+/// The refusal naming the engine's `UnsupportedCause`, or `None` when the
+/// error carries none or its class is `EditCause::Other`, which keeps the
+/// engine's generic sentence.
+pub(crate) fn cannot_edit(
+    error: &pdfcer_core::text_edit::EditError,
+) -> Option<crate::text::textedit::EditRefusal> {
+    use pdfcer_gui_base::text::editcause::EditCause;
+    let pdfcer_core::text_edit::EditError::Unsupported(cause) = error else {
+        return None;
+    };
+    let class = EditCause::of(cause);
+    (class != EditCause::Other).then(|| crate::text::textedit::EditRefusal::CannotEdit {
+        cause: class,
+        offered: cause.workaround().is_some(),
+    })
+}
+
+/// Whether the engine answered that the find text is on the page only across
+/// show operators or text objects it does not join.
+pub(crate) fn engine_says_split(error: &pdfcer_core::text_edit::EditError) -> bool {
+    use pdfcer_core::text_edit::{EditError, NotFoundReason};
+    matches!(
+        error,
+        EditError::NoMatch {
+            reason: NotFoundReason::SplitRun { .. } | NotFoundReason::SpansTextObjects { .. },
+            ..
+        }
+    )
+}
+
 /// **Classify the engine's refusal of a committed text edit, say it on the
 /// trace, and put the sentence in the slot** — the one entry point
 /// `app::actions::apply`'s `edit_text` arm calls.
@@ -120,6 +150,11 @@ pub(crate) fn record_edit_text_refusal(
         error,
         pdfcer_core::text_edit::EditError::PinnedSpanNotFound { .. }
     );
+    // The engine says when the text is there only across pieces it will not
+    // join; that answer outranks the shell's own operator count, which still
+    // decides a pinned request the engine confined to one operator.
+    let engine_split = engine_says_split(error);
+    let one_operator = one_operator && !engine_split;
     let missing = missing_character(error);
     let typed = crate::canvas::textedit::last_commit().filter(|c| c.page == page && c.run == run);
     let char_kind = refused_char_kind(error, typed.as_ref());
@@ -130,7 +165,13 @@ pub(crate) fn record_edit_text_refusal(
                 | crate::text::textedit::RefusedCharacter::HeldTwoGlyphsFor(_)
         )
     );
-    let why = crate::text::textedit::EditRefusal::of(kind, one_operator, char_kind, stale_pin);
+    let why = char_kind
+        .is_none()
+        .then(|| cannot_edit(error))
+        .flatten()
+        .unwrap_or_else(|| {
+            crate::text::textedit::EditRefusal::of(kind, one_operator, char_kind, stale_pin)
+        });
     crate::diag::trace(|| {
         //
         //
@@ -173,9 +214,10 @@ pub(crate) fn record_edit_text_refusal(
 
         format!(
             "edit-text-classified page={page} run={run} kind={kind:?} \
-             one_operator={one_operator} stale_pin={} character={character} \
-             character_font={character_font} said={said}",
-            u8::from(stale_pin)
+             one_operator={one_operator} stale_pin={} engine_split={} \
+             character={character} character_font={character_font} said={said}",
+            u8::from(stale_pin),
+            u8::from(engine_split)
         )
     });
     record_edit_text(why);

@@ -94,17 +94,6 @@ impl RunSplitRefusal {
     }
 }
 
-/// The inference disclosure for a text object inside a placed drawing, whose
-/// cuts the shell computes itself: the engine's plan, which words this for a
-/// page object, takes a page object index only.
-#[must_use]
-pub fn lines_inferred(breaks: usize, operators: usize) -> String {
-    format!(
-        "pdfcer inferred {breaks} line break(s) among this text's {operators} show operator(s) \
-         from baselines and spacing; the file does not record where its lines are."
-    )
-}
-
 /// The success sentence: how many objects the one became.
 #[must_use]
 pub fn split_into(pieces: usize) -> String {

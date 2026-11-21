@@ -7,6 +7,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/cache.md`.
 
 pub mod provenance;
+mod sessionmodel;
 
 use std::cell::Ref;
 use std::time::Instant;
@@ -195,6 +196,7 @@ impl OpenDoc {
         if let Ok(generation) = session.page_content_generation(page) {
             self.content_generation.set(Some((page, epoch, generation)));
         }
+        self.read_session_model();
     }
 
     /// Decompose the current page if the cache does not already describe it.
@@ -204,7 +206,17 @@ impl OpenDoc {
             return;
         }
         self.page_objects.built_for.set(Some(key));
+        let session_model = self.take_session_model(key);
         let built = self.current_page().map(|page| {
+            if let Some(model) = session_model {
+                return Ok(ObjectModelProvider::from_session(
+                    &self.session.view(),
+                    page,
+                    self.view.page_index,
+                    model.objects,
+                    model.took,
+                ));
+            }
             ObjectModelProvider::build_or_reason(
                 // The SESSION view, never the base document's: the session
                 // view is the edited state, which is the state the operator

@@ -28,3 +28,7 @@ The too-large warning (`MAX_OUTPUT_PIXELS`) is unit-tested too.
 
 `.with_upscale(request.upscale)` dropped from the run options: the run still
 asks for ×2 and the recogniser reports `enlarged=none`, so step 3 fails.
+
+# The choices drawn are the engine's
+
+The dialog traces `ocr-reading-offer` with what `check_options` accepts for the chosen model (`ocr::reading_offer`). `ocr_word_lists::drawn_as_offered` asserts the answer for this model kind and that the regions ever drawn match it exactly. Falsified by drawing *Add word file…* whatever the answer: red on `ocrs`.

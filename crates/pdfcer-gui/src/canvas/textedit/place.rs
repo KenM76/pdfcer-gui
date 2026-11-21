@@ -58,6 +58,71 @@ pub fn click(
         commit_into(ctx, &existing, actions);
         abandon(ctx);
     }
+    let anchor = anchor_of(click)?;
+    let in_place = super::landing::refused(ctx, click.doc, click.page_index, &anchor)?;
+    let text = match &anchor {
+        Anchor::Run { original, .. } | Anchor::Block { original, .. } => original.clone(),
+        // Both authoring anchors start empty. A box is not pre-filled with
+        // anything: an operator who drags a rectangle has asked for somewhere to
+        // type, not for a suggestion.
+        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::FreeText { .. } => String::new(),
+    };
+    // The caret lands WHERE THE CLICK LANDED, not at the end.
+    //
+    //
+    // Falls back to the end of the text, which is the old behaviour, when the
+    // run's glyphs cannot be read. That is the right fallback rather than the
+    // start: appending is the less destructive of the two if the operator
+    // types without looking.
+    let caret = match &anchor {
+        Anchor::Run { run, .. } => {
+            caret_index_at(click, *run).unwrap_or_else(|| text.chars().count())
+        }
+        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::FreeText { .. } => 0,
+        Anchor::Block { .. } => text.chars().count(),
+    };
+    let mut draft = Draft {
+        page: click.page_index,
+        kind: click.kind,
+        anchor,
+        text,
+        caret,
+        mark: None,
+        seeded: false,
+    };
+    // A line of a paragraph opens as the whole paragraph, unless the
+    // operator has switched Paragraphs off.
+    let on = super::promote::enabled_on(ctx, click.doc.serial, click.page_index);
+    let widened = if on || super::promote::here::any(ctx, click.doc.serial, click.page_index) {
+        super::promote::widen(ctx, click.doc, &mut draft, on, click_point(click))
+    } else {
+        Err(None)
+    };
+    // A run widened into its paragraph is edited by another verb, which the
+    // run's cause does not describe.
+    let in_place = in_place.filter(|_| matches!(draft.anchor, Anchor::Run { .. }));
+    store(ctx, draft);
+    match widened {
+        Ok(pdfcer_core::text_edit::LineEndSource::Inferred) => super::note::raise(
+            ctx,
+            pdfcer_gui_base::text::draftnote::DraftNote::BreaksInferred,
+        ),
+        Err(Some(note)) => super::note::raise(ctx, note),
+        _ => {}
+    }
+    if let Some(cause) = in_place {
+        super::note::raise(
+            ctx,
+            pdfcer_gui_base::text::draftnote::DraftNote::CannotEditInPlace(cause),
+        );
+    }
+    trace_caret(ctx, click);
+    Ok(())
+}
+
+/// The anchor a click names: an origin for Add, the run under the click for
+/// Edit, or an origin where Edit finds no run.
+fn anchor_of(click: &Click<'_>) -> Result<Anchor, Refusal> {
     let anchor = match click.kind {
         TextEditKind::Add => {
             let page = click
@@ -116,89 +181,11 @@ pub fn click(
             Err(other) => return Err(other),
         },
     };
-    // **A RUN WHOSE FONT CAN SPELL NOTHING GETS NO CARET AT ALL.**
-    //
-    // `run_repertoire` answers with an *empty* repertoire and a `reason` — not
-    // an `Err` — when a run's font offers no character `edit_text` could put
-    // back: a symbolic face with no usable encoding, a `Type0` whose CMap the
-    // engine cannot invert, an embedded subset with no reachable codes. The
-    // engine returns it that way **by this project's own request**, so the shell
-    // could tell *"the question failed"* from *"the answer is nothing"*.
-    //
-    //
-    // ⚠ Only the *measured* empty case refuses. `of_run` answering `None` means
-    // the run could not be pinned or the engine would not answer, and that is
-    // permission to proceed — see `repertoire`'s header. Refusing on `None`
-    // would make every run the engine cannot address completely untypeable,
-    // which is worse than the defect this gate exists to fix.
-    if let Anchor::Run { run, .. } = &anchor
-        && let Some(rep) = super::repertoire::of_run(ctx, click.doc, click.page_index, *run)
-        && !rep.is_editable()
-    {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed.
-            //
-            // The engine's `reason` is allowed here and nowhere else: it is
-            // written in the engine's vocabulary (`/Encoding`, CMap, code
-            // ranges) and the operator gets `crate::text::textedit::refusal`
-            // instead. A reader debugging this needs the engine's words; he
-            // does not.
-            format!(
-                "text-edit-refused reason=no-usable-encoding page={} run={run} font={} said={}",
-                click.page_index,
-                rep.base_font,
-                rep.reason.as_deref().unwrap_or("none"),
-            )
-        });
-        return Err(Refusal::NoUsableEncoding);
-    }
-    let text = match &anchor {
-        Anchor::Run { original, .. } | Anchor::Block { original, .. } => original.clone(),
-        // Both authoring anchors start empty. A box is not pre-filled with
-        // anything: an operator who drags a rectangle has asked for somewhere to
-        // type, not for a suggestion.
-        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::FreeText { .. } => String::new(),
-    };
-    // The caret lands WHERE THE CLICK LANDED, not at the end.
-    //
-    //
-    // Falls back to the end of the text, which is the old behaviour, when the
-    // run's glyphs cannot be read. That is the right fallback rather than the
-    // start: appending is the less destructive of the two if the operator
-    // types without looking.
-    let caret = match &anchor {
-        Anchor::Run { run, .. } => {
-            caret_index_at(click, *run).unwrap_or_else(|| text.chars().count())
-        }
-        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::FreeText { .. } => 0,
-        Anchor::Block { .. } => text.chars().count(),
-    };
-    let mut draft = Draft {
-        page: click.page_index,
-        kind: click.kind,
-        anchor,
-        text,
-        caret,
-        mark: None,
-        seeded: false,
-    };
-    // A line of a paragraph opens as the whole paragraph, unless the
-    // operator has switched Paragraphs off.
-    let on = super::promote::enabled_on(ctx, click.doc.serial, click.page_index);
-    let widened = if on || super::promote::here::any(ctx, click.doc.serial, click.page_index) {
-        super::promote::widen(ctx, click.doc, &mut draft, on)
-    } else {
-        Err(None)
-    };
-    store(ctx, draft);
-    match widened {
-        Ok(pdfcer_core::text_edit::LineEndSource::Inferred) => super::note::raise(
-            ctx,
-            pdfcer_gui_base::text::draftnote::DraftNote::BreaksInferred,
-        ),
-        Err(Some(note)) => super::note::raise(ctx, note),
-        _ => {}
-    }
+    Ok(anchor)
+}
+
+/// The `text-edit-caret` line for the draft [`click`] stored.
+fn trace_caret(ctx: &egui::Context, click: &Click<'_>) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
@@ -230,7 +217,6 @@ pub fn click(
             click.kind, click.page_index
         )
     });
-    Ok(())
 }
 
 /// **Open a draft anchored to a dragged rectangle** — the multi-line entrance.
@@ -315,6 +301,13 @@ pub fn run_under(doc: &OpenDoc, page_index: usize, canvas_point: Pos2) -> bool {
 /// `Some(false)`, or `None` when the question could not be asked.
 fn has_no_anchor(c: &Click<'_>, run: usize) -> Option<bool> {
     c.doc.run_has_no_anchor(run)
+}
+
+/// The click in PDF user space, or `None` off the page.
+fn click_point(c: &Click<'_>) -> Option<(f64, f64)> {
+    let page = c.doc.pages.get(c.page_index)?;
+    let pdf = crate::viewer::canvas_to_pdf_space(c.canvas_point, page)?;
+    Some((f64::from(pdf.x), f64::from(pdf.y)))
 }
 
 /// **Which character boundary a click landed on, inside `run`**: the

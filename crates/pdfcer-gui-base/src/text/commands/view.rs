@@ -638,7 +638,7 @@ pub const fn view_move_to_new_window() -> CommandText {
     CommandText::new(
         "Move to new window",
         "Close this document here and open it in a new pdfcer window of its own, \
-         unsaved edits and password included; its undo history stays here. \
+         unsaved edits, their undo history and password included. \
          Available when more than one document is open here and it has a file.",
     )
 }
@@ -649,7 +649,7 @@ pub const fn view_move_to_window() -> CommandText {
     CommandText::new(
         "Move to other window",
         "Close this document here and open it in another pdfcer window, unsaved \
-         edits and password included; its undo history stays here. With several \
+         edits, their undo history and password included. With several \
          open, you pick which. Available when another pdfcer window is open and \
          this document has a file.",
     )

@@ -77,7 +77,7 @@ fn assess(
 
 /// Answer the prompt with `password`, when given one, and rotate the active
 /// document.
-fn rotate(w: &Window, password: &str) -> Result<Option<String>> {
+pub(super) fn rotate(w: &Window, password: &str) -> Result<Option<String>> {
     if !password.is_empty()
         && let Some(why) = answer(&w.session, &w.pointer, password)?
     {

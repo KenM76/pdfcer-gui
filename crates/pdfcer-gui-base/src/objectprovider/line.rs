@@ -282,14 +282,18 @@ mod tests {
         use pdfcer_core::vector::FormLeaf;
         let page = two_lines();
         let mut leaf = two_lines();
-        let object = leaf.objects.objects.remove(0);
-        leaf.objects.leaves.push(FormLeaf {
-            object,
-            containment: vec![pdfcer_core::object::ObjId::new(5, 0)],
-            paint_order: 0,
-            placement: Matrix::IDENTITY,
-            form_object_index: 0,
-        });
+        let object = std::sync::Arc::make_mut(&mut leaf.objects)
+            .objects
+            .remove(0);
+        std::sync::Arc::make_mut(&mut leaf.objects)
+            .leaves
+            .push(FormLeaf {
+                object,
+                containment: vec![pdfcer_core::object::ObjId::new(5, 0)],
+                paint_order: 0,
+                placement: Matrix::IDENTITY,
+                form_object_index: 0,
+            });
         let mut hit_any = false;
         for (x, y) in [
             (150.0, 703.0),
@@ -368,7 +372,8 @@ mod tests {
     #[test]
     fn a_line_whose_first_fragment_inherits_names_the_line() {
         let mut p = one_line_three_fragments();
-        let VectorObject::Text(text) = &mut p.objects.objects[0] else {
+        let VectorObject::Text(text) = &mut std::sync::Arc::make_mut(&mut p.objects).objects[0]
+        else {
             unreachable!("fixture is a text object")
         };
         text.runs[0].positioned_by = RunPositioning::Inherited;

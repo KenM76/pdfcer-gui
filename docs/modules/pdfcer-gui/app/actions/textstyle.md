@@ -32,7 +32,7 @@ inside the engine and reporting which one bound:
 |---|---|---|
 | 1 | a real face already on the page that claims the style and passes the coverage gate — same family first, then any family | `StyleRung::RealFaceOnPage` |
 | 2 | the **standard-14 sibling of the run's own family**, as a new `/Font` resource, nothing embedded | `StyleRung::StandardFourteenSibling` |
-| 3 | a donor face the caller supplies (`FormatRequest::style_donor`) | the shell passes none, so this rung never binds from the GUI |
+| 3 | a donor face the caller supplies (`FormatRequest::style_donor`): the operator's files in `OpenDoc::style_donors`, planned by [`donor`] | `StyleRung::SuppliedFaceEmbedded` |
 | 4 | synthesis — the stroke or the shear | `StyleRung::Synthetic` |
 
 Rung 2 is the rung that fires constantly and the one a shell-side walk

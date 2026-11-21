@@ -26,13 +26,12 @@ moved the view while the window was open.
 
 ## How the sheets are made
 
-The engine has no blank-page verb. `app::actions::insertruns::insert_blank`
+The engine has no blank-page verb. `app::actions::insertblank::insert_blank`
 builds a one-page blank document of the chosen size
 (`pdfcer_gui_base::blank::document_sized`) and inserts its page `count`
 times through the same `insert_from_view` funnel every page insert uses, so
 the receipt, the landing on the first new sheet and the single undo step are
-the same as Insert from file's. See `app/actions/insertruns.md` for why a
-repeated source page needs one engine call per copy.
+the same as Insert from file's. See `app/actions/insertblank.md`.
 
 ## Region names, for `ui-verify`
 

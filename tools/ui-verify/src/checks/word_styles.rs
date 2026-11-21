@@ -126,6 +126,17 @@ pub(crate) fn launch_invoking(
     fixture: &str,
     invoke: &str,
 ) -> Result<(Driven, std::path::PathBuf)> {
+    launch_with_env(ctx, report, (stem, fixture), invoke, &[])
+}
+
+/// [`launch_invoking`] with `env` added to the program's environment.
+pub(crate) fn launch_with_env(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    (stem, fixture): (&str, &str),
+    invoke: &str,
+    env: &[(&str, &str)],
+) -> Result<(Driven, std::path::PathBuf)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -152,8 +163,11 @@ pub(crate) fn launch_invoking(
         SHELL_DIAG_ENV,
         (viewport_env, OFFSCREEN),
         ("PDFCER_DIAG_INVOKE", invoke),
-    ] {
-        spec.env.push((k.to_owned(), v.to_owned()));
+    ]
+    .iter()
+    .chain(env)
+    {
+        spec.env.push(((*k).to_owned(), (*v).to_owned()));
     }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;

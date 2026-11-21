@@ -17,14 +17,22 @@ draft.
 The paragraph is the one `edit_block_text` will be handed: recognised with
 `EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(),
 &cells)` over the provenance extraction, as `reflow::block_of_run` does, and
-found with `block_at(TextPosition::new(run, 0))`. Its text is each line's
-glyph slices concatenated, lines joined as `line_ends` says.
+found with `block_at(TextPosition::new(run, 0))`. On a click, `widen` takes
+the block `EditSession::block_at_point` names at the clicked point instead
+(traced `by=point`; `by=run` where the engine names none), so the paragraph
+opened is the engine's answer for that place; a run outside that block stays
+a run draft (`run-not-in-paragraph`). Its text is each line's glyph slices
+concatenated, lines joined as `line_gaps` says, or `line_ends` where the
+breaks were inferred.
 
 ## Breaks and wraps
 
 The model is built `with_line_marks(LineMarks::scan(..))` over the page's
 content, and `EditableTextModel::line_ends` says of each line end whether it
-is a `Break` (joined with `\n`) or a `Wrap` (joined with a space).
+is a `Break` (joined with `\n`) or a `Wrap` (joined with a space). For a
+marked block `line_gaps` refines each end to a count: 0 a wrap, 1 a break,
+`n` a break followed by `n - 1` blank lines, joined with `n` newlines and
+counted in `breaks`.
 `line_end_source` says how it knows: `Marked` when the block carries the
 break marks `edit_block_text` writes, so a paragraph pdfcer has rewritten
 keeps every hand break exactly; `Inferred` otherwise (Add text writes no
@@ -34,8 +42,8 @@ raises the `breaks-inferred` draft note, from `place` on a click and from
 `edits` on Enter, because a break typed after a nearly full line reads as a
 wrap and the next edit would merge the two lines.
 
-A marked blank line arrives as one `Break`: `line_ends` carries no count (G183), so a
-re-open keeps one line break where there were two.
+An inferred paragraph has no blank lines: layout cannot tell one from a
+paragraph gap.
 
 While walking it, `open` records where the run's characters sit. The draft's
 text replaces exactly that slice, so the operator's edits to the line so far
@@ -78,7 +86,7 @@ recognised run (a line, or a word on a page an older pdfcer recognised) is
 edited as its own run: `edit_block_text` repacks each line with single word
 gaps from its origin, which moves recognised words off the scan words they
 sit over (G203), and folds the layer's own stream into the page's first. It traces `text-edit-widened page= run= block=
-lines= breaks= len= source= ms= looks=` or `text-edit-widen-declined page= run= reason= ms=`.
+by= lines= breaks= len= source= ms= looks=` or `text-edit-widen-declined page= run= reason= ms=`.
 
 ## Options
 

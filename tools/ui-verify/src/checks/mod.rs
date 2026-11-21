@@ -22,10 +22,14 @@ pub mod export_keep_text;
 pub mod field_highlight;
 pub mod field_outline;
 pub mod fields_redrawn;
+/// A caret on a line the engine will not edit in place says so on landing.
+pub mod landing_refusal;
 pub mod merge_runs;
 pub mod ocr_colour_setting;
 pub mod ocr_layer_view;
 pub mod off_page_blank_overhang;
+/// An edit reads the page model from the edit session, not a second decomposition.
+pub mod one_decompose;
 /// Output Preview says whether the page uses overprint.
 pub mod output_preview_press;
 pub mod overprint_default;
@@ -39,6 +43,8 @@ pub mod run_width;
 pub mod selection_drop;
 pub mod smooth_pictures;
 pub mod snapshot_picture;
+/// A line written one letter per show operator edits as one run.
+pub mod spanned_edit;
 /// One text object split into one per line, and a split the engine refuses.
 pub mod split_lines;
 pub mod spots_flattened;
@@ -478,6 +484,8 @@ pub mod box_sizes;
 pub mod check_mark;
 /// Give a multi-select list several default choices from Properties.
 pub mod choice_defaults;
+/// A click passes through an image's fully clear pixels to the ink beneath.
+pub mod clear_pixels;
 /// A selection copied in one window pastes as objects in another.
 pub mod cross_window_paste;
 /// Create a self-signed digital ID in the Sign window and sign with it.
@@ -545,6 +553,8 @@ pub mod page_boxes_view;
 pub mod page_print_boxes;
 pub mod password_fill;
 pub mod pdfx_claim;
+/// The Objects panel says where each placed drawing on the page is drawn.
+pub mod placed_drawings;
 /// Batch print sends each picked file as its own job.
 pub mod print_batch;
 /// Print in grey or black only.
@@ -913,6 +923,8 @@ pub mod rich_comment;
 pub mod selection_gestures;
 /// A strikethrough says where its line's height came from.
 pub mod strike_source;
+/// A font file offered for Bold or Italic is bound and embedded.
+pub mod style_donor;
 /// Ctrl+B and Ctrl+I pressed again take their style off.
 pub mod style_off;
 /// A letter an embedded subset outlines but never showed can be typed.
@@ -932,6 +944,8 @@ pub mod two_codes;
 pub mod window_carry;
 /// A document moves to another window, or tears off into its own.
 pub mod window_move;
+/// A document moved to another window keeps its undo history.
+pub mod window_undo;
 pub mod word_line_edit;
 pub mod word_styles;
 /// A refused text edit offers the way the engine can make it.
@@ -1053,6 +1067,7 @@ pub mod widget_no_border;
 pub mod band_scroll;
 
 pub mod block_nav;
+pub mod table_nav;
 
 /// A bookmark can be written into a document that has no outline.
 pub mod bookmark_add;

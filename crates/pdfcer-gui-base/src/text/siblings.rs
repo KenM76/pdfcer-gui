@@ -131,13 +131,24 @@ pub const fn not_opened() -> &'static str {
     "the document did not open there"
 }
 
-/// Said in the window a document arrived in with unsaved edits: the edits
-/// came along, and the steps that made them stayed behind.
+/// Said in the window a document arrived in with unsaved edits whose undo
+/// history could not be replayed: the edits came along, the steps did not.
 #[must_use]
 pub fn arrived_with_edits(edits: u64) -> String {
     format!(
         "Moved here with {edits} unsaved edit{}. They are kept and saved with the document, but \
          cannot be undone in this window.",
+        if edits == 1 { "" } else { "s" }
+    )
+}
+
+/// The note a window shows when a document arrives with unsaved edits and
+/// their undo history.
+#[must_use]
+pub fn arrived_with_history(edits: u64) -> String {
+    format!(
+        "Moved here with {edits} unsaved edit{}. They are kept, saved with the document, and \
+         can be undone here.",
         if edits == 1 { "" } else { "s" }
     )
 }

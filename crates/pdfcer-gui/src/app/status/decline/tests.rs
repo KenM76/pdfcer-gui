@@ -857,3 +857,47 @@ fn a_refused_stamp_is_not_reported_as_an_edit() {
     );
     retire();
 }
+
+/// The engine's own answer that the text is there only across pieces it does
+/// not join is read as a split; an absent text is not.
+#[test]
+fn the_engines_split_answer_is_read_as_a_split() {
+    use pdfcer_core::text_edit::{EditError, NotFoundReason};
+    let no_match = |reason| EditError::NoMatch {
+        find: "ABC".to_owned(),
+        reason,
+    };
+    assert!(textedit::engine_says_split(&no_match(
+        NotFoundReason::SplitRun { operators: 3 }
+    )));
+    assert!(textedit::engine_says_split(&no_match(
+        NotFoundReason::SpansTextObjects { objects: 2 }
+    )));
+    assert!(!textedit::engine_says_split(&no_match(
+        NotFoundReason::NoSuchText
+    )));
+}
+
+/// A committed edit the engine refuses for a named cause is said by that
+/// cause, with the workaround's door when one is offered; a cause outside the
+/// classes keeps the engine's generic sentence.
+#[test]
+fn a_named_cause_is_said_by_name() {
+    use pdfcer_core::text_edit::{EditError, UnsupportedCause};
+    use pdfcer_gui_base::text::editcause::EditCause;
+    let quote = textedit::cannot_edit(&EditError::Unsupported(UnsupportedCause::QuoteOperator));
+    assert_eq!(
+        quote,
+        Some(crate::text::textedit::EditRefusal::CannotEdit {
+            cause: EditCause::QuoteOperator,
+            offered: true,
+        })
+    );
+    assert!(quote.is_some_and(|r| r.line().contains("Open Properties")));
+    let form = textedit::cannot_edit(&EditError::Unsupported(UnsupportedCause::ReferenceXObject));
+    assert!(form.is_some_and(|r| r.line().contains("Add text")));
+    assert_eq!(
+        textedit::cannot_edit(&EditError::Unsupported(UnsupportedCause::NoContents)),
+        None
+    );
+}

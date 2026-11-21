@@ -9,8 +9,13 @@
 //! over the original. The password crosses only the pipe, which admits the
 //! current user alone, so the receiver never asks for it.
 //!
-//! The undo history stays behind: the engine cannot hand a session's steps to
-//! another process, and the receiver says so off-canvas.
+//! The session's undo history travels beside the copy, written by
+//! `EditSession::export_history`. The receiver opens the original file
+//! pristine and replays the history onto it, so the edits arrive as steps it
+//! can undo. When the replay is refused — the file changed on disk since the
+//! sender opened it, or the sender's session was itself opened from a copy —
+//! the receiver reads the copy instead, and says off-canvas that the edits
+//! cannot be undone there.
 //!
 //! The sender closes its tab on the receiver's `ok`, which is answered once
 //! the document is open there, and only when no edit was made while the
@@ -23,6 +28,9 @@ use super::wire::{Arrival, Carry};
 use crate::app::PdfcerApp;
 use crate::app::state::{Origin, Status};
 use crate::text::siblings::{self as t, WindowMoveRefusal};
+
+/// The extension of the history file written beside a carry copy.
+const HISTORY_EXT: &str = "history"; // ui-text-exempt: a file extension, never displayed
 
 /// The carry directory's name inside the discovery directory.
 const CARRY_DIR: &str = "carry"; // ui-text-exempt: a directory name, never displayed
@@ -50,10 +58,13 @@ impl Parcel {
     }
 }
 
-/// Delete `arrival`'s carry file, if it has one.
+/// Delete `arrival`'s carry file and history, if it has them.
 pub(super) fn discard(arrival: &Arrival) {
     if let Some(carry) = &arrival.carry {
         let _ = std::fs::remove_file(&carry.file);
+        if let Some(history) = &carry.history {
+            let _ = std::fs::remove_file(history);
+        }
     }
 }
 
@@ -125,9 +136,14 @@ impl PdfcerApp {
                     .map_err(|e| WindowMoveRefusal::NotCarried(e.to_string()))?;
             }
             crate::app::save::carry_copy(doc, &file).map_err(WindowMoveRefusal::NotCarried)?;
+            let history = file.with_extension(HISTORY_EXT);
+            let history = std::fs::write(&history, doc.session.export_history())
+                .is_ok()
+                .then_some(history);
             Some(Carry {
                 file,
                 edits: crate::app::save::unsaved_edit_count(doc).max(1),
+                history,
             })
         } else {
             None
@@ -167,13 +183,20 @@ impl PdfcerApp {
             // password, gives way to the document arriving.
             self.close_slot(slot);
         }
-        let source = arrival.carry.as_ref().map(|c| c.file.as_path());
-        self.open_arrival(arrival.path.clone(), source, arrival.key.as_ref());
+        let replayed = arrival
+            .carry
+            .as_ref()
+            .and_then(|c| Some((c, c.history.as_deref()?)))
+            .is_some_and(|(carry, history)| self.replay(arrival, carry.edits, history));
+        if !replayed {
+            let source = arrival.carry.as_ref().map(|c| c.file.as_path());
+            self.open_arrival(arrival.path.clone(), source, arrival.key.as_ref());
+        }
         let Status::Open(doc) = &mut self.status else {
             self.close_slot(self.active_slot);
             return Err(t::not_opened().to_owned());
         };
-        if let Some(carry) = &arrival.carry {
+        if let Some(carry) = arrival.carry.as_ref().filter(|_| !replayed) {
             doc.carried_edits = carry.edits;
             crate::app::actions::record_note(doc.edit_epoch, t::arrived_with_edits(carry.edits));
         }
@@ -181,5 +204,39 @@ impl PdfcerApp {
             self.show_page(page);
         }
         Ok(())
+    }
+
+    /// Open the arrival's file pristine and replay `history` onto it. On a
+    /// refusal the tab is closed again, for the copy to be read instead.
+    fn replay(&mut self, arrival: &Arrival, edits: u64, history: &Path) -> bool {
+        self.open_arrival(arrival.path.clone(), None, arrival.key.as_ref());
+        let Status::Open(doc) = &mut self.status else {
+            self.close_slot(self.active_slot);
+            return false;
+        };
+        let outcome = std::fs::read(history)
+            .map_err(|e| e.to_string())
+            .and_then(|bytes| {
+                crate::app::actions::import_history(doc, &bytes).map_err(|e| {
+                    // ui-text-exempt: a trace token, never displayed
+                    e.map_or_else(|| "session-busy".to_owned(), |e| e.to_string())
+                })
+            });
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            match &outcome {
+                Ok(r) => format!(
+                    "window-move-history replayed=true undo={} redo={}",
+                    r.undo_steps, r.redo_steps
+                ),
+                Err(why) => format!("window-move-history replayed=false why={why:?}"),
+            }
+        });
+        if outcome.is_err() {
+            self.close_slot(self.active_slot);
+            return false;
+        }
+        crate::app::actions::record_note(doc.edit_epoch, t::arrived_with_history(edits));
+        true
     }
 }

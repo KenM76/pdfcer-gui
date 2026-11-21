@@ -80,6 +80,16 @@ a number whose meaning depends on which space the reader has in mind. This
 project has met that confusion four times in coordinate arithmetic; a
 two-variant enum cannot have it.
 
+### `fn model_of`
+
+The model is the one the engine's block verbs build (`engine_model::recognise`):
+recognised with `reflow_recognition_options` and the page's ruled cells from
+`detect_cell_regions`. With cells, `caret_up` / `caret_down` stay inside a
+cell, then step to the adjacent cell of the same table, then to the nearest
+line outside it; without, a table row is one line and Up lands on whichever
+word of the row above lies under the caret. `None` when the cells cannot be
+read, and the caret stays put. Driven by `arrow_keys_walk_a_table_by_its_cells`.
+
 ### `fn neighbour`
 
 `None` when there is nothing there — the top line of the topmost block, a
@@ -113,8 +123,8 @@ oversight. What is built is right for one press at a time.
 
 # Cost
 
-One provenance-free extraction and one recognition of the whole page, per
-press. Measured elsewhere in this crate at **336 ms on the benchmark CAD
+One provenance-free extraction, one cell detection and one recognition of
+the whole page, per press. Measured elsewhere in this crate at **336 ms on the benchmark CAD
 sheet** for the extraction alone — which is why this is on a *keystroke*
 path and not a frame path, and why the caller must not call it speculatively.
 

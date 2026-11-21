@@ -73,6 +73,30 @@ not decode is not re-decomposed on every frame: the failure is
 deterministic, and retrying it sixty times a second would peg a core
 producing the same error.
 
+A build takes the edit session's own model of the page when one was read
+for the same key (`cache::sessionmodel`), and decomposes the page itself
+only when none was.
+
+### The session's model (`cache::sessionmodel`)
+
+`EditSession::page_objects` memoises the page model against the session
+revision, and the editing verbs consult that memo. The window reads it
+instead of running its own `decompose_page`, so each revision of a page is
+decomposed once and an edit's verb finds the model already built.
+
+The call needs `&mut EditSession`, which the shell holds only on a frame
+where it owns the session `Arc` alone: `refresh_content_generation`, run in
+every frame's prelude and in the edit funnel right after an edit. There
+`read_session_model` asks the session when the window's model is stale for
+`(page, revision)` and keeps the answer under that key in
+`PageObjectCache::from_session`. `ensure_page_objects` takes it for the
+same key. **Invalidation stays the window's**: the key is the one
+`page_objects_revision` already gives, the content digest stamped with the
+edit epoch, so a model the session read before an edit can never serve the
+page after it. When the `Arc` is shared (a render in flight) or the session
+refuses, nothing is kept and the window decomposes the page as before. The
+trace says which: `page-objects-built … source=session` or `source=shell`.
+
 ### `fn ensure_page_text`
 
 The key is recorded **before** the work, for the reason

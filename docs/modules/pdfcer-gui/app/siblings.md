@@ -28,11 +28,18 @@ What travels:
 - The password the document was opened with (`OpenDoc::opened_with`), so the
   receiver does not ask for it. It crosses only the pipe.
 
-The undo history stays behind: the engine cannot hand a session's steps to
-another process (G184). The receiver says so on the status line, and the
-commands' hover text says so before the move.
+- With unsaved edits, also the session's undo history, written by
+  `EditSession::export_history` beside the copy as `<copy>.history`. The
+  receiver opens the original file pristine and replays the history through
+  `EditSession::import_history` (`actions::import_history`), so the edits
+  arrive as undo steps and count as unsaved through the edit epoch instead of
+  `carried_edits`; it traces `window-move-history replayed= undo= redo=` or
+  `replayed=false why=`. A refusal — the file changed on disk since the
+  sender's session opened it, or that session was itself opened from a copy —
+  closes the pristine tab and reads the copy as above, and the status line
+  says the edits cannot be undone there.
 
-Carry files are deleted by the receiver once read, by the sender when the send
+Carry and history files are deleted by the receiver once read, by the sender when the send
 fails, and by any window starting up once older than ten minutes.
 
 ## Transport (`wire`)

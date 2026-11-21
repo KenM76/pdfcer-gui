@@ -83,4 +83,7 @@ pub enum Refusal {
     /// words in a scan means. The remedy is File ▸ Recognise text…, which
     /// `crate::declined::Declined::remedy` offers as a button.
     PictureOfText,
+    /// The engine answered `edit_capability` with this cause and no
+    /// workaround reaches it.
+    CannotEdit(crate::text::editcause::EditCause),
 }

@@ -46,13 +46,6 @@ pub fn commit(count: usize) -> String {
     }
 }
 
-/// An insert whose page list stopped part-way: `landed` of `asked` pages
-/// arrived before the engine refused the rest.
-#[must_use]
-pub fn insert_stopped(landed: usize, asked: usize, reason: &str) -> String {
-    format!("Only {landed} of {asked} pages were inserted; the rest were refused: {reason}")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

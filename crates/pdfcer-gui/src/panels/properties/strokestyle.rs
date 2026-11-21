@@ -3,7 +3,8 @@
 //!
 //! Paths get Width, Style, Line opacity and Fill opacity; pictures and placed
 //! drawings get one Picture opacity. Width and dash are shown and sent in
-//! **points** (`app::actions::strokestyle` converts to each path's user space).
+//! **points**: read through `PathObject::line_width_pt` and `dash_pt`, and sent
+//! as `StrokeUnits::Page` (`app::actions::strokestyle`).
 //! A row whose members disagree shows the first member's value and says so; a
 //! new value sets them all. An opacity the file does not state readably gets
 //! no field (`super::opacityrow`).
@@ -209,12 +210,11 @@ fn read(doc: &OpenDoc, page: usize, objects: &[usize], leaves: bool) -> Option<S
     };
     for &index in objects {
         match crate::app::actions::styled_object(model, index, leaves) {
-            Some(object @ VectorObject::Path(path)) => {
-                let k = crate::app::actions::stroke_scale(object);
+            Some(VectorObject::Path(path)) => {
                 subjects.paths.push(PathRead {
                     index,
-                    width_pt: path.line_width * k,
-                    dash: dash_reading(&path.dash, k),
+                    width_pt: path.line_width_pt(),
+                    dash: dash_reading(&path.dash_pt()),
                     stroke_alpha: path.stroke_alpha_known.then_some(path.stroke_alpha),
                     fill_alpha: path.fill_alpha_known.then_some(path.fill_alpha),
                 });
@@ -228,15 +228,15 @@ fn read(doc: &OpenDoc, page: usize, objects: &[usize], leaves: bool) -> Option<S
     Some(subjects)
 }
 
-/// A path's dash, scaled to points, as the chooser names it.
-fn dash_reading(dash: &Dash, k: f64) -> DashReading {
+/// A path's dash in points (`PathObject::dash_pt`), as the chooser names it.
+fn dash_reading(dash: &Dash) -> DashReading {
     if dash.is_solid() {
         return DashReading::Solid;
     }
     let pt: Vec<f64> = dash
         .array
         .iter()
-        .map(|v| (v * k / DASH_RESOLUTION).round() * DASH_RESOLUTION)
+        .map(|v| (v / DASH_RESOLUTION).round() * DASH_RESOLUTION)
         .collect();
     LineStyle::of_pattern(&pt).map_or(DashReading::Foreign, DashReading::Offered)
 }
@@ -337,32 +337,20 @@ fn trace(subjects: &Subjects, leaves: bool) {
 mod tests {
     use super::*;
 
-    #[test]
-    fn a_dash_drawn_at_half_scale_reads_as_the_pattern_in_points() {
-        let dash = Dash::new(vec![16.0, 8.0], 0.0);
-        assert_eq!(
-            dash_reading(&dash, 0.5),
-            DashReading::Offered(LineStyle::LongDash)
-        );
-    }
-
+    /// `dash_pt` of a pattern drawn through a 0.24 scale is off by rounding.
     #[test]
     fn a_pattern_off_by_rounding_still_reads_as_itself() {
-        let k = 0.24;
-        let dash = Dash::new(vec![3.0 / k], 0.0);
-        assert_eq!(
-            dash_reading(&dash, k),
-            DashReading::Offered(LineStyle::Dashed)
-        );
+        let dash = Dash::new(vec![3.0 / 0.24 * 0.24], 0.0);
+        assert_eq!(dash_reading(&dash), DashReading::Offered(LineStyle::Dashed));
     }
 
     #[test]
     fn an_unoffered_pattern_is_foreign_and_no_dash_is_solid() {
         assert_eq!(
-            dash_reading(&Dash::new(vec![5.0, 2.0], 0.0), 1.0),
+            dash_reading(&Dash::new(vec![5.0, 2.0], 0.0)),
             DashReading::Foreign
         );
-        assert_eq!(dash_reading(&Dash::default(), 1.0), DashReading::Solid);
+        assert_eq!(dash_reading(&Dash::default()), DashReading::Solid);
     }
 
     fn path(dash: DashReading) -> PathRead {

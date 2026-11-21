@@ -311,9 +311,9 @@ pub(super) fn insert_from_view(
     };
     let before = doc.pages.len();
 
-    let page_count = doc.pages.len();
     super::apply::vector_edit(doc, "insert-pages", landing, count, |session| {
-        super::insertruns::insert(session, view, pages, position, page_count)
+        session
+            .insert_pages(view, pages, position)
             // `orphaned_widgets` is exact, so the number goes in front of the
             // operator unhedged and a zero drops the clause entirely.
             //
@@ -324,8 +324,7 @@ pub(super) fn insert_from_view(
             // plainly that the old undifferentiated sentence *"is true of both
             // and useful for only one"*, because it describes a chore for the
             // 11 and a permanent loss for the 2, in the milder wording.
-            .map(|done| {
-                let outcome = done.outcome;
+            .map(|outcome| {
                 let mut notes = vec![crate::text::pages::inserted(
                     outcome.pages_inserted,
                     outcome.orphaned_widgets,
@@ -350,16 +349,6 @@ pub(super) fn insert_from_view(
                     outcome.source_tags_dropped,
                 ));
                 notes.extend(crate::text::cedimcopy::copied(&(&outcome).into()));
-                if let Some(refusal) = done.stopped {
-                    notes.push(crate::text::insertblank::insert_stopped(
-                        outcome.pages_inserted,
-                        count,
-                        &refusal.to_string(),
-                    ));
-                }
-                if !done.folded {
-                    notes.push(pdfcer_gui_base::text::reface::undo_split(done.calls));
-                }
                 notes
             })
     });
@@ -761,7 +750,7 @@ pub(super) fn apply(
             height_pt,
             count,
             position,
-        } => super::insertruns::insert_blank(doc, (width_pt, height_pt), count, position),
+        } => super::insertblank::insert_blank(doc, (width_pt, height_pt), count, position),
         PageAction::ExtractPages {
             pages,
             labels,

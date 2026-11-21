@@ -1,6 +1,7 @@
 //! `hand_breaks_are_read_from_marks` — a paragraph pdfcer has written keeps a
 //! line broken by hand after its longest line; `inferred_breaks_are_disclosed`
-//! — one whose breaks were only judged from layout says so off-canvas.
+//! — one whose breaks were only judged from layout says so off-canvas;
+//! `blank_lines_reopen_as_typed` — a written blank line re-opens as one.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/hand_breaks.md`.
 
@@ -42,6 +43,86 @@ pub struct HandBreaksAreReadFromMarks;
 
 /// A paragraph with no break marks says its breaks were inferred.
 pub struct InferredBreaksAreDisclosed;
+
+/// Two blank lines written into a paragraph re-open as two blank lines.
+pub struct BlankLinesReopenAsTyped;
+
+/// The Enters between the two lines in [`BlankLinesReopenAsTyped`]: a break
+/// and two blank lines.
+const BLANK_ENTERS: usize = 3;
+
+impl Check for BlankLinesReopenAsTyped {
+    fn name(&self) -> &'static str {
+        "blank_lines_reopen_as_typed"
+    }
+
+    fn defect(&self) -> &'static str {
+        "blank lines typed into a paragraph re-open as one line break, so the next edit of the \
+         paragraph deletes them"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        run_on(
+            self,
+            ctx,
+            &FIXTURE,
+            "mode.edit,edit.text",
+            "blank-lines",
+            drive_blank,
+        )
+    }
+}
+
+/// Add two lines, retype them with [`BLANK_ENTERS`] Enters between through
+/// the paragraph, re-open: the failure sentence unless it traced as many
+/// breaks, read from the marks at the clicked point.
+fn drive_blank(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    click_on(ctx, session, pointer, &FIXTURE, 0, TYPED_AT)?;
+    type_lines(session, pointer, TYPED[1])?;
+    commit(session, pointer, ADDED, "Ctrl+Enter on two typed lines")?;
+    if let Err(failure) = reopen(ctx, session, pointer, &FIXTURE, ON_TYPED)? {
+        return Ok(Some(failure));
+    }
+    pointer.key(session, None, "a", Some("ctrl"))?;
+    pointer.type_text(session, None, TYPED[0])?;
+    for _ in 0..BLANK_ENTERS {
+        pointer.key(session, None, "Enter", None)?;
+    }
+    pointer.type_text(session, None, RETYPED)?;
+    commit(
+        session,
+        pointer,
+        BLOCK_APPLIED,
+        "Ctrl+Enter on the blank lines",
+    )?;
+    let opened = match reopen(ctx, session, pointer, &FIXTURE, ON_TYPED)? {
+        Ok(r) => r,
+        Err(failure) => return Ok(Some(format!("after the blank lines, {failure}"))),
+    };
+    report.note(format!("re-opened: `{}`", opened.line.raw));
+    pointer.key(session, None, "Escape", None)?;
+    session.settle(10);
+    let len = TYPED[0].chars().count() + BLANK_ENTERS + RETYPED.chars().count();
+    let ok = opened.line.get("source") == Some("marked")
+        && opened.line.get("by") == Some("point")
+        && opened.line.get_usize("breaks") == Some(BLANK_ENTERS)
+        && opened.line.get_usize("len") == Some(len);
+    Ok((!ok).then(|| {
+        format!(
+            "a paragraph written with {BLANK_ENTERS} Enters between its lines re-opened as `{}`; \
+             want source=marked by=point breaks={BLANK_ENTERS} len={len}: the blank lines were \
+             read as one break (`line_gaps`), or the paragraph was not the one \
+             `block_at_point` names at the click. Trace: {}.",
+            opened.line.raw,
+            session.trace_path().display()
+        )
+    }))
+}
 
 impl Check for InferredBreaksAreDisclosed {
     fn name(&self) -> &'static str {
@@ -194,6 +275,7 @@ fn drive(
     let len = TYPED.iter().map(|t| t.chars().count()).sum::<usize>() + 1;
     let kept = |r: &Reopened| {
         r.line.get("source") == Some("marked")
+            && r.line.get("by") == Some("point")
             && r.line.get_usize("breaks") == Some(1)
             && r.line.get_usize("len") == Some(len)
             && r.note.is_none()
@@ -210,7 +292,7 @@ fn drive(
     if !kept(&added) {
         return Ok(Some(format!(
             "a paragraph Add text wrote re-opened as `{}`, note {:?}; want source=marked \
-             breaks=1 len={len} and no note. Trace: {path}.",
+             by=point breaks=1 len={len} and no note. Trace: {path}.",
             added.line.raw, added.note
         )));
     }
@@ -234,7 +316,7 @@ fn drive(
     session.settle(10);
     Ok((!ok).then(|| {
         format!(
-            "a paragraph pdfcer wrote re-opened as `{}`, note {:?}; want source=marked breaks=1 \
+            "a paragraph pdfcer wrote re-opened as `{}`, note {:?}; want source=marked by=point breaks=1 \
              len={len} and no note: the break typed after the longest line was read from layout. \
              Trace: {path}.",
             marked.line.raw, marked.note

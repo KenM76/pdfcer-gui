@@ -79,30 +79,7 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
     // Sampled once, so a setting cannot change halfway through a multi-run
     // restyle and leave two runs decided by two different answers.
     let policy = doc.settings.style_policy;
-    // Derived-whitespace runs carry no glyphs, so no show operator stands
-    // behind them: they are skipped, never treated as an unpinnable run, which
-    // stops the gesture. Filtering on `glyphs.is_empty()` rather than on a
-    // failed pin keeps the two apart; otherwise the first word space of a swept
-    // label ends the restyle.
-    let glyphless: std::collections::BTreeSet<usize> =
-        doc.page_text()
-            .map_or_else(std::collections::BTreeSet::new, |text| {
-                text.runs
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, r)| r.glyphs.is_empty())
-                    .map(|(i, _)| i)
-                    .collect()
-            });
-    let mut ordered: Vec<usize> = runs
-        .iter()
-        .copied()
-        .filter(|r| !glyphless.contains(r))
-        .collect();
-    ordered.sort_unstable();
-    ordered.dedup();
-    ordered.reverse();
-
+    let ordered = ordered_runs(doc, runs);
     let total = ordered.len();
     if total == 0 {
         decline::record_text_style(t::TextStyleRefusal::NoRun);
@@ -132,16 +109,7 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
         stop(doc, 0, t::TextStyleRefusal::Unpinnable);
         return;
     }
-    let requests: Vec<FormatRequest> = pins
-        .into_iter()
-        .map(|pin| {
-            let req = change.stamp(request(page, pin));
-            match &plan {
-                Some(plan) => req.embedded_font(plan.clone()),
-                None => req,
-            }
-        })
-        .collect();
+    let requests = requests(doc, (page, &ordered), pins, change, plan.as_ref());
     let gesture = super::restylebatch::Gesture {
         page,
         policy,
@@ -150,6 +118,63 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
         stopped,
     };
     super::restylebatch::run(doc, &gesture, &requests);
+}
+
+/// `runs` without glyphless ones, deduplicated, last first.
+fn ordered_runs(doc: &OpenDoc, runs: &[usize]) -> Vec<usize> {
+    // Derived-whitespace runs carry no glyphs, so no show operator stands
+    // behind them: they are skipped, never treated as an unpinnable run, which
+    // stops the gesture. Filtering on `glyphs.is_empty()` rather than on a
+    // failed pin keeps the two apart; otherwise the first word space of a swept
+    // label ends the restyle.
+    let glyphless: std::collections::BTreeSet<usize> =
+        doc.page_text()
+            .map_or_else(std::collections::BTreeSet::new, |text| {
+                text.runs
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, r)| r.glyphs.is_empty())
+                    .map(|(i, _)| i)
+                    .collect()
+            });
+    let mut ordered: Vec<usize> = runs
+        .iter()
+        .copied()
+        .filter(|r| !glyphless.contains(r))
+        .collect();
+    ordered.sort_unstable();
+    ordered.dedup();
+    ordered.reverse();
+
+    ordered
+}
+
+/// One request per pinned operator: `change`, the gesture's face file, and
+/// for Bold and Italic the operator's donor faces for the ladder's rung 3.
+fn requests(
+    doc: &OpenDoc,
+    (page, ordered): (usize, &[usize]),
+    pins: Vec<crate::canvas::textedit::pin::Pinned>,
+    change: &StyleChange,
+    plan: Option<&pdfcer_core::font_embed::FontEmbedPlan>,
+) -> Vec<FormatRequest> {
+    let donors = if matches!(change, StyleChange::Weight { .. }) {
+        donor::plans(doc, &gesture_chars(doc, ordered))
+    } else {
+        Vec::new()
+    };
+    pins.into_iter()
+        .map(|pin| {
+            let req = donors
+                .iter()
+                .cloned()
+                .fold(change.stamp(request(page, pin)), FormatRequest::style_donor);
+            match plan {
+                Some(plan) => req.embedded_font(plan.clone()),
+                None => req,
+            }
+        })
+        .collect()
 }
 
 /// **One `format_text` call through the funnel** — the notes it owes the
@@ -238,25 +263,18 @@ fn donor_plan(
     runs: &[usize],
     path: &std::path::Path,
 ) -> Result<pdfcer_core::font_embed::FontEmbedPlan, String> {
-    use pdfcer_render::font::subset::{plan_subset, subset_tag_for};
-    let mut wanted: Vec<char> = doc.page_text().map_or_else(Vec::new, |text| {
-        runs.iter()
-            .filter_map(|r| text.runs.get(*r))
-            .flat_map(|r| r.text.chars())
-            .collect()
-    });
-    wanted.sort_unstable();
-    wanted.dedup();
-    let donor = std::fs::read(path).map_err(|e| e.to_string())?;
-    let stem = path.file_stem().map_or_else(
-        || "EmbeddedFont".to_owned(),
-        |s| s.to_string_lossy().into_owned(),
-    );
-    // The tag names the character set too, so two gestures with different
-    // letters never share a tag for two different subsets (§9.6.4).
-    let keyed: String = wanted.iter().collect();
-    let tag = subset_tag_for(&format!("{stem}\u{0}{keyed}"));
-    plan_subset(&donor, 0, &wanted, &stem, &tag).map_err(|e| e.to_string())
+    donor::plan(path, &gesture_chars(doc, runs))
+}
+
+/// Every character the runs hold, as a plan wants them.
+fn gesture_chars(doc: &OpenDoc, runs: &[usize]) -> Vec<char> {
+    doc.page_text().map_or_else(Vec::new, |text| {
+        donor::chars_of(
+            runs.iter()
+                .filter_map(|r| text.runs.get(*r))
+                .map(|r| r.text.as_str()),
+        )
+    })
 }
 
 /// Re-record the whole gesture's disclosures, on the last step.
@@ -321,8 +339,8 @@ pub(super) fn stop(doc: &mut OpenDoc, applied: usize, why: t::TextStyleRefusal) 
 ///
 /// * **A change that is not a style change.** `style_ladder` is `None` unless
 ///   `set_style` was set, so size, colour and face fall out here.
-/// * **A rung this build does not know.** [`StyleRung`] is `#[non_exhaustive]`;
-///   rung 3 (`--font-dir` donors) is not built and a fifth rung is possible.
+/// * **A rung this build does not know.** [`StyleRung`] is `#[non_exhaustive]`
+///   and a further rung is possible.
 ///   An invented sentence for an outcome nobody here has seen is
 ///   worse than the engine's precise one — it would be untestable, and it would
 ///   assert something about a mechanism this file has never read. Traced so it
@@ -398,6 +416,13 @@ fn ladder_note(report: &FormatReport, policy: StylePolicy) -> Option<String> {
         },
         StyleRung::StandardFourteenSibling => match ladder.bound.as_deref() {
             Some(to) => Some(t::text_style_used_standard_face(bold, italic, to)),
+            None => {
+                trace_rung(ladder, "no-bound-face");
+                None
+            }
+        },
+        StyleRung::SuppliedFaceEmbedded => match ladder.bound.as_deref() {
+            Some(to) => Some(t::text_style_used_supplied_face(bold, italic, to)),
             None => {
                 trace_rung(ladder, "no-bound-face");
                 None
@@ -588,7 +613,9 @@ fn render_mode_note(report: &FormatReport) -> Option<String> {
 
 mod align;
 pub(super) use align::align;
+pub(crate) mod donor;
 mod off;
+pub(crate) use off::rung_token;
 mod runwidth;
 pub(super) mod span;
 
