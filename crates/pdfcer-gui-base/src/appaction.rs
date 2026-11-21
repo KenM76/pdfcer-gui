@@ -497,6 +497,9 @@ pub enum Action {
     PrevPage,
     /// Jump to a 0-based page index, clamped into the document.
     GoToPage(usize),
+    /// The element picked in the Tags panel, or none; the canvas outlines
+    /// its boxes.
+    PickTag(Option<crate::tagtree::TagPick>),
     /// **Bring a rectangle on `page` into view with the least movement.**
     ///
     /// `OPERATOR_REQUESTS.md` O204's reveal, and the only way the canvas can
@@ -508,9 +511,6 @@ pub enum Action {
     /// [`crate::canvas::minreveal::MinReveal`], which carries why fractions
     /// and why they span frames. `why` reaches the operator through nothing
     /// but a `PDFCER_DIAG` line.
-    /// The element picked in the Tags panel, or none; the canvas outlines
-    /// its boxes.
-    PickTag(Option<crate::tagtree::TagPick>),
     RevealRect {
         /// 0-based page index.
         page: usize,
@@ -527,35 +527,6 @@ pub enum Action {
     /// Apply each in order, then fold every command they pushed into one
     /// undo entry: one operator gesture that needs several verbs.
     OneUndoStep(Vec<Action>),
-    // =======================================================================
-    // THE PAGE VERBS — structural edits, and the family that renumbers
-    //
-    // Four variants for five commands (`pages.rotate_left` and
-    // `pages.rotate_right` share one), plus `pages.extract`, which is not here
-    // at all — see `ExtractPages` below for why it is and
-    // `pages.merge_into` / `pages.insert_from_file` for why they are not.
-    // `pages.split` is `PageAction::SplitDocument`.
-    //
-    // # Why the operand list travels, and is not re-derived at apply time
-    //
-    // The same argument `DeleteSelection` makes, one structure up: the operand
-    // is the **Pages panel's multi-select**, resolved once by
-    // `crate::panels::pages::ops::operands`. Re-reading `PanelsState` during
-    // the apply would be a second reading of a set the operator may have
-    // changed between the frame that raised the action and the frame that
-    // applies it — and for `DeletePages` the consequence of reading it twice
-    // is destroying sheets nobody chose.
-    //
-    // # What separates these from every action above them
-    //
-    // Everything else in this enum either leaves the page *count* and the page
-    // *order* alone, or is not a document edit at all. These three do neither,
-    // and that is why `crate::app::actions::apply::page_edit` exists beside
-    // `vector_edit` rather than each arm doing its own bookkeeping: a page
-    // delete or reorder invalidates the flattened page vector, every cached
-    // raster keyed on a page index, the canvas selection's page identity and
-    // the panel's own picks, all at once, and a missed one is a stale picture
-    // or a verb aimed at the wrong sheet.
     /// **Author one markup annotation on the page** — the release of a band
     /// drag, the release of a freehand stroke, or the ending of a vertex run.
     ///

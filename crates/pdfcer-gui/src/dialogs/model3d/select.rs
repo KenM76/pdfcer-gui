@@ -240,7 +240,7 @@ fn trace_pick(
 ) {
     let [x, y, z] = s.pick.point;
     let local = match (figures, frame) {
-        (Ok(Figures::Corner(at)), Some(f)) => format!(" local={}", triple(f.point_to_local(*at))),
+        (Ok(Figures::Corner(at)), Some(f)) => format!(" local={}", triple(f.point_to_local(*at))), // ui-text-exempt: diagnostic trace
         _ => String::new(),
     };
     let head = format!(
@@ -324,9 +324,9 @@ fn trace_projected(plane: &str, p: &Projected) {
         .iter()
         .enumerate()
         .map(|(i, f)| match f {
-            Some(Ok(a)) => format!(" face{}={:.6}/{:.6}", i + 1, a.toward, a.away),
-            Some(Err(_)) => format!(" face{}=refused", i + 1),
-            None => format!(" face{}=-", i + 1),
+            Some(Ok(a)) => format!(" face{}={:.6}/{:.6}", i + 1, a.toward, a.away), // ui-text-exempt: diagnostic trace
+            Some(Err(_)) => format!(" face{}=refused", i + 1), // ui-text-exempt: diagnostic trace
+            None => format!(" face{}=-", i + 1),               // ui-text-exempt: diagnostic trace
         })
         .collect();
     // ui-text-exempt: diagnostic trace, never displayed

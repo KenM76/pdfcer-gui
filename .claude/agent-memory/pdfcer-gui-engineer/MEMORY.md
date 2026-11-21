@@ -10,7 +10,7 @@
 - [Always publish the build to OneDrive](feedback_always_publish_latest.md) — finishing work is itself the trigger.
 - [Never --prerelease](feedback_never_mark_release.md) — [`gh release create` tags remotely](feedback_gh_release_create.md); [push main only inside a release](feedback_push_only_with_release.md), then fetch tags.
 - [Publish zip AND APK to GitHub every release](feedback_publish_portable_zip.md) — both places, every time, CLEAN tree.
-- [Refresh FEATURES.md before every release](feedback_refresh_features_md.md) — re-measure, then package.
+- [Refresh FEATURES.md before every release](feedback_refresh_features_md.md) — re-measure, then package; [smoke-launch it](feedback_smoke_launch_before.md) off-screen.
 - [Never defer on an external blocker](feedback_never_defer_external.md) — three "blockers" were never real.
 - [Use the conventional interaction](feedback_use_conventional.md) — the product class IS the spec.
 - [Multi-document since 2026-08-20](project_pdfcer_multi_document.md) — active doc is still `PdfcerApp::status`.
@@ -53,7 +53,6 @@
 - [Parallelism needs an ownership map](feedback_parallelism_default.md) — nine tracks in one repo; [a parallel pin commit duplicates a row](feedback_parallel_pin_duplicates_row.md).
 - [Never ask — just add the feature](feedback_never_ask_add_feature.md) — placement, wording and scope are yours.
 - [A commit can describe work that never landed](feedback_commit_message.md) — a `;` chain hid a failed edit.
-- [Smoke-launch before EVERY release](feedback_smoke_launch_before.md) — ninety seconds, off-screen, no focus.
 - [A driven failure indicts the check too](feedback_driven_failure_claim.md) — the first sweep gave 7 harness defects.
 - [A window over a thing takes its gestures](feedback_window_over_thing.md) — `constrain_to` slides it on.
 - [Uniform failure at every rung is the probe](feedback_uniform_failure_every.md) — the baseline rung is the control.
@@ -156,7 +155,7 @@
 - [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
 - [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates; [wire a SHIPPED reply before the tag](feedback_build_on_untagged_engine.md).
 - [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
-- [Window capture grabs HIS desktop](feedback_window_capture_grabs_desktop.md) — window_to_png raises + screen-grabs; photographed SolidWorks off-screen.
+- [Window capture grabs HIS desktop](feedback_window_capture_grabs_desktop.md) — raises + screen-grabs; [so did Maximise](feedback_maximize_leaves_off_desktop.md): grow in place.
 - [A release build skips the tests](feedback_release_build_skips_tests.md) — clippy --all-targets before gates; a test literal cost a run.
 - [One gate run at a time](feedback_one_gate_run_at_a_time.md) — [Git Bash ps can't see a sibling](feedback_ps_blind_sibling.md); check Win32_Process first.
 - [A gate reading upstream must read the pin](feedback_gate_reads_moving_upstream.md) — engine landed a row per hour; three verified runs failed.
@@ -190,4 +189,3 @@
 - [The PC bugchecks, even idle](project_machine_bugchecks_under_load.md) — 6 since 11-06, one 0x12B (RAM); fsck after a reset.
 - [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".
-- [Maximise left the off-screen desktop](feedback_maximize_leaves_off_desktop.md) — it photographed his screen; grow in place, judge the app's own frame.

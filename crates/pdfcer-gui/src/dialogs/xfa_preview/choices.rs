@@ -266,7 +266,9 @@ pub(super) fn show(ui: &mut egui::Ui, choices: &mut Choices) -> bool {
                 if section != Some(t::section(key)) {
                     section = Some(t::section(key));
                     ui.add_space(4.0);
-                    ui.label(egui::RichText::new(t::section_heading(t::section(key))).strong());
+                    let ink = ui.visuals().text_color();
+                    let heading = t::section_heading(t::section(key));
+                    ui.label(egui::RichText::new(heading).strong().color(ink));
                 }
                 let (label, answers) = t::choice(key);
                 ui.horizontal_wrapped(|ui| {

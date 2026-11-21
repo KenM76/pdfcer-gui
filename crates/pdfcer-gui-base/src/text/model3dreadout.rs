@@ -183,6 +183,7 @@ mod tests {
 
     #[test]
     fn a_conversion_scales_lengths_once_and_areas_twice() {
+        // ORACLE, NOT A CONVERSION: a test's inch factor, written out by hand.
         let l = Lengths {
             factor: 1.0 / 25.4,
             unit: "in",
@@ -191,12 +192,15 @@ mod tests {
         };
         assert_eq!(l.length(50.8), "2.00 in");
         assert_eq!(l.area(645.16), "1.00 in\u{b2}");
+        // ORACLE, NOT A CONVERSION: one inch, in millimetres.
         assert_eq!(l.coordinate(25.4), "1.00");
         assert_eq!(Lengths::plain("").length(1.0), "1.000");
+        // ORACLE, NOT A CONVERSION: a test's inch factor, written out by hand.
         let both = Lengths {
             also: Some((1.0 / 25.4, "in")),
             ..Lengths::plain("mm")
         };
+        // ORACLE, NOT A CONVERSION: a test's inch factor, written out by hand.
         assert_eq!(both.length(25.4), "25.400 mm (1.000 in)");
         assert_eq!(both.area(645.16), "645.160 mm\u{b2} (1.000 in\u{b2})");
     }

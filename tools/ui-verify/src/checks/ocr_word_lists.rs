@@ -151,7 +151,7 @@ pub(super) fn drawn_as_offered(
         || want.iter().any(|(k, v)| offer.get(k) != Some(*v))
     {
         return Some(format!(
-            "★ the engine's answer for this model should be {want:?} from `check_options`;              the window traced `{}`.",
+            "★ the engine's answer for this model should be {want:?} from `check_options`; the window traced `{}`.",
             offer.raw
         ));
     }

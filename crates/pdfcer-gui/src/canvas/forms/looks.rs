@@ -71,7 +71,7 @@ pub(crate) fn describe(look: Option<Look>) -> String {
     match look {
         None => "kind=none".to_owned(),
         Some((page, id, kind)) => format!(
-            "kind={} page={page} widget={}",
+            "kind={} page={page} widget={}", // ui-text-exempt: diagnostic trace
             match kind {
                 AppearanceKind::Rollover => "rollover",
                 AppearanceKind::Down => "down",

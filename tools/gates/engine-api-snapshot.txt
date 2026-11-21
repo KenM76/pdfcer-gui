@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 46ce16c9bb5ecd17ccc6a5695d1f691f8d830ea1
+# baseline: e5e8b5b6e6e897150860c9b98185d6ecfd4eab22
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12662
+# items: 12688
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -438,6 +438,8 @@ pdfcer-3d field pdfcer_3d::render::RenderOptions::shadows
 pdfcer-3d field pdfcer_3d::render::RenderOptions::shininess
 pdfcer-3d field pdfcer_3d::render::RenderOptions::threads
 pdfcer-3d field pdfcer_3d::render::RenderOptions::width
+pdfcer-3d field pdfcer_3d::surface_measure::distance::EntityDistance::a_source
+pdfcer-3d field pdfcer_3d::surface_measure::distance::EntityDistance::b_source
 pdfcer-3d field pdfcer_3d::surface_measure::distance::EntityDistance::centres
 pdfcer-3d field pdfcer_3d::surface_measure::distance::EntityDistance::maximum
 pdfcer-3d field pdfcer_3d::surface_measure::distance::EntityDistance::minimum
@@ -1285,6 +1287,7 @@ pdfcer-core enum pdfcer_core::form_script::recompute::Skip
 pdfcer-core enum pdfcer_core::form_script::shape::Literal
 pdfcer-core enum pdfcer_core::formclip::FieldPastePolicy
 pdfcer-core enum pdfcer_core::formclip::PasteTooltip
+pdfcer-core enum pdfcer_core::formclip::set::FieldCopyNaming
 pdfcer-core enum pdfcer_core::formclip::set::FieldSetPastePolicy
 pdfcer-core enum pdfcer_core::formcsv::CsvError
 pdfcer-core enum pdfcer_core::forms::ButtonKind
@@ -1383,6 +1386,7 @@ pdfcer-core enum pdfcer_core::pageops::PageOpError
 pdfcer-core enum pdfcer_core::pageops::PermissionGate
 pdfcer-core enum pdfcer_core::pageops::ReorderedPageLabels
 pdfcer-core enum pdfcer_core::pageops::assemble::OutlinePolicy
+pdfcer-core enum pdfcer_core::pageops::insert_carry::InsertedOutline
 pdfcer-core enum pdfcer_core::pageops::region::RegionError
 pdfcer-core enum pdfcer_core::pageops::scale::OrientationPolicy
 pdfcer-core enum pdfcer_core::pageops::scale::ScaleMode
@@ -2247,12 +2251,15 @@ pdfcer-core field pdfcer_core::edit::InsertOutcome::ce_dimension_groups_renamed
 pdfcer-core field pdfcer_core::edit::InsertOutcome::ce_dimension_sidecar_newer
 pdfcer-core field pdfcer_core::edit::InsertOutcome::ce_dimensions_as_lines
 pdfcer-core field pdfcer_core::edit::InsertOutcome::ce_dimensions_carried
+pdfcer-core field pdfcer_core::edit::InsertOutcome::dests_carried
+pdfcer-core field pdfcer_core::edit::InsertOutcome::dests_renamed
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_carried
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_renamed
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_split
 pdfcer-core field pdfcer_core::edit::InsertOutcome::links_to_pages_left_behind
 pdfcer-core field pdfcer_core::edit::InsertOutcome::orphaned_widgets
 pdfcer-core field pdfcer_core::edit::InsertOutcome::orphaned_widgets_unrecoverable
+pdfcer-core field pdfcer_core::edit::InsertOutcome::outline_items_carried
 pdfcer-core field pdfcer_core::edit::InsertOutcome::page_label_ranges
 pdfcer-core field pdfcer_core::edit::InsertOutcome::page_labels_stale
 pdfcer-core field pdfcer_core::edit::InsertOutcome::pages_inserted
@@ -2786,6 +2793,7 @@ pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::action_targets_orph
 pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::disclosures
 pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::on_state
 pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::source_removed
+pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::target_created
 pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::widget
 pdfcer-core field pdfcer_core::edit::svg::PlacedSvg::annot_id
 pdfcer-core field pdfcer_core::edit::svg::PlacedSvg::content_id
@@ -3120,6 +3128,7 @@ pdfcer-core field pdfcer_core::forms::Widget::border_dash
 pdfcer-core field pdfcer_core::forms::Widget::caption
 pdfcer-core field pdfcer_core::forms::Widget::caption_position
 pdfcer-core field pdfcer_core::forms::Widget::free_angle
+pdfcer-core field pdfcer_core::forms::Widget::free_size
 pdfcer-core field pdfcer_core::forms::Widget::has_normal_appearance
 pdfcer-core field pdfcer_core::forms::Widget::has_off_appearance
 pdfcer-core field pdfcer_core::forms::Widget::icon
@@ -3718,6 +3727,9 @@ pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::separations
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::struct_tree_dropped
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::structure_links_to_first_page
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::structure_links_to_pages
+pdfcer-core field pdfcer_core::pageops::insert_carry::InsertOptions::labels
+pdfcer-core field pdfcer_core::pageops::insert_carry::InsertOptions::named_destinations
+pdfcer-core field pdfcer_core::pageops::insert_carry::InsertOptions::outline
 pdfcer-core field pdfcer_core::pageops::references::DanglingReport::links
 pdfcer-core field pdfcer_core::pageops::references::DanglingReport::named_destinations
 pdfcer-core field pdfcer_core::pageops::references::DanglingReport::non_link_annotations
@@ -4534,6 +4546,7 @@ pdfcer-core field pdfcer_core::text_edit::model::BlockRecognitionOptions::gutter
 pdfcer-core field pdfcer_core::text_edit::model::BlockRecognitionOptions::indent_ratio
 pdfcer-core field pdfcer_core::text_edit::model::BlockRecognitionOptions::line_baseline_ratio
 pdfcer-core field pdfcer_core::text_edit::model::BlockRecognitionOptions::paragraph_leading_ratio
+pdfcer-core field pdfcer_core::text_edit::model::BlockRecognitionOptions::paragraph_max_gap_em
 pdfcer-core field pdfcer_core::text_edit::model::BlockRecognitionOptions::same_direction_cos
 pdfcer-core field pdfcer_core::text_edit::model::GlyphRef::glyph
 pdfcer-core field pdfcer_core::text_edit::model::GlyphRef::run
@@ -5889,6 +5902,7 @@ pdfcer-core method pdfcer_core::edit::EditSession::insert_dimension_vertex
 pdfcer-core method pdfcer_core::edit::EditSession::insert_ink_point
 pdfcer-core method pdfcer_core::edit::EditSession::insert_pages
 pdfcer-core method pdfcer_core::edit::EditSession::insert_pages_with
+pdfcer-core method pdfcer_core::edit::EditSession::insert_pages_with_options
 pdfcer-core method pdfcer_core::edit::EditSession::into_document
 pdfcer-core method pdfcer_core::edit::EditSession::is_modified
 pdfcer-core method pdfcer_core::edit::EditSession::mark_redactions_by_pattern
@@ -6342,6 +6356,7 @@ pdfcer-core method pdfcer_core::edit::stroke_style::EditSession::set_object_stro
 pdfcer-core method pdfcer_core::edit::svg::EditSession::add_svg
 pdfcer-core method pdfcer_core::edit::svg::EditSession::add_svg_on_layer
 pdfcer-core method pdfcer_core::edit::svg::EditSession::add_svg_stamp
+pdfcer-core method pdfcer_core::edit::text_capability::EditSession::edit_capability_for
 pdfcer-core method pdfcer_core::edit::text_form_reshape::EditSession::merge_text_runs_in_form
 pdfcer-core method pdfcer_core::edit::text_form_reshape::EditSession::set_text_run_width_in_form
 pdfcer-core method pdfcer_core::edit::text_form_reshape::EditSession::split_text_object_in_form
@@ -6470,6 +6485,7 @@ pdfcer-core method pdfcer_core::formclip::set::FieldClipSet::object_count
 pdfcer-core method pdfcer_core::formclip::set::FieldClipSet::source_names
 pdfcer-core method pdfcer_core::formclip::set::FieldClipSet::to_bytes
 pdfcer-core method pdfcer_core::formclip::set::FieldClipSet::widget_count
+pdfcer-core method pdfcer_core::formclip::set::FieldCopyNaming::free_name
 pdfcer-core method pdfcer_core::formcsv::CsvExport::message
 pdfcer-core method pdfcer_core::forms::AcroForm::descendants_of
 pdfcer-core method pdfcer_core::forms::AcroForm::field_by_name
@@ -6729,6 +6745,9 @@ pdfcer-core method pdfcer_core::pageops::assemble::AssembleOptions::with_separat
 pdfcer-core method pdfcer_core::pageops::assemble::Copier::copy_value
 pdfcer-core method pdfcer_core::pageops::assemble::Copier::reserve
 pdfcer-core method pdfcer_core::pageops::assemble::Copier::store
+pdfcer-core method pdfcer_core::pageops::insert_carry::InsertOptions::with_labels
+pdfcer-core method pdfcer_core::pageops::insert_carry::InsertOptions::with_named_destinations
+pdfcer-core method pdfcer_core::pageops::insert_carry::InsertOptions::with_outline
 pdfcer-core method pdfcer_core::pageops::references::DanglingReport::is_empty
 pdfcer-core method pdfcer_core::pageops::references::DestinationResolver::iter
 pdfcer-core method pdfcer_core::pageops::references::DestinationResolver::lookup
@@ -7784,6 +7803,7 @@ pdfcer-core struct pdfcer_core::pageops::PageClip
 pdfcer-core struct pdfcer_core::pageops::assemble::AssembleOptions
 pdfcer-core struct pdfcer_core::pageops::assemble::AssembleReport
 pdfcer-core struct pdfcer_core::pageops::assemble::Copier
+pdfcer-core struct pdfcer_core::pageops::insert_carry::InsertOptions
 pdfcer-core struct pdfcer_core::pageops::references::DanglingReport
 pdfcer-core struct pdfcer_core::pageops::references::DestinationResolver
 pdfcer-core struct pdfcer_core::pageops::region::RegionExport
@@ -8679,6 +8699,7 @@ pdfcer-core variant pdfcer_core::edit::EditError::PageBoxRepeated
 pdfcer-core variant pdfcer_core::edit::EditError::PageOp
 pdfcer-core variant pdfcer_core::edit::EditError::PageOutOfRange
 pdfcer-core variant pdfcer_core::edit::EditError::PageTree
+pdfcer-core variant pdfcer_core::edit::EditError::PasteNamesCount
 pdfcer-core variant pdfcer_core::edit::EditError::PerimeterWouldBeDegenerate
 pdfcer-core variant pdfcer_core::edit::EditError::PrinterMarks
 pdfcer-core variant pdfcer_core::edit::EditError::QuaddingInvalid
@@ -9065,6 +9086,8 @@ pdfcer-core variant pdfcer_core::formclip::PasteTooltip::Carry
 pdfcer-core variant pdfcer_core::formclip::PasteTooltip::Declined
 pdfcer-core variant pdfcer_core::formclip::PasteTooltip::Text
 pdfcer-core variant pdfcer_core::formclip::PasteTooltip::Undecided
+pdfcer-core variant pdfcer_core::formclip::set::FieldCopyNaming::ContinueNumber
+pdfcer-core variant pdfcer_core::formclip::set::FieldCopyNaming::Underscore
 pdfcer-core variant pdfcer_core::formclip::set::FieldSetPastePolicy::AdditionalWidgets
 pdfcer-core variant pdfcer_core::formclip::set::FieldSetPastePolicy::NewFields
 pdfcer-core variant pdfcer_core::formcsv::CsvError::NoRows
@@ -9539,6 +9562,9 @@ pdfcer-core variant pdfcer_core::pageops::ReorderedPageLabels::Positional
 pdfcer-core variant pdfcer_core::pageops::assemble::OutlinePolicy::Drop
 pdfcer-core variant pdfcer_core::pageops::assemble::OutlinePolicy::PerSource
 pdfcer-core variant pdfcer_core::pageops::assemble::OutlinePolicy::Subset
+pdfcer-core variant pdfcer_core::pageops::insert_carry::InsertedOutline::Append
+pdfcer-core variant pdfcer_core::pageops::insert_carry::InsertedOutline::Drop
+pdfcer-core variant pdfcer_core::pageops::insert_carry::InsertedOutline::UnderParent
 pdfcer-core variant pdfcer_core::pageops::region::RegionError::Content
 pdfcer-core variant pdfcer_core::pageops::region::RegionError::Edit
 pdfcer-core variant pdfcer_core::pageops::region::RegionError::ImageNotCut

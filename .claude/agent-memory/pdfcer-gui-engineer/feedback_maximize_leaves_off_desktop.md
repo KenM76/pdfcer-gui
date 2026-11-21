@@ -13,4 +13,4 @@ An off-screen run is only off-screen until something maximises the window. `sys:
 - `Session::maximize` resizes in place when `OFF_DESKTOP` is set.
 - Any check judging pixels takes `ScriptedPointer::screenshot`, never an OS capture.
 - If a check whose window shows Ken's desktop goes red, suspect the capture before the product.
-- 220 of 231 sweep SKIPs were OS-input checks. Their conversion is the coverage lever. See [[feedback-skip-red-check-stop]].
+- 220 of 231 sweep SKIPs were OS-input checks. Their conversion is the coverage lever. See [[feedback_skip_red_check_stop]].

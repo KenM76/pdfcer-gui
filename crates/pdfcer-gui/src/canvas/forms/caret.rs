@@ -85,7 +85,8 @@ pub(super) fn lay(
         .scope(|ui| {
             let v = ui.visuals_mut();
             v.text_cursor.stroke = Stroke::NONE;
-            v.selection.bg_fill = Color32::TRANSPARENT;
+            // The page draws the highlight; the hidden editor must not.
+            v.selection.bg_fill = Color32::TRANSPARENT; // selection-channel-exempt: a write that hides it
             textbox::lay(
                 ui,
                 draft,
@@ -214,13 +215,14 @@ fn paint(ui: &Ui, spec: &textbox::Spec<'_>, placed: &Placed<'_>, draft: &str) {
     let font = egui::FontId::proportional((placed.geom.font_size as f32 * scale).max(1.0));
     // The `/DA` colour is not in the layout; a field's text is black on a page
     // far more often than not, and a `/MK /BG` tint brings its own ink.
+    // NOT A THEME COLOUR: page ink, which the document sets.
     let ink = textbox::ink(ui.ctx(), spec).unwrap_or(Color32::BLACK);
     if let Some((_, lo, hi)) = range.filter(|(_, lo, hi)| lo < hi) {
         select(
             &painter,
             placed,
             (lo, hi),
-            ui.visuals().selection.bg_fill.gamma_multiply(0.6),
+            egui_shell::theme::Theme::canvas_selection_fill(ui.ctx()),
         );
     }
     for c in &placed.geom.chars {

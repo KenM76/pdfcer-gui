@@ -89,6 +89,7 @@ pub fn lay(ui: &mut Ui, draft: &mut String, spec: &Spec<'_>) -> egui::Response {
         edit = edit.background_color(fill).text_color(ink);
     }
     if spec.engine_drawn {
+        // NOT A THEME COLOUR: the page under the field, not chrome.
         let fill = tint.map_or(egui::Color32::WHITE, |(fill, _)| fill);
         edit = edit
             .background_color(fill)

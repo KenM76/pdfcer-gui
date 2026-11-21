@@ -37,7 +37,7 @@ pub const fn style_donor_button() -> &'static str {
 /// Hover for [`style_donor_button`].
 #[must_use]
 pub const fn style_donor_hover() -> &'static str {
-    "Offer a bold or italic font file of this text's own typeface. When this page has no such      face, Bold and Italic use the file and copy into the document only the letters the text uses."
+    "Offer a bold or italic font file of this text's own typeface. When this page has no such face, Bold and Italic use the file and copy into the document only the letters the text uses."
 }
 
 /// The bold button's hover text when **pdfcer will embed an offered face**.

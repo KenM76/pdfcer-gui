@@ -355,6 +355,7 @@ mod tests {
             second: Some(LengthUnit::Inch),
             ..r
         };
+        // ORACLE, NOT A CONVERSION: a test's inch factor, written out by hand.
         assert_eq!(
             both.lengths_from(Some(25.4), "in").length(1.0),
             "25.400 mm (1.000 in)"

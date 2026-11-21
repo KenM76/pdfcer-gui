@@ -75,7 +75,7 @@ fn typed_and_committed(
             .filter_map(|l| l.get("reason"))
             .collect();
         return Ok(Some(format!(
-            "the click on the page traced no `text-edit-caret kind=Add`, so no draft was              started and there is nothing for a keystroke to reach. Refusals traced: {}.",
+            "the click on the page traced no `text-edit-caret kind=Add`, so no draft was started and there is nothing for a keystroke to reach. Refusals traced: {}.",
             list_str(&declined)
         )));
     }
@@ -102,7 +102,7 @@ fn typed_and_committed(
     let trace = session.trace()?;
     if trace.events("add-text").next().is_none() {
         return Ok(Some(
-            "the draft had characters in it and clicking away traced no `add-text`, so the              commit never reached the engine. `textedit::click` is supposed to commit an              existing draft before starting a new one — clicking away is every editor's              \"that word is finished\", and it is the ONLY commit route a mouse-driven              operator has, because Enter is the other one."
+            "the draft had characters in it and clicking away traced no `add-text`, so the commit never reached the engine. `textedit::click` is supposed to commit an existing draft before starting a new one — clicking away is every editor's \"that word is finished\", and it is the ONLY commit route a mouse-driven operator has, because Enter is the other one."
                 .to_owned(),
         ));
     }
@@ -140,7 +140,7 @@ fn armed(
             .filter_map(|l| l.get("tool"))
             .collect();
         return Ok(Some(format!(
-            "clicking Edit > Add text traced no `text-edit-tool tool=TextEdit(Add)` line, so              the control armed nothing. Tools traced this run: {}.",
+            "clicking Edit > Add text traced no `text-edit-tool tool=TextEdit(Add)` line, so the control armed nothing. Tools traced this run: {}.",
             list_str(&tools)
         )));
     }
@@ -175,7 +175,7 @@ fn typed(
         .any(|n| n > 0);
     if !grew {
         return Ok(Some(format!(
-            "TWO TYPED CHARACTERS REACHED NOTHING. The tool armed, the click placed a caret,              and no `text-edit-typing` line ever reported a draft longer than zero. Read the              fields of the lines below: `owns_keyboard=false` means a text field held focus              and `typing` refused the events; `text_events=0` means egui delivered no              `Event::Text` at all; a rising `text_events` with a flat `len` means the events              arrived and `insert` did not land them. Lines traced: {}.",
+            "TWO TYPED CHARACTERS REACHED NOTHING. The tool armed, the click placed a caret, and no `text-edit-typing` line ever reported a draft longer than zero. Read the fields of the lines below: `owns_keyboard=false` means a text field held focus and `typing` refused the events; `text_events=0` means egui delivered no `Event::Text` at all; a rising `text_events` with a flat `len` means the events arrived and `insert` did not land them. Lines traced: {}.",
             list_str(&typing)
         )));
     }

@@ -232,7 +232,7 @@ impl XfaPreviewDialog {
                     format!(
                         "form-preview pages={pages} notes={notes} warnings={warnings} \
                          values={values} merge_warnings={merged} \
-                         approximated={approximated} choices={choices} excluded={excluded}                          digest={digest:016x}"
+                         approximated={approximated} choices={choices} excluded={excluded} digest={digest:016x}"
                     )
                 });
                 Shown::Pages {

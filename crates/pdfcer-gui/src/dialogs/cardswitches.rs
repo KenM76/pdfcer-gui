@@ -123,8 +123,9 @@ fn body(ui: &mut Ui, rows: &mut Rows<'_>) {
         .spacing([18.0, 6.0])
         .show(ui, |ui| {
             let [a, b] = t::columns();
-            ui.strong(a);
-            ui.strong(b);
+            let ink = ui.visuals().text_color();
+            ui.label(egui::RichText::new(a).strong().color(ink));
+            ui.label(egui::RichText::new(b).strong().color(ink));
             ui.end_row();
             pages_row(ui, rows);
             #[cfg(feature = "3d")]

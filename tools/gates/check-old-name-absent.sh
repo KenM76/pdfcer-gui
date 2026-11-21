@@ -216,6 +216,7 @@ ALLOWED_PAT=(
     'Dev\\pdfce\\crates\\pdfce-gui'
     'pdfce_FeatureRequests'
     'pdfceF'
+    'pdfceSubsetDemo'
     '^Cargo\.lock:'
     '^tools/gates/engine-api-snapshot\.txt:'
     'old-name-exempt:'
@@ -224,6 +225,7 @@ ALLOWED_WHY=(
     "the salvaged GUI's path, which breaks if it is renamed"
     'the request-channel folder shared with the engine'
     "the engine's /Font resource prefix, written into documents it produces"
+    "the font name inside the engine's subset-font-floor.pdf fixture, which checks match on"
     "Cargo.lock, Cargo's own record of what resolved"
     "the API-drift gate's generated record of the engine's public names"
     'a line carrying old-name-exempt: and its reason'

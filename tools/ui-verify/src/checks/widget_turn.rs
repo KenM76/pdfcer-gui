@@ -128,7 +128,7 @@ fn tilt(
     // is the defect, not the SKIP a failed `press` would file.
     if declared_in(&session.trace()?, ui_rect_event(ctx)?, UPRIGHT).is_none() {
         return Ok(Some(format!(
-            "the box was tilted and Properties drew no `{UPRIGHT}`: the field's angle was              not read. Trace: {}.",
+            "the box was tilted and Properties drew no `{UPRIGHT}`: the field's angle was not read. Trace: {}.",
             session.trace_path().display()
         )));
     }
