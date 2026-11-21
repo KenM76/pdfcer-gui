@@ -16,6 +16,10 @@ const FIXTURE: &str = "quote-operator.pdf";
 const INVOKE: &str = "mode.edit,edit.paragraphs,edit.text"; // ui-text-exempt: command ids, never displayed
 const IN_PLAIN: (f64, f64) = (100.0, 704.0);
 const IN_QUOTED: (f64, f64) = (100.0, 684.0);
+/// `Two runs` drawn from a form XObject placed at (40, 40), baseline page
+/// y 100, Helvetica 14 pt.
+const FORM_FIXTURE: &str = "form-text-runs.pdf";
+const IN_FORM: (f64, f64) = (70.0, 104.0);
 const CAPABILITY: &str = "text-edit-capability"; // ui-text-exempt: a trace event name, never displayed
 const NOTE: &str = "text-edit-note"; // ui-text-exempt: a trace event name, never displayed
 const CLASSIFIED: &str = "edit-text-classified"; // ui-text-exempt: a trace event name, never displayed
@@ -119,14 +123,45 @@ fn quoted(d: &Driven, findings: &mut Vec<String>) -> Result<()> {
     Ok(())
 }
 
+/// A line drawn from a form XObject: the engine is asked about the form's
+/// own stream (`target=form`) and answers it editable.
+fn in_form(d: &Driven, findings: &mut Vec<String>) -> Result<()> {
+    let mark = d.session.trace()?.mark();
+    if let Err(why) = d.caret_at(IN_FORM)? {
+        findings.push(why);
+        return Ok(());
+    }
+    let trace = d.session.trace()?;
+    let line = trace.last_after(CAPABILITY, mark);
+    let asked = line.and_then(|l| Some((l.get("asked")?, l.get("target")?, l.get("cause")?)));
+    if asked != Some(("1", "form", "none")) {
+        findings.push(format!(
+            "the in-form line's landing traced `{CAPABILITY}` {:?}, wanted asked=1 \
+             target=form cause=none.",
+            line.map(|l| l.raw.as_str())
+        ));
+    }
+    Ok(())
+}
+
+/// Note every capability answer the session traced.
+fn note_answers(d: &Driven, report: &mut CheckReport) -> Result<()> {
+    let trace = d.session.trace()?;
+    let lines: Vec<String> = trace.events(CAPABILITY).map(|l| l.raw.clone()).collect();
+    report.note(format!("{CAPABILITY}: {}", lines.join(" | ")));
+    Ok(())
+}
+
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let (d, _doc) = launch_invoking(ctx, report, "landing-refusal", FIXTURE, INVOKE)?;
     let mut findings = Vec::new();
     plain(&d, &mut findings)?;
     quoted(&d, &mut findings)?;
     d.pointer.gone(&d.session)?;
-    let trace = d.session.trace()?;
-    let lines: Vec<String> = trace.events(CAPABILITY).map(|l| l.raw.clone()).collect();
-    report.note(format!("{CAPABILITY}: {}", lines.join(" | ")));
+    note_answers(&d, report)?;
+    let (f, _doc) = launch_invoking(ctx, report, "landing-in-form", FORM_FIXTURE, INVOKE)?;
+    in_form(&f, &mut findings)?;
+    f.pointer.gone(&f.session)?;
+    note_answers(&f, report)?;
     Ok((!findings.is_empty()).then(|| format!("{} Trace: {}.", findings.join(" "), d.path())))
 }

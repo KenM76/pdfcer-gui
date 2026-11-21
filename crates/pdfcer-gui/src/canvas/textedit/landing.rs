@@ -60,24 +60,19 @@ fn spells_nothing(
     Err(Refusal::NoUsableEncoding)
 }
 
-/// The engine's `edit_capability` answer for the run's show operator.
-///
-/// A run reached through a form XObject is not asked: `edit_capability`
-/// takes a page span and plans against the page's own contents, so its
-/// answer for a form's span would be about other bytes.
+/// The engine's `edit_capability_for` answer for the run's show operator,
+/// in the page's contents or the form XObject the run is drawn from.
 fn capability(doc: &OpenDoc, page: usize, run: usize) -> Result<Option<EditCause>, Refusal> {
     let Some(pin) = super::pin::resolve(doc, page, run) else {
         return Ok(None);
     };
-    if matches!(pin.target, EditTarget::Form { .. }) {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed.
-            format!("text-edit-capability page={page} run={run} asked=0 target=form")
-        });
-        return Ok(None);
-    }
+    let target = if matches!(pin.target, EditTarget::Form { .. }) {
+        "form"
+    } else {
+        "page"
+    };
     let started = std::time::Instant::now();
-    let answer = doc.session.edit_capability(page, pin.span);
+    let answer = doc.session.edit_capability_for(page, pin.span, pin.target);
     let cause = match &answer {
         Err(EditError::Unsupported(cause)) => Some(cause),
         _ => None,
@@ -87,7 +82,8 @@ fn capability(doc: &OpenDoc, page: usize, run: usize) -> Result<Option<EditCause
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "text-edit-capability page={page} run={run} asked=1 ms={} ok={} cause={} offered={}",
+            "text-edit-capability page={page} run={run} asked=1 target={target} ms={} ok={} cause={} \
+             offered={}",
             started.elapsed().as_millis(),
             u8::from(answer.is_ok()),
             class.map_or("none", EditCause::name),
