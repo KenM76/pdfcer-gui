@@ -13,8 +13,10 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
-/// Reset the dock, take Edit mode, arm the **edit** caret — one per frame.
-const INVOKE: &str = "view.reset_layout,mode.edit,edit.text";
+/// Reset the dock, take Edit mode, switch Paragraphs off so the click opens
+/// the run rather than its paragraph (this check's subject is the run's pin),
+/// arm the **edit** caret — one per frame.
+const INVOKE: &str = "view.reset_layout,mode.edit,edit.paragraphs,edit.text";
 
 /// The characters seeded into the draft. One letter, because the operator's
 /// correction was one letter: `clien` → `clien`**`t`**.

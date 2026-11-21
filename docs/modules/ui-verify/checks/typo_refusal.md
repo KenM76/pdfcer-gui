@@ -199,6 +199,11 @@ launch inherits whatever the previous launch left — including a previous
 reading the last run's furniture; this project has filed one such report.
 The reset's arrival is asserted below rather than assumed.
 
+`edit.paragraphs` switches paragraph editing off, so the click opens the run
+and the commit goes through `edit_text` with its pin. With it on, the click
+opens the recognised paragraph and the commit is `edit-block-text`, which has
+no pin to judge.
+
 ### `const SEED`
 
 Seeded rather than typed: the keystroke is not the subject here — the
