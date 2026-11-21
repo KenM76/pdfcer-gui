@@ -178,17 +178,24 @@ fi
 # status line is the thing that actually means "taken", and a filename is only
 # ever a shorthand for it.
 NOTES=()
+FILES=()
 for f in "$CHANNEL"/*.md "$ARCHIVE"/*.md; do
-  [ -f "$f" ] || continue
-  b="$(basename "$f")"
-  case "$b" in
-    *CONSUMED*|*consumed*)            NOTES+=("$f"); continue ;;
-    done_*|*-done.md|*-done-[0-9].md) NOTES+=("$f"); continue ;;
-  esac
-  if head -12 "$f" | grep -qiE '^\*\*Status:.*consumed'; then
-    NOTES+=("$f")
-  fi
+  [ -f "$f" ] && FILES+=("$f")
 done
+# One pass, one process: names first, then the header line, with
+# FNR <= 12 standing for `head -12`. A process per file cost 90 s over the
+# channel's 1,600 files. An unmatched glob stays literal and stops awk, so
+# only existing files are passed.
+while IFS= read -r f; do
+  NOTES+=("$f")
+done < <(awk '
+  FNR == 1 {
+    n = FILENAME; sub(/.*\//, "", n)
+    if (n ~ /consumed|CONSUMED/ || n ~ /^done_/ || n ~ /-done(-[0-9])?\.md$/) { print FILENAME; nextfile }
+  }
+  FNR > 12 { nextfile }
+  tolower($0) ~ /^\*\*status:.*consumed/ { print FILENAME; nextfile }
+' ${FILES[@]+"${FILES[@]}"} </dev/null)
 
 if [ "${#NOTES[@]}" -eq 0 ]; then
   echo "check-stale-blockers: SKIPPED — the channel holds NO consumption notes."
