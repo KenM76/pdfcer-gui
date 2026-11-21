@@ -10,6 +10,8 @@
 mod authoring;
 /// Every word the Field-groups section shows.
 pub mod groups;
+/// What a field's drawing showed apart from its stored state.
+mod notes;
 /// What a redraw decided about a field's text.
 mod redraw;
 mod tab_order;
@@ -26,6 +28,7 @@ pub use authoring::{
 };
 
 pub use groups::*;
+pub use notes::{FieldNoteKind, field_display_notes, field_display_notes_tooltip};
 pub use redraw::{RedrawSubject, redraw_notes};
 pub use tab_order::*;
 

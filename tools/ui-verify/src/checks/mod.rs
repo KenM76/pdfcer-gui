@@ -479,6 +479,7 @@ pub mod edit_never_blanks;
 /// An encrypted file edits under its password, or offers its owner password.
 pub mod encrypted_edit;
 pub mod field_extras;
+pub mod field_notes;
 /// A text field calculated from others and given a range, from Properties.
 pub mod field_scripts;
 pub mod field_text_cmyk;
