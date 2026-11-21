@@ -252,13 +252,15 @@ impl Choices {
     }
 }
 
-/// The choices as radio rows under their group headings. Returns `true`
-/// when one changed. Each answer declares `form-preview.choice.<slug>.<n>`.
+/// The choices as radio rows under their group headings, folded until
+/// opened so the form's pages come first. Returns `true` when one changed.
+/// The heading declares `form-preview.choices`; each answer declares
+/// `form-preview.choice.<slug>.<n>`.
 pub(super) fn show(ui: &mut egui::Ui, choices: &mut Choices) -> bool {
     let mut changed = false;
-    egui::CollapsingHeader::new(t::choices_heading())
+    let shown = egui::CollapsingHeader::new(t::choices_heading())
         .id_salt("form-preview-choices") // ui-text-exempt: widget id, never displayed
-        .default_open(true)
+        .default_open(false)
         .show(ui, |ui| {
             ui.label(t::choices_caveat());
             let mut section = None;
@@ -287,6 +289,8 @@ pub(super) fn show(ui: &mut egui::Ui, choices: &mut Choices) -> bool {
                 });
             }
         });
+    // ui-text-exempt: trace region name, never displayed
+    crate::diag::ui_rect("form-preview.choices", shown.header_response.rect);
     changed
 }
 

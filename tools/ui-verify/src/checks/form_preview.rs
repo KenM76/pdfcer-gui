@@ -99,6 +99,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, invoke: bool) -> Result<O
     if let Some(failure) = first_draw(l.ui_rect, &l.session, report, invoke)? {
         return Ok(Some(failure));
     }
+    if let Some(failure) = open_choices(&l)? {
+        return Ok(Some(failure));
+    }
     plain_borders(l.ui_rect, &l.session, &l.pointer)
 }
 
@@ -156,6 +159,24 @@ pub(super) fn launch(
         pointer,
         ui_rect,
     })
+}
+
+/// The reading choices' heading (`dialogs::xfa_preview::choices::show`).
+const CHOICES: &str = "form-preview.choices";
+
+/// Unfold the reading choices, which open folded so the pages come first.
+/// `Some` names the failure when the heading never drew.
+pub(super) fn open_choices(l: &Launched) -> Result<Option<String>> {
+    let trace = l.session.trace()?;
+    let Some((rect, vp)) = declared_in(&trace, l.ui_rect, CHOICES) else {
+        return Ok(Some(format!(
+            "★★★ no `{CHOICES}` region was declared: the reading choices' heading never drew."
+        )));
+    };
+    l.pointer
+        .click_in(&l.session, vp.as_deref(), WindowPoint::centre_of(rect))?;
+    l.session.settle(30);
+    Ok(None)
 }
 
 /// The open was disclosed, the form drawn with the fixture's figures, and the

@@ -17,7 +17,7 @@
 //! - *A section laid out in rows: Moves whole* redraws with
 //!   `tiled-split:1` in its choices: the layout setting reached the worker.
 
-use super::form_preview::{Launched, launch};
+use super::form_preview::{Launched, launch, open_choices};
 use crate::checks::driving::declared_in;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
@@ -92,6 +92,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     report.note(first.raw.clone());
+    if let Some(failure) = open_choices(&l)? {
+        return Ok(Some(failure));
+    }
+    let trace = l.session.trace()?;
     if first.get("choices") != Some("default") || first.get("excluded") != Some("0") {
         return Ok(Some(format!(
             "★★★ `{}` must carry choices=default excluded=0: the form's own views keep \
