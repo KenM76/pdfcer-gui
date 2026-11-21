@@ -131,6 +131,7 @@ mod ocr_upscale;
 /// and *how their answers reach the app*. Two different callers, two different
 /// sets of invariants, one receiver.
 pub mod open;
+mod open_pages;
 mod open_region;
 /// The "which pages" group Recognise text and Remove OCR text share.
 mod page_scope;

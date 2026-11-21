@@ -217,7 +217,6 @@ fn crates/pdfcer-gui/src/app/actions/merge.rs::write_merge
 fn crates/pdfcer-gui/src/app/actions/models.rs::save_mesh
 fn crates/pdfcer-gui/src/app/actions/newcomment.rs::apply
 fn crates/pdfcer-gui/src/app/actions/pages.rs::apply
-fn crates/pdfcer-gui/src/app/actions/pages.rs::insert_from_view
 fn crates/pdfcer-gui/src/app/actions/pages.rs::resync
 fn crates/pdfcer-gui/src/app/actions/purge_passwords.rs::purge
 fn crates/pdfcer-gui/src/app/actions/redact.rs::apply

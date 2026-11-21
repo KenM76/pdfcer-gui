@@ -132,6 +132,7 @@ pub use chrome::ViewChrome;
 pub(crate) use historymove::import_history;
 /// Pages ▸ Insert blank…, as copies of a one-page blank document.
 mod insertblank;
+mod pageinsert;
 /// The four page verbs' bodies, and the structural resync every edit owes.
 pub mod pages;
 /// **Changing the paper an open drawing sits on** — `set_media_boxes`, and
