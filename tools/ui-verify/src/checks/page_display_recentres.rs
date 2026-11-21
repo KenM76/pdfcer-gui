@@ -4,11 +4,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/page_display_recentres.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared};
-use crate::checks::fit_places_the_view::{CANVAS_EVENT, invoke, page_rect};
+use crate::checks::fit_places_the_view::{CANVAS_EVENT, page_rect};
+use crate::checks::scripteddrive::{at_fraction, offscreen_at, view_item};
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use std::path::PathBuf;
 
@@ -22,8 +23,8 @@ const CANVAS_REGION: &str = "canvas-viewport";
 const STRIP_REGION: &str = "canvas-strip";
 
 /// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes
-/// it: `x,y,w,h`.
-const VIEWPORT: &str = "0,0,1600,1000";
+/// it: `x,y,w,h`. Off the desktop, so no OS input reaches it.
+const VIEWPORT: &str = "-4200,-4200,1600,1000";
 
 /// How far the drawn strip's centre may sit from the viewport's, in logical
 /// points, and still count as centred.
@@ -170,15 +171,41 @@ fn acting_page(session: &Session) -> Result<Option<usize>> {
         .and_then(|line| line.get("page").and_then(|v| v.parse::<usize>().ok())))
 }
 
+/// Make page index 1 — the first page of the first two-page row — the acting
+/// one. The scroll in half one may already have left it there, in which case
+/// Page Down would step PAST the spread; it is pressed only from the cover.
+fn reach_the_spread(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    report: &mut CheckReport,
+) -> Result<()> {
+    if acting_page(session)? == Some(1) {
+        report.note("facing: already acting on page index 1, the spread; no Page Down needed");
+    } else {
+        pointer.key(session, None, "PageDown", None)?;
+        session.settle(24);
+    }
+    let page = acting_page(session)?;
+    if page != Some(1) {
+        return Err(Error::new(format!(
+            "Page Down left the canvas acting on page {page:?}, not page index 1. The cover \
+             rule puts page 0 in a row by ITSELF, so a facing fit measured here would be \
+             measuring ONE page and would pass on a build that cannot fit two. SKIPPED rather \
+             than measured on the wrong row."
+        )));
+    }
+    Ok(())
+}
+
 /// Enter a display mode and assert the canvas agrees it is in it.
 pub(super) fn enter_display(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     item: &str,
     expect: &str,
 ) -> Result<()> {
-    invoke(session, driver, ui_rect, item)?;
+    view_item(session, pointer, ui_rect, item)?;
     session.settle(24);
     match display_mode(session)? {
         Some(mode) if mode == expect => Ok(()),
@@ -195,17 +222,16 @@ pub(super) fn enter_display(
 /// moved. See [`DISPLACED_PT`].
 fn displace(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     canvas: LRect,
     report: &mut CheckReport,
 ) -> Result<()> {
     let before = page_rect(session)?.ok_or_else(|| {
         Error::new("the canvas never published a page rect, so there is nothing to displace.")
     })?;
-    let at = session
-        .frame()?
-        .declared_at(canvas, SCROLL_AT.0, SCROLL_AT.1);
-    driver.scroll_at(at, -SCROLL_NOTCHES)?;
+    let at = at_fraction(canvas, SCROLL_AT.0, SCROLL_AT.1);
+    #[allow(clippy::cast_precision_loss)]
+    pointer.wheel(session, at, -SCROLL_NOTCHES as f32, false)?;
     session.settle(24);
     let after = page_rect(session)?
         .ok_or_else(|| Error::new("the canvas stopped publishing a page rect after the scroll."))?;
@@ -232,12 +258,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check presses ribbon commands, rolls the \
-             wheel and presses Page Down. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -270,9 +290,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    if let Some(name) = ctx.profile.viewport_env {
-        spec.env.push((name.to_owned(), VIEWPORT.to_owned()));
-    } else {
+    if ctx.profile.viewport_env.is_none() {
         return Err(Error::new(format!(
             "the `{}` profile declares no viewport override, so this check cannot fix the \
              window size — and every tolerance below is quoted in points of a known window. \
@@ -280,6 +298,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.name
         )));
     }
+    let pointer = offscreen_at(ctx, &mut spec, "page-display-recentres", VIEWPORT)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -288,10 +307,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(16);
 
     let canvas = declared(&session.trace()?, ui_rect, CANVAS_REGION)
@@ -317,13 +336,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ] {
         enter_display(
             &session,
-            &driver,
+            &pointer,
             ui_rect,
             "ribbon.item.view.page_continuous",
             "continuous",
         )?;
-        displace(&session, &driver, canvas, report)?;
-        enter_display(&session, &driver, ui_rect, item, mode)?;
+        displace(&session, &pointer, canvas, report)?;
+        enter_display(&session, &pointer, ui_rect, item, mode)?;
 
         let Some((strip, canvas_now)) = strip_and_viewport(&session, ui_rect)? else {
             return Err(Error::new(format!(
@@ -361,25 +380,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Still in `facing` from the loop above. The cover rule means page 0 is a
     // row by itself, so the spread has to be reached before it can be
     // measured — see the module header.
-    driver.press(crate::sys::vk::PAGE_DOWN)?;
-    session.settle(24);
-    let page = acting_page(&session)?;
-    if page != Some(1) {
-        return Err(Error::new(format!(
-            "Page Down left the canvas acting on page {page:?}, not page index 1. The cover \
-             rule puts page 0 in a row by ITSELF, so a facing fit measured here would be \
-             measuring ONE page and would pass on a build that cannot fit two. SKIPPED rather \
-             than measured on the wrong row."
-        )));
-    }
+    reach_the_spread(&session, &pointer, report)?;
 
     let Some(one_page) = page_rect(&session)? else {
         return Err(Error::new(
             "the canvas stopped publishing a page rect on the spread.".to_owned(),
         ));
     };
-    invoke(&session, &driver, ui_rect, "ribbon.item.view.zoom_fit_page")?;
+    view_item(
+        &session,
+        &pointer,
+        ui_rect,
+        "ribbon.item.view.zoom_fit_page",
+    )?;
     session.settle(28);
+    pointer.gone(&session)?;
 
     let Some((strip, canvas_now)) = strip_and_viewport(&session, ui_rect)? else {
         return Err(Error::new(format!(

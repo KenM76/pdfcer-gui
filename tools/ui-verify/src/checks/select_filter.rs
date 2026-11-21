@@ -4,10 +4,11 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/select_filter.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext, CheckReport};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
 /// The mode this drives. See the module docs.
@@ -65,12 +66,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              would make this check pass without measuring anything.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, the canvas, and \
-             two buttons inside a popup. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -100,27 +95,26 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "select-filter")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(24);
 
     // Where on screen the object is. Computed once and reused for all three
     // clicks, so the three are genuinely the same pixel.
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
-    let at = session
-        .frame()?
-        .to_screen(mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?);
+    let at = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
 
     // --- 0: NORMALISE, because the filter is PERSISTED ----------------------
     //
@@ -139,10 +133,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // persisted state must establish that state at the START, not assume the
     // default and tidy up at the end.** Tidying at the end only runs when the
     // check passes, which is the case that did not need it.
-    set_filter(&session, &driver, ui_rect, FILTER_ALL)?;
+    set_filter(&session, &pointer, ui_rect, FILTER_ALL)?;
 
     // --- 1: the control point ----------------------------------------------
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(24);
     if !selected(&session)? {
         return Err(Error::new(format!(
@@ -158,11 +152,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("with every class on, the click selects".to_owned());
 
     // --- 2: switch everything off ------------------------------------------
-    set_filter(&session, &driver, ui_rect, FILTER_NONE)?;
+    set_filter(&session, &pointer, ui_rect, FILTER_NONE)?;
     // Clicking the canvas with nothing selectable must also CLEAR what is
     // already selected — a click on what is now empty paper deselects
     // (convention C6). So this both re-clicks and checks the clear.
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(24);
     if selected(&session)? {
         return Ok(Some(format!(
@@ -179,8 +173,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("with every class off, the same click selects nothing".to_owned());
 
     // --- 3: and back ---------------------------------------------------------
-    set_filter(&session, &driver, ui_rect, FILTER_ALL)?;
-    driver.click_at(at)?;
+    set_filter(&session, &pointer, ui_rect, FILTER_ALL)?;
+    pointer.click(&session, at)?;
     session.settle(24);
     if !selected(&session)? {
         return Ok(Some(format!(
@@ -194,6 +188,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("switching them back on restores it".to_owned());
+    pointer.gone(&session)?;
 
     Ok(None)
 }
@@ -212,9 +207,12 @@ fn selected(session: &Session) -> Result<bool> {
 }
 
 /// Open the Select popup, click one of its two whole-set buttons, and close it.
-fn set_filter(session: &Session, driver: &Driver, ui_rect: &str, button: &str) -> Result<()> {
-    let frame = session.frame()?;
-
+fn set_filter(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    button: &str,
+) -> Result<()> {
     let trace = session.trace()?;
     let open_at =
         crate::checks::driving::declared(&trace, ui_rect, FILTER_BUTTON).ok_or_else(|| {
@@ -224,7 +222,7 @@ fn set_filter(session: &Session, driver: &Driver, ui_rect: &str, button: &str) -
                  renamed."
             ))
         })?;
-    driver.click_at(frame.declared_center(open_at))?;
+    pointer.click(session, WindowPoint::centre_of(open_at))?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -235,7 +233,7 @@ fn set_filter(session: &Session, driver: &Driver, ui_rect: &str, button: &str) -
              `Popup::menu` cancelling it."
         ))
     })?;
-    driver.click_at(frame.declared_center(target))?;
+    pointer.click(session, WindowPoint::centre_of(target))?;
     session.settle(24);
     Ok(())
 }

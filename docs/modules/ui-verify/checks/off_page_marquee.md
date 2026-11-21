@@ -65,7 +65,7 @@ questions; this is a *geometry* question with an exact answer.
 
 # Every way this reports SKIP
 
-No binary, `--no-input`, no diagnostic channel, no page on screen, the Select
+No binary, no diagnostic channel, no page on screen, the Select
 tool unreachable from the ribbon, or **not enough grey margin on screen to
 reach x = −100** — which is a property of the window size on the day and is
 reported as a skip that names the geometry, never as a pass.
@@ -76,7 +76,7 @@ reported as a skip that names the geometry, never as a pass.
 
 Measured that day, while writing the sibling `off_page_press`: **this check
 was reporting SKIP on every run**, and had been for an unknown length of
-time. Fit-page on a 200 × 200 fixture in a maximised window puts the sheet
+time. Fit-page on a 200 × 200 fixture in a desktop-sized window puts the sheet
 at about 3.8 px per point, so the band's destination at x = −100 pt lands
 381 px left of the page edge — where the viewport has only about 243 px of
 grey. `doc_to_window_off_page` refuses to convert a point outside the

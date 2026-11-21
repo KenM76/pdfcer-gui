@@ -5,16 +5,16 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/text_in_own_font.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared};
-use crate::checks::save_copy::{click_command, click_tab};
+use crate::checks::save_copy::click_command;
+use crate::checks::scripteddrive::{click_tab_traced, offscreen, shot};
+use crate::checks::text_selection::aim_window;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
 use crate::geom::PixRect;
 use crate::image::Image;
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 const MODE: &str = "edit";
 const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
@@ -107,11 +107,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              draft, which is drawn in the shell's font by design.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input); reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx
         .profile
         .vocab
@@ -136,21 +131,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text-in-own-font")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
-    click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
+    click_tab_traced(&session, &pointer, ui_rect, EDIT_TAB)?;
     session.settle(14);
-    click_command(&session, &driver, ui_rect, EDIT_TEXT_ITEM, 18)?;
+    click_command(&session, &pointer, ui_rect, EDIT_TEXT_ITEM, 18)?;
 
     // Zoom in on the run: at fit-page a drawing's text is a few pixels tall,
     // too small for a glyph-by-glyph comparison.
     let aim_now = || {
-        crate::checks::text_selection::aim(
+        aim_window(
             ctx,
             &session,
             page,
@@ -162,7 +158,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         if crate::checks::scale_aim::current_zoom(&session)? >= start * ZOOM_FACTOR {
             break;
         }
-        driver.scroll_at_held(aim_now()?, &[vk::CONTROL], 1, 1)?;
+        pointer.wheel(&session, aim_now()?, 1.0, true)?;
         session.settle(10);
     }
     session.settle(60);
@@ -173,16 +169,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // The page's own rendering of the run, before any draft covers it.
     let before_path = ctx.out("own-font.before.png");
-    let before = crate::capture::window_to_png(&session, &before_path)?;
+    let before = shot(&session, &pointer, &before_path)?;
     report.artifact(before_path);
 
-    let at = crate::checks::text_selection::aim(
-        ctx,
-        &session,
-        page,
-        DocPoint::new(target.page, target.x, target.y),
-    )?;
-    driver.click_at(at)?;
+    pointer.click(&session, aim_now()?)?;
     session.settle(24);
     if session.trace()?.last("text-edit-caret").is_none() {
         return Err(Error::new(
@@ -192,14 +182,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     // Caret to the start: an X typed there moves every glyph after it, a
     // change the comparison cannot miss, and the caret line sits in the inset.
-    driver.press(vk::HOME)?;
+    pointer.key(&session, None, "Home", None)?;
     session.settle(8);
 
     // One character added: the draft now differs from the page.
-    driver.type_ascii("X")?;
+    pointer.type_text(&session, None, "X")?;
     session.settle(30);
     let typed_path = ctx.out("own-font.typed.png");
-    let typed = crate::capture::window_to_png(&session, &typed_path)?;
+    let typed = shot(&session, &pointer, &typed_path)?;
     report.artifact(typed_path);
     let trace = session.trace()?;
     let shaped = trace.last(SHAPED_EVENT).map(|l| {
@@ -224,10 +214,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // Back to the original text: now the in-font draft must look like the page.
-    driver.press(vk::BACKSPACE)?;
+    pointer.key(&session, None, "Backspace", None)?;
     session.settle(30);
     let same_path = ctx.out("own-font.original.png");
-    let same = crate::capture::window_to_png(&session, &same_path)?;
+    let same = shot(&session, &pointer, &same_path)?;
     report.artifact(same_path);
 
     let trace = session.trace()?;
@@ -283,7 +273,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             SAME_AT_MOST * 100.0
         )));
     }
-    driver.press(vk::ESCAPE)?;
+    pointer.key(&session, None, "Escape", None)?;
     session.settle(10);
+    pointer.gone(&session)?;
     Ok(None)
 }

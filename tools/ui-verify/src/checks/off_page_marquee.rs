@@ -6,10 +6,10 @@
 use crate::checks::driving::{
     SHELL_DIAG_ENV, arm_select_from_ribbon, click_mode_segment, declared, declared_names, list,
 };
+use crate::checks::scripteddrive::{OFFSCREEN_WIDE, offscreen_at};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -92,12 +92,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check drags a rubber band. Reported as \
-             SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so this check cannot reach the \
@@ -126,6 +120,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen_at(ctx, &mut spec, "off-page-marquee", OFFSCREEN_WIDE)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -135,12 +130,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         pdf.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    // The ribbon's groups collapse at the default width and a collapsed group
-    // publishes no item rects — `checks::ocr`'s repair, applied here from the
-    // start. Maximising also widens the grey margin this check drags into.
-    session.maximize();
-    session.settle(16);
+    report.artifact(pointer.path().to_path_buf());
+    // The ribbon's groups collapse at a narrow width and a collapsed group
+    // publishes no item rects, so the window is launched desktop-sized; the
+    // width also widens the grey margin this check drags into.
+    session.settle(56);
 
     let trace = session.trace()?;
     if !trace.started(ctx.profile.vocab.start_event) {
@@ -151,8 +145,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, RIBBON_MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, RIBBON_MODE)?;
     session.settle(12);
 
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
@@ -161,7 +154,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&session.trace()?, ui_rect, "page"))
         )));
     }
-    if !arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
+    if !arm_select_from_ribbon(&session, &pointer, ui_rect, report)? {
         return Err(Error::new(
             "the select tool could not be armed from the ribbon, so no rubber band could be \
              started. Nothing about what a band reaches was measured.",
@@ -171,9 +164,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- aim -----------------------------------------------------------------
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, FIXTURE_PAGE, 0)?;
-    let frame = session.frame()?;
-    let from =
-        frame.to_screen(mapping.doc_to_window(DocPoint::new(0, BAND_FROM.0, BAND_FROM.1))?);
+    let from = mapping.doc_to_window(DocPoint::new(0, BAND_FROM.0, BAND_FROM.1))?;
     // The off-page conversion, named, and bounded by the canvas VIEWPORT
     // rather than by the page. See its own doc comment for why the ordinary
     // conversion refuses this point and why that refusal is right everywhere
@@ -186,9 +177,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              page's own rect: every off-page point is outside that by construction."
         ))
     })?;
-    let to = frame.to_screen(
-        mapping.doc_to_window_off_page(DocPoint::new(0, BAND_TO.0, BAND_TO.1), viewport)?,
-    );
+    let to = mapping.doc_to_window_off_page(DocPoint::new(0, BAND_TO.0, BAND_TO.1), viewport)?;
     report.note(format!(
         "band ({:.0}, {:.0}) → ({:.0}, {:.0}) in page points — the second corner is {:.0} pt \
          LEFT of the sheet, in the grey margin, and the drag is right-to-left so it is a \
@@ -196,8 +185,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         BAND_FROM.0, BAND_FROM.1, BAND_TO.0, BAND_TO.1, -BAND_TO.0
     ));
 
-    driver.drag(from, to)?;
+    pointer.drag(&session, from, to, 8)?;
     session.settle(40);
+    pointer.gone(&session)?;
 
     // --- read ----------------------------------------------------------------
     let trace = session.trace()?;

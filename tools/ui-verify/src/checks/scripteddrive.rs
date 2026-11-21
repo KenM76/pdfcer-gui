@@ -854,3 +854,138 @@ pub fn wheel_to(
     }
     Ok(None)
 }
+
+/// [`offscreen`] at `geometry` (`x,y,w,h` in logical points) instead of
+/// [`OFFSCREEN`]. `Session::maximize` would bring the window onto the
+/// desktop, so a check that maximised launches at [`OFFSCREEN_WIDE`].
+pub fn offscreen_at(
+    ctx: &CheckContext,
+    spec: &mut LaunchSpec,
+    stem: &str,
+    geometry: &str,
+) -> Result<ScriptedPointer> {
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
+    spec.env
+        .push((viewport_env.to_owned(), geometry.to_owned()));
+    spec.place = false;
+    ScriptedPointer::attach(spec, ctx.out(&format!("{stem}.pointer.txt")))
+}
+
+/// Turn the wheel `lines` at `at`, `times` times, with Ctrl held when `ctrl`:
+/// the scripted twin of `Driver::scroll_at_held` (and of `scroll_at` with
+/// `times` = 1). One OS notch is one wheel line; the sign is the notch's.
+pub fn wheel_times(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    at: WindowPoint,
+    lines: f32,
+    ctrl: bool,
+    times: usize,
+) -> Result<()> {
+    for _ in 0..times {
+        pointer.wheel(session, at, lines, ctrl)?;
+    }
+    Ok(())
+}
+
+/// Press the View tab, then `item` on it or in its overflow: the scripted twin
+/// of `fit_places_the_view::invoke`.
+pub fn view_item(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    item: &str,
+) -> Result<()> {
+    use crate::checks::driving::{declared, declared_or_in_overflow};
+    let trace = session.trace()?;
+    let tab = declared(&trace, ui_rect, "ribbon.tab.view").ok_or_else(|| {
+        Error::new(format!(
+            "no `ribbon.tab.view` region. Tabs declared: {}.",
+            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
+        ))
+    })?;
+    pointer.click(session, WindowPoint::centre_of(tab))?;
+    session.settle(14);
+    let region = declared_or_in_overflow(session, pointer, ui_rect, item)?.ok_or_else(|| {
+        Error::new(format!(
+            "no `{item}` region on the View tab or in its overflow. Items declared: {}.",
+            list(&declared_names(
+                &session.trace().unwrap_or_default(),
+                ui_rect,
+                "ribbon.item.view."
+            ))
+        ))
+    })?;
+    pointer.click(session, WindowPoint::centre_of(region))?;
+    session.settle(24);
+    Ok(())
+}
+
+/// Click the ribbon tab `region` and require the shell's `TAB_EVENT tab=<id>`
+/// line for it: the scripted twin of the OS checks' `click_tab`.
+pub fn click_tab_traced(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    (region, id): (&str, &str),
+) -> Result<()> {
+    use crate::checks::driving::{TAB_EVENT, declared, shell_trace};
+    let trace = session.trace()?;
+    let rect = declared(&trace, ui_rect, region).ok_or_else(|| {
+        Error::new(format!(
+            "no `{region}` region. Tabs declared: {}.",
+            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
+        ))
+    })?;
+    let count = |s: &Session| -> Result<usize> {
+        Ok(shell_trace(s)?
+            .events(TAB_EVENT)
+            .filter(|l| l.get("tab") == Some(id))
+            .count())
+    };
+    let before = count(session)?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
+    session.settle(14);
+    if count(session)? <= before {
+        return Err(Error::new(format!(
+            "the click on `{region}` produced no new `{TAB_EVENT} tab={id}` line."
+        )));
+    }
+    Ok(())
+}
+
+/// Click ribbon command `name` — on the band, in a collapsed group or in the
+/// overflow — and require a new shell `INVOKE_EVENT id=<id>` line: the
+/// scripted twin of the OS checks' `click_command`.
+pub fn click_command_traced(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    (name, id): (&str, &str),
+    settle: u32,
+) -> Result<()> {
+    use crate::checks::driving::{INVOKE_EVENT, declared_or_in_overflow, shell_trace};
+    let rect = declared_or_in_overflow(session, pointer, ui_rect, name)?.ok_or_else(|| {
+        Error::new(format!(
+            "`{name}` was not on the band, in any collapsed group, or in the overflow."
+        ))
+    })?;
+    let count = |s: &Session| -> Result<usize> {
+        Ok(shell_trace(s)?
+            .events(INVOKE_EVENT)
+            .filter(|l| l.get("id") == Some(id))
+            .count())
+    };
+    let before = count(session)?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
+    session.settle(settle);
+    if count(session)? <= before {
+        return Err(Error::new(format!(
+            "`{name}` DID NOT TAKE THE CLICK: declared at {rect:?}, and no new \
+             `{INVOKE_EVENT} id={id}` line followed."
+        )));
+    }
+    Ok(())
+}

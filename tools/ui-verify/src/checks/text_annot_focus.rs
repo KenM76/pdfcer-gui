@@ -3,16 +3,15 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/text_annot_focus.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
+    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive::{click, offscreen, shot};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
 use crate::geom::{LRect, PixRect, Pt};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The sticky marker's square, in PDF points: the shell's `wordmarkup::STICKY_PT`,
 /// hung down and right from the click.
@@ -72,12 +71,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             pdf.display()
         )));
     }
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control, clicks on the \
-             canvas and types. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = ctx
         .profile
         .vocab
@@ -113,6 +106,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text-annot-focus")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -121,11 +115,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- A: Review mode, Markup tab, arm the sticky note ----------------------
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.markup").ok_or_else(|| {
         Error::new(format!(
@@ -133,7 +127,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -148,7 +142,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let item = crate::checks::driving::declared_or_in_overflow(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         "ribbon.item.markup.sticky_note",
     )?
@@ -158,7 +152,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(&session, WindowPoint::centre_of(item))?;
     session.settle(14);
     let trace = session.trace()?;
     if !trace
@@ -205,11 +199,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     );
 
     let before_path = ctx.out("text_annot_focus.before.png");
-    let before_shot = crate::capture::window_to_png(&session, &before_path)?;
+    let before_shot = shot(&session, &pointer, &before_path)?;
     report.artifact(before_path);
 
     // A click, not a drag: the sticky is click-placed and a drag places nothing.
-    driver.click_at(frame.to_screen(corner))?;
+    pointer.click(&session, corner)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -219,7 +213,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              `text_annot_places_and_authors`' territory, not this check's — fix it there.",
         ));
     }
-    let Some(_field) = declared(&trace, ui_rect, "text-annot.text") else {
+    let Some((_field, field_vp)) =
+        crate::checks::driving::declared_in(&trace, ui_rect, "text-annot.text")
+    else {
         return Err(Error::new(
             "the dialog declared no `text-annot.text` region, so it is not the text-bearing \
              kind and this check has nothing to say.",
@@ -234,25 +230,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // window — and the keys go to whatever holds focus. If the dialog seated
     // its caret, that is the field. If it only *asked* and lost, it is not.
     //
-    // Two keys already in `sys::vk`. WHAT is typed does not matter: Accept is
-    // gated on the field being non-empty and nothing else.
-    for key in [vk::F, vk::DIGIT_2] {
-        driver.press(key)?;
-        session.settle(8);
-    }
+    // Typed into the dialog's viewport, which reaches the field only if it
+    // holds egui's focus. WHAT is typed does not matter: Accept is gated on the
+    // field being non-empty and nothing else.
+    pointer.type_text(&session, field_vp.as_deref(), "F2")?;
+    session.settle(8);
     report.note("typed two characters WITHOUT clicking the field, the way an operator does");
 
     // --- D: Accept, and let the greying answer the question ----------------
     let trace = session.trace()?;
-    let Some(accept) = declared(&trace, ui_rect, "text-annot.accept") else {
+    let Some(_accept) = declared(&trace, ui_rect, "text-annot.accept") else {
         return Err(Error::new(
             "the dialog declared no `text-annot.accept` region to press.",
         ));
     };
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "text-annot.accept")?.declared_center(accept),
-    )?;
-    session.settle(24);
+    click(&session, &pointer, "text-annot.accept")?;
+    session.settle(9);
 
     let after = annot_count(&session);
     if after <= before {
@@ -284,14 +277,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The pointer is parked away from the box first, for `markup_rectangle`'s
     // reason: a capture taken with the cursor over the region would measure a
     // hover as well as an annotation.
-    driver.move_to(frame.to_screen(mapping.doc_to_window(DocPoint {
-        page: target.page,
-        x: target.x + PARK_PT,
-        y: target.y,
-    })?))?;
+    pointer.hover(
+        &session,
+        mapping.doc_to_window(DocPoint {
+            page: target.page,
+            x: target.x + PARK_PT,
+            y: target.y,
+        })?,
+    )?;
     session.settle(10);
     let after_path = ctx.out("text_annot_focus.after.png");
-    let after_shot = crate::capture::window_to_png(&session, &after_path)?;
+    let after_shot = shot(&session, &pointer, &after_path)?;
     report.artifact(after_path);
 
     let px = frame.logical_to_capture_pixels(box_rect);
@@ -323,6 +319,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "and it is on the page: {changed} of {total} pixels ({:.1}%) inside the box changed",
         ratio * 100.0
     ));
+    pointer.gone(&session)?;
     Ok(None)
 }
 

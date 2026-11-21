@@ -150,7 +150,7 @@ evidence rather than an absence of evidence.
   aim at. The six verbs it offers are the six driven here through the ribbon,
   and both routes reach `PdfcerApp::dispatch_command` — which is the whole
   point of one choke point.
-* **Extract.** It opens its own window, which this OS-input check does not
+* **Extract.** It opens its own window, which this check does not
   drive; `extract_pages_keeps_or_drops_the_labels` drives it with the
   scripted pointer, from the ribbon click to the written file.
 * **Which page was rotated.** Phase H proves *a* page in the file carries
@@ -159,7 +159,7 @@ evidence rather than an absence of evidence.
 
 # Every way this reports SKIP, and why none of them is a pass
 
-* no binary, no `--pdf`, `--no-input` — the harness never began;
+* no binary, no `--pdf` — the harness never began;
 * the diagnostic switches did not reach the process;
 * the document has **fewer than three pages** — a delete needs a spare and
   the count assertion needs headroom;

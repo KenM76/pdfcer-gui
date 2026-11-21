@@ -10,11 +10,11 @@ use super::trace::{latest_canvas, unavailable_now};
 use super::{CANVAS_REGION, MESSAGE_REGION, UNAVAILABLE_EVENT};
 use crate::checks::CheckReport;
 use crate::checks::driving::declared;
+use crate::checks::scripteddrive::{at_fraction, wheel_times};
 use crate::error::Result;
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
-use crate::sys::vk;
 use crate::trace::Trace;
 
 /// How many Ctrl+wheel notches out this part will spend before calling the way
@@ -62,7 +62,7 @@ fn standing(trace: &Trace) -> Option<Standing> {
 /// the state the wall put him in.
 pub(super) fn part_c(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     canvas: LRect,
     report: &mut CheckReport,
@@ -78,11 +78,9 @@ pub(super) fn part_c(
 
     // The canvas centre, not the page rect's. At the wall the page is far
     // larger than the window, so its midpoint is a window-logical coordinate a
-    // long way outside the window — and a Ctrl+wheel posted there goes to
-    // whatever owns that pixel, which is the operator's desktop. Same reasoning
-    // as part B's, and the same reason the frame is re-read here rather than
-    // carried: a dock may have been laid out again since.
-    let centre = session.frame()?.declared_at(canvas, 0.5, 0.5);
+    // long way outside the window — and a Ctrl+wheel aimed there lands where
+    // nothing answers it. Same reasoning as part B's.
+    let centre = at_fraction(canvas, 0.5, 0.5);
 
     match &start {
         Standing::Drawing(z) => report.note(format!(
@@ -105,7 +103,7 @@ pub(super) fn part_c(
     let mut spent = 0usize;
 
     while spent < BACKOUT_NOTCHES {
-        driver.scroll_at_held(centre, &[vk::CONTROL], -1, BACKOUT_BATCH)?;
+        wheel_times(session, pointer, centre, -1.0, true, BACKOUT_BATCH)?;
         session.settle(24);
         spent += BACKOUT_BATCH;
         let trace = session.trace()?;

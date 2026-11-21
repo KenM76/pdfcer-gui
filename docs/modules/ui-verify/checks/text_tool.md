@@ -83,8 +83,9 @@ default surviving beside the new tool.
 
 # Mouse only
 
-Every gesture here is a real `SetCursorPos` + `mouse_event`. Nothing in this
-check needs a key, which is a consequence of the interaction model rather than a
+Every gesture here is the scripted pointer's, on a window placed off the
+desktop, so the check runs under `--no-input`. Nothing in this check needs a
+key, which is a consequence of the interaction model rather than a
 coincidence: the tool is armed from the ribbon and the mark is a ribbon press,
 so the whole feature is clicks and one drag.
 
@@ -96,7 +97,7 @@ armed. All three are covered by unit test alone.
 
 # Every way this reports SKIP, and why none of them is a pass
 
-* no binary, no `--pdf`, `--no-input` — the harness never began;
+* no binary or no `--pdf` — the harness never began;
 * the diagnostic switches did not reach the process;
 * the page size could not be read and no `--page-size` was given;
 * the Edit segment, the View or Markup tab, or one of the two controls was

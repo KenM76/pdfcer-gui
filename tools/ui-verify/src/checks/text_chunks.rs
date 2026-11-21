@@ -8,11 +8,12 @@ use crate::checks::driving::{
     INVOKE_EVENT, SHELL_DIAG_ENV, TAB_EVENT, VIEW_TAB, click_mode_segment, declared,
     declared_names, declared_or_in_overflow, list, shell_trace,
 };
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::offscreen;
+use crate::checks::text_selection::aim_window;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::Click;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -133,7 +134,7 @@ pub(crate) fn toggle_invokes(session: &Session) -> Result<usize> {
 /// subsystems agree it was pressed. `Ok(Some(_))` is a failure message.
 pub(crate) fn press_the_toggle(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     want: bool,
     report: &mut CheckReport,
@@ -150,7 +151,7 @@ pub(crate) fn press_the_toggle(
                 list(&declared_names(&trace, ui_rect, "ribbon.tab."))
             )));
         };
-        driver.click_at(session.frame()?.declared_center(tab))?;
+        driver.click_rect(session, tab)?;
         session.settle(14);
         if !shell_trace(session)?
             .events(TAB_EVENT)
@@ -185,7 +186,7 @@ pub(crate) fn press_the_toggle(
     // same control up to three times in one run.
     let invokes_before = toggle_invokes(session)?;
     let mark = session.trace()?.mark();
-    driver.click_at(session.frame()?.declared_center(item))?;
+    driver.click_rect(session, item)?;
     session.settle(22);
 
     if toggle_invokes(session)? <= invokes_before {
@@ -226,13 +227,6 @@ pub(crate) fn press_the_toggle(
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is one click on the page and two or \
-             three on the ribbon, and it needs the pointer and the foreground. Reported as \
-             SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -282,18 +276,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text-chunks")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(45);
-    let driver = Driver::new(session.window());
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(
             "no `{PAGE_REGION}` region, so no sheet is on screen. Regions beginning `page`: {}.",
@@ -323,20 +318,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              the preference that way. Turning them on before measuring; they are left ON however \
              this check ends.",
         );
-        if let Some(failure) = press_the_toggle(&session, &driver, ui_rect, true, report)? {
+        if let Some(failure) = press_the_toggle(&session, &pointer, ui_rect, true, report)? {
             return Ok(Some(failure));
         }
     }
 
     // --- B: a click on the text must draw one box per chunk ------------------
-    let at = aim(
+    let at = aim_window(
         ctx,
         &session,
         page,
         DocPoint::new(target.page, target.x, target.y),
     )?;
     let mark = session.trace()?.mark();
-    driver.click_at(at)?;
+    pointer.click(&session, at)?;
     session.settle(28);
 
     let trace = session.trace()?;
@@ -392,7 +387,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- C: the switch must turn them off ------------------------------------
     let mark = session.trace()?.mark();
-    if let Some(failure) = press_the_toggle(&session, &driver, ui_rect, false, report)? {
+    if let Some(failure) = press_the_toggle(&session, &pointer, ui_rect, false, report)? {
         return Ok(Some(failure));
     }
     let off = verdict(&session.trace()?, mark);
@@ -400,7 +395,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // Restore before reporting. This check leaves the boxes on however it
         // ends, and a failure here is exactly the run that would otherwise
         // poison the next one.
-        let _ = press_the_toggle(&session, &driver, ui_rect, true, report);
+        let _ = press_the_toggle(&session, &pointer, ui_rect, true, report);
         return Ok(Some(format!(
             "★★★ THE SWITCH DOES NOT GOVERN THE BOXES: the command was invoked, the application \
              wrote `{SWITCH_EVENT} enabled=false`, and the painter's answer is {}.\n\
@@ -419,7 +414,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- D: …and back on, which is also how this check cleans up -------------
     let mark = session.trace()?.mark();
-    if let Some(failure) = press_the_toggle(&session, &driver, ui_rect, true, report)? {
+    if let Some(failure) = press_the_toggle(&session, &pointer, ui_rect, true, report)? {
         return Ok(Some(failure));
     }
     let back = verdict(&session.trace()?, mark);
@@ -439,5 +434,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("★ …and a second press brought them back, leaving the switch as it was found");
+    pointer.gone(&session)?;
     Ok(None)
 }

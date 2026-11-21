@@ -3,20 +3,25 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/redact_preview.md`.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::checks::redaction::{
     self, MODE, PANEL_EVENT, PREPARED_EVENT, PROTECT_TAB, REDACT, REFUSED_EVENT, REGION_PREFIX,
     SECRET, WHOLE_PAGE_REGION,
 };
+use crate::checks::scripteddrive::{click, click_command_traced, click_tab_traced, offscreen};
 use crate::checks::{Check, CheckContext, driving};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
+use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// The apply control on the marking panel.
 const APPLY_REGION: &str = "redact-apply";
+
+/// The seam that answers the save dialog.
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 
 /// The block under test — both the trace key and the published region name.
 const REMOVED_TEXT: &str = "redact-apply-removed-text";
@@ -65,14 +70,54 @@ fn clipped_fraction(trace: &Trace) -> Option<f32> {
         .and_then(|line| line.get_f32("shown"))
 }
 
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check has to mark a page and open the apply \
-             report, which is four clicks. Reported as SKIPPED rather than passed: a check that \
-             did not run has learned nothing.",
-        ));
+/// Launch off the desktop on `pdf` with both diagnostic channels armed and the
+/// save seam set to `target`, and the scripted pointer that drives it.
+fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    pdf: &Path,
+    target: &Path,
+) -> Result<(Session, ScriptedPointer)> {
+    let exe = ctx
+        .resolve_exe()
+        .ok_or_else(|| Error::new("no binary to drive. Pass --exe."))?;
+    let mut spec = LaunchSpec::new(&exe, ctx.out("redact-preview.trace.txt"));
+    spec.pdf = Some(pdf.to_path_buf());
+    spec.env.push((
+        ctx.profile.diag_env.0.to_owned(),
+        ctx.profile.diag_env.1.to_owned(),
+    ));
+    spec.env.push((
+        driving::SHELL_DIAG_ENV.0.to_owned(),
+        driving::SHELL_DIAG_ENV.1.to_owned(),
+    ));
+    spec.env
+        .push((SAVE_PATH_ENV.to_owned(), target.display().to_string()));
+    spec.allow_stale = ctx.allow_stale;
+    spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "redact-preview")?;
+    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.note(format!(
+        "launched {} on {} as pid {}",
+        exe.display(),
+        pdf.display(),
+        session.pid()
+    ));
+    report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(40);
+    if !session.trace()?.started(ctx.profile.vocab.start_event) {
+        return Err(Error::new(format!(
+            "the trace has no `{}` line, so the diagnostic switch did not reach the process. \
+             Captured stderr is at {}.",
+            ctx.profile.vocab.start_event,
+            session.trace_path().display()
+        )));
     }
+    Ok((session, pointer))
+}
+
+fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -110,15 +155,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let target = ctx.out("redact-preview-unused.pdf");
     let _ = std::fs::remove_file(&target);
 
-    let session = redaction::launch(ctx, report, &fixture, &target, "redact-preview.trace.txt")?;
-    let driver = Driver::new(session.window());
+    let (session, pointer) = launch(ctx, report, &fixture, &target)?;
 
-    driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(16);
 
     // --- mark page 1 ------------------------------------------------------
-    redaction::click_tab(&session, &driver, ui_rect, PROTECT_TAB)?;
-    redaction::click_command(&session, &driver, ui_rect, REDACT, 20)?;
+    click_tab_traced(&session, &pointer, ui_rect, PROTECT_TAB)?;
+    click_command_traced(&session, &pointer, ui_rect, REDACT, 20)?;
     redaction::region(&session.trace()?, ui_rect, WHOLE_PAGE_REGION, REGION_PREFIX).map_err(
         |e| {
             Error::new(format!(
@@ -127,7 +171,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ))
         },
     )?;
-    redaction::click_region(&session, &driver, ui_rect, WHOLE_PAGE_REGION, 18)?;
+    click(&session, &pointer, WHOLE_PAGE_REGION)?;
+    session.settle(3);
 
     let trace = session.trace()?;
     let Some((marks, _)) = redaction::census(&trace) else {
@@ -147,7 +192,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- open the apply report --------------------------------------------
-    redaction::click_region(&session, &driver, ui_rect, APPLY_REGION, 24)?;
+    redaction::region(&session.trace()?, ui_rect, APPLY_REGION, REGION_PREFIX)?;
+    click(&session, &pointer, APPLY_REGION)?;
+    session.settle(9);
+    pointer.gone(&session)?;
     let trace = session.trace()?;
     if trace.last(PREPARED_EVENT).is_none() {
         if let Some(refused) = trace.last(REFUSED_EVENT) {

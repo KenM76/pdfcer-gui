@@ -8,12 +8,12 @@ use crate::checks::driving::{
     list,
 };
 use crate::checks::page_display_recentres::enter_display;
+use crate::checks::scripteddrive::{at_fraction, offscreen_at, wheel_times};
 use crate::checks::{Check, CheckContext, CheckReport};
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
-use crate::sys::vk;
 use crate::trace::Trace;
 use std::collections::BTreeSet;
 use std::path::PathBuf;
@@ -63,7 +63,7 @@ const MODE: &str = "review";
 /// survives to zoom 47 — comfortably past 20.7 with the first notch above the
 /// boundary landing near 25. The chrome above and below the canvas measured 230
 /// points in total, which is the constant in `canvas_height = height - 230`.
-const VIEWPORT: &str = "0,0,1600,1380";
+const VIEWPORT: &str = "-4200,-4200,1600,1380";
 
 /// The canvas viewport. Every aim point in this check is expressed as a
 /// fraction of it, per the crate's coordinate contract.
@@ -291,19 +291,19 @@ use trace::{
 /// Part A. The operator's raster error, at its source.
 fn part_a(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     canvas: LRect,
     report: &mut CheckReport,
 ) -> Result<Option<String>> {
     enter_display(
         session,
-        driver,
+        pointer,
         ui_rect,
         "ribbon.item.view.page_continuous",
         "continuous",
     )?;
-    let (seam, opening) = park_on_the_seam(session, driver, canvas, report)?;
+    let (seam, opening) = park_on_the_seam(session, pointer, canvas, report)?;
 
     // Every page the canvas reported as ACTING during the climb. The "only the
     // operator's own sheet was ordered" clause is stated against this set
@@ -324,7 +324,7 @@ fn part_a(
     let seam_logical = seam_y(&opening);
     let mut state = opening;
     while notches < CLIMB_NOTCHES_A {
-        driver.scroll_at_held(seam, &[vk::CONTROL], 1, 1)?;
+        pointer.wheel(session, seam, 1.0, true)?;
         session.settle(12);
         notches += 1;
         let trace = session.trace()?;
@@ -578,14 +578,14 @@ fn unconverted_panics(trace: &Trace) -> Option<String> {
 /// says why.
 fn part_b(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     canvas: LRect,
     report: &mut CheckReport,
 ) -> Result<Option<String>> {
     enter_display(
         session,
-        driver,
+        pointer,
         ui_rect,
         "ribbon.item.view.page_single",
         "single",
@@ -594,15 +594,15 @@ fn part_b(
     // The canvas centre, not the page-rect centre. At part A's exit zoom the
     // page is far larger than the window, so its rect's midpoint is a
     // window-logical coordinate a long way outside the window — and
-    // `declared_at` does not clamp, deliberately. Aiming there would send a
-    // Ctrl+wheel at whatever owns that pixel, which is the operator's desktop.
-    let centre = session.frame()?.declared_at(canvas, 0.5, 0.5);
+    // `at_fraction` does not clamp, deliberately. A Ctrl+wheel aimed there
+    // lands outside the window, where nothing answers it.
+    let centre = at_fraction(canvas, 0.5, 0.5);
     let mark = session.trace()?.mark();
 
     let mut notches = 0usize;
     let mut learned: Option<Learned> = None;
     while notches < CLIMB_NOTCHES_B {
-        driver.scroll_at_held(centre, &[vk::CONTROL], 1, CLIMB_BATCH_B)?;
+        wheel_times(session, pointer, centre, 1.0, true, CLIMB_BATCH_B)?;
         session.settle(24);
         notches += CLIMB_BATCH_B;
         let trace = session.trace()?;
@@ -648,7 +648,7 @@ fn part_b(
 
     // The operator's *"the canvas will just stop zooming in"*: the clamp has to
     // hold against continued pressure, not merely happen once.
-    driver.scroll_at_held(centre, &[vk::CONTROL], 1, EXTRA_NOTCHES_B)?;
+    wheel_times(session, pointer, centre, 1.0, true, EXTRA_NOTCHES_B)?;
     session.settle(40);
     let trace = session.trace()?;
 
@@ -826,13 +826,6 @@ fn drive_a(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check presses ribbon commands and rolls the \
-             wheel, plain and with Ctrl held, for a hundred notches or more. Reported as SKIPPED \
-             rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -865,9 +858,7 @@ fn drive_a(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    if let Some(name) = ctx.profile.viewport_env {
-        spec.env.push((name.to_owned(), VIEWPORT.to_owned()));
-    } else {
+    if ctx.profile.viewport_env.is_none() {
         return Err(Error::new(format!(
             "the `{}` profile declares no viewport override, so this check cannot fix the window \
              size — and the seam band below is quoted as a fraction of a canvas of known height. \
@@ -875,6 +866,7 @@ fn drive_a(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
             ctx.profile.name
         )));
     }
+    let pointer = offscreen_at(ctx, &mut spec, "raster-wall", VIEWPORT)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -883,10 +875,10 @@ fn drive_a(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(16);
 
     let canvas = declared(&session.trace()?, ui_rect, CANVAS_REGION)
@@ -900,7 +892,9 @@ fn drive_a(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
         )));
     }
 
-    part_a(&session, &driver, ui_rect, canvas, report)
+    let verdict = part_a(&session, &pointer, ui_rect, canvas, report);
+    pointer.gone(&session)?;
+    verdict
 }
 
 /// Launch on the dense drawing and run [`part_b`].
@@ -912,12 +906,6 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check rolls the wheel with Ctrl held, a hundred \
-             notches and more. Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -955,15 +943,14 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    if let Some(name) = ctx.profile.viewport_env {
-        spec.env.push((name.to_owned(), VIEWPORT.to_owned()));
-    } else {
+    if ctx.profile.viewport_env.is_none() {
         return Err(Error::new(format!(
             "the `{}` profile declares no viewport override, so this check cannot fix the window \
              size. SKIPPED rather than measured at whatever size the window happened to open at.",
             ctx.profile.name
         )));
     }
+    let pointer = offscreen_at(ctx, &mut spec, "raster-wall-b", VIEWPORT)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     //
@@ -979,14 +966,14 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     // A longer settle than part A's. This is a 5.7 MB vector drawing and the
     // first frame has to raster a whole sheet of it; a short settle reads the
     // opening zoom before the fit has been applied, which would put the climb's
     // first notch somewhere this check did not choose.
     session.settle(80);
 
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(24);
 
     let canvas = declared(&session.trace()?, ui_rect, CANVAS_REGION)
@@ -999,7 +986,7 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
             canvas.height()
         )));
     }
-    if let Some(failure) = part_b(&session, &driver, ui_rect, canvas, report)? {
+    if let Some(failure) = part_b(&session, &pointer, ui_rect, canvas, report)? {
         return Ok(Some(failure));
     }
     // Part C runs on whatever part B left standing — a held ceiling or a
@@ -1007,7 +994,9 @@ fn drive_b(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String
     // one. It is here rather than in a `Check` of its own because reaching the
     // wall costs sixty-eight or more notches on a 5.7 MB drawing, and this
     // session is already standing in the state it needs. See `backout`.
-    backout::part_c(&session, &driver, ui_rect, canvas, report)
+    let verdict = backout::part_c(&session, &pointer, ui_rect, canvas, report);
+    pointer.gone(&session)?;
+    verdict
 }
 
 #[cfg(test)]

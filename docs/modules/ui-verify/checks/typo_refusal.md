@@ -201,11 +201,9 @@ The reset's arrival is asserted below rather than assumed.
 
 ### `const SEED`
 
-Seeded rather than typed, for `enter_newline`'s reason: `sys::vk` is a
-deliberately closed list of non-character virtual keys and this machine
-cannot inject an arbitrary character. The keystroke is not the subject here
-— the refusal after the commit is — so a seam that puts the letter in the
-draft costs this check nothing it was measuring.
+Seeded rather than typed: the keystroke is not the subject here — the
+refusal after the commit is — so a seam that puts the letter in the draft
+costs this check nothing it was measuring.
 
 ### `const RESET_EVENT`
 
@@ -242,8 +240,8 @@ document**, not work around the guard.
 
 The wheel is chosen over the Pages panel and over the status bar's page box
 because it needs neither of them to be mounted, and this check has just
-reset the dock. It is chosen over a keyboard chord because there is none:
-`sys::vk` carries no `PAGE_DOWN`, deliberately.
+reset the dock. It is the scripted pointer's wheel, on a window placed off the
+desktop, like every other gesture here.
 
 ## It reads the application's own answer, not its own count
 

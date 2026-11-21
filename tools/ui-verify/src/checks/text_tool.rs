@@ -8,11 +8,12 @@ use crate::checks::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
-use crate::checks::text_selection::{BANDS, aim, settled, settled_selection};
+use crate::checks::scripteddrive::{offscreen, shot};
+use crate::checks::text_selection::{BANDS, aim_window, settled, settled_selection};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{DocPoint, PageGeometry};
+use crate::coords::{DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -131,7 +132,7 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 /// Click a ribbon tab and confirm the shell reported it.
 fn click_tab(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     region: &str,
     tab_id: &str,
@@ -146,7 +147,7 @@ fn click_tab(
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     session.settle(12);
     if !shell_trace(session)?
         .events(TAB_EVENT)
@@ -198,13 +199,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              rather than the feature.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is five clicks and two drags on a real \
-             canvas. Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -246,6 +240,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "text-tool")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -258,6 +253,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         SHELL_DIAG_ENV.1
     ));
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
 
     let trace = session.trace()?;
@@ -271,10 +267,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let driver = Driver::new(session.window());
 
     // --- step 1: Edit, the one mode this tool changes anything in ----------
-    driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     report.note(format!(
         "the {MODE} segment reported the click — the mode whose primary button is the content \
          marquee, and therefore the only one where the text tool is not redundant"
@@ -290,15 +285,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // was always live — and "always live and does nothing" is what P3 forbids
     // outright, so failing here is a violation in the opposite direction rather
     // than a missing feature.
-    click_tab(&session, &driver, ui_rect, MARKUP_TAB, MARKUP_TAB_ID)?;
-    let frame = session.frame()?;
+    click_tab(&session, &pointer, ui_rect, MARKUP_TAB, MARKUP_TAB_ID)?;
     let mark = control(&session.trace()?, ui_rect, MARK_ITEM, "Underline")?;
     report.note(format!(
         "{MARK_ITEM} at {mark:?} on the Markup tab in {MODE}"
     ));
 
     let before = invokes(&session, MARK_ID)?;
-    driver.click_at(frame.declared_center(mark))?;
+    pointer.click(&session, WindowPoint::centre_of(mark))?;
     session.settle(12);
     if invokes(&session, MARK_ID)? > before {
         return Ok(Some(format!(
@@ -331,8 +325,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ==================================================================
     // PHASE B — the ribbon control arms the canvas tool
     // ==================================================================
-    click_tab(&session, &driver, ui_rect, TOOL_TAB, TOOL_TAB_ID)?;
-    let frame = session.frame()?;
+    click_tab(&session, &pointer, ui_rect, TOOL_TAB, TOOL_TAB_ID)?;
     let trace = session.trace()?;
     let tool = control(&trace, ui_rect, TOOL_ITEM, "Text tool")?;
     if declared(&trace, ui_rect, TOOL_SIBLING).is_none() {
@@ -349,7 +342,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
 
     let before = invokes(&session, TOOL_ID)?;
-    driver.click_at(frame.declared_center(tool))?;
+    pointer.click(&session, WindowPoint::centre_of(tool))?;
     session.settle(16);
     if invokes(&session, TOOL_ID)? <= before {
         return Ok(Some(format!(
@@ -417,7 +410,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     for (n, (start, end)) in BANDS.iter().enumerate() {
         let from = DocPoint::new(0, start.0 * page.width_pt, start.1 * page.height_pt);
         let to = DocPoint::new(0, end.0 * page.width_pt, end.1 * page.height_pt);
-        let (from, to) = match (aim(ctx, &session, page, from), aim(ctx, &session, page, to)) {
+        let (from, to) = match (
+            aim_window(ctx, &session, page, from),
+            aim_window(ctx, &session, page, to),
+        ) {
             (Ok(a), Ok(b)) => (a, b),
             (Err(e), _) | (_, Err(e)) => {
                 unreachable.push(format!("band {}: {}", n + 1, e.message()));
@@ -425,7 +421,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             }
         };
         let before = settled(&session.trace()?).1;
-        driver.drag(from, to)?;
+        pointer.drag(&session, from, to, 8)?;
         session.settle(16);
         let after = session.trace()?;
         // The line the gesture SETTLED on, read unfiltered — see
@@ -492,10 +488,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // same bytes — but a reader who wants to know whether the band landed on the
     // words they expected needs the picture, and on a failure it is the first
     // thing they will ask for.
-    let shot = ctx.out("text_tool.png");
-    match crate::capture::window_to_png(&session, &shot) {
+    let png = ctx.out("text_tool.png");
+    match shot(&session, &pointer, &png) {
         Ok(_) => {
-            report.artifact(shot);
+            report.artifact(png);
             report.note(
                 "the window with the Edit-mode text selection on it is saved beside the trace. \
                  Evidence, not the oracle: the wash is deliberately low-alpha and the cursor is \
@@ -516,12 +512,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     //
     // The P3 tension closing, observed rather than argued: the same control,
     // in the same mode, in the same run, that phase A found dead.
-    click_tab(&session, &driver, ui_rect, MARKUP_TAB, MARKUP_TAB_ID)?;
-    let frame = session.frame()?;
+    click_tab(&session, &pointer, ui_rect, MARKUP_TAB, MARKUP_TAB_ID)?;
     let mark = control(&session.trace()?, ui_rect, MARK_ITEM, "Underline")?;
     let invokes_before = invokes(&session, MARK_ID)?;
     let applies_before = session.trace()?.events(APPLY_EVENT).count();
-    driver.click_at(frame.declared_center(mark))?;
+    pointer.click(&session, WindowPoint::centre_of(mark))?;
     session.settle(24);
 
     if invokes(&session, MARK_ID)? <= invokes_before {
@@ -610,10 +605,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // nothing, and the marquee (the ONLY content-selection gesture the product
     // has) would be silently gone. This is the only phase that can tell the two
     // apart, and it costs one click and one drag.
-    click_tab(&session, &driver, ui_rect, TOOL_TAB, TOOL_TAB_ID)?;
-    let frame = session.frame()?;
+    click_tab(&session, &pointer, ui_rect, TOOL_TAB, TOOL_TAB_ID)?;
     let tool = control(&session.trace()?, ui_rect, TOOL_ITEM, "Text tool")?;
-    driver.click_at(frame.declared_center(tool))?;
+    pointer.click(&session, WindowPoint::centre_of(tool))?;
     session.settle(16);
     let retired = session
         .trace()?
@@ -630,20 +624,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     let (start, end) = BANDS[band - 1];
-    let from = aim(
+    let from = aim_window(
         ctx,
         &session,
         page,
         DocPoint::new(0, start.0 * page.width_pt, start.1 * page.height_pt),
     )?;
-    let to = aim(
+    let to = aim_window(
         ctx,
         &session,
         page,
         DocPoint::new(0, end.0 * page.width_pt, end.1 * page.height_pt),
     )?;
     let before = selections(&session.trace()?).len();
-    driver.drag(from, to)?;
+    pointer.drag(&session, from, to, 8)?;
     session.settle(16);
     let after = session.trace()?;
     let lines = selections(&after);
@@ -679,6 +673,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          (see find_bar), so all three are covered by unit test alone and the gap is on the record \
          rather than implied by a green result",
     );
+    pointer.gone(&session)?;
     Ok(None)
 }
 

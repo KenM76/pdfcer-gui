@@ -65,8 +65,10 @@ operator's own drawings are frequently single-sheet.
 `viewer::display::PageDisplay::row_of` implements the **cover rule**:
 row 0 holds page 0 **alone**, and rows 1.. hold `2r-1` and `2r`. A facing
 fit measured at launch therefore measures **one page** and would pass on a
-build that cannot fit two. The run presses **Page Down** once to reach page
-index 1 before it measures anything, and then asserts that what it is
+build that cannot fit two. The run makes page index 1 the acting page
+before it measures anything. The scroll in the first half may already have
+left it there, so **Page Down** is pressed only from the cover, never past
+the spread. It then asserts that page index 1 is acting and that what it is
 looking at really is wider than one page — a precondition that fails as a
 SKIP rather than being assumed.
 

@@ -79,10 +79,13 @@ on the line.
 
 # Mouse only
 
+Every gesture is a drag of the scripted pointer on a window placed off the
+desktop, so the check runs under `--no-input`. No key is pressed: Escape,
+Ctrl+A and Ctrl+C are covered by unit test alone, and the report says so.
 
 # Every way this reports SKIP, and why none of them is a pass
 
-* no binary, no `--pdf`, `--no-input` — the harness never began;
+* no binary or no `--pdf` — the harness never began;
 * the diagnostic switches did not reach the process;
 * the page size could not be read and no `--page-size` was given — without
   the page height there is no y-flip;
@@ -141,10 +144,13 @@ ran and produced half an answer.
 [`crate::checks::read_mode`]'s ladder looks for a *point* with an object
 under it. This needs a **horizontal run** with glyphs along it, which is a
 different target and a more forgiving one: a sweep only has to *cross* text
-somewhere along its length. Neither end has to land on a glyph —
-`EditableTextModel::hit_test` answers over a band one line-height deep
-around each line, and `canvas::textsel::clamp_to_text` carries the far end
-of a sweep back to the furthest point that was in reach.
+somewhere along its length. The far end does not have to land on a glyph:
+`canvas::textsel::clamp_to_text` carries it back to the furthest point that
+was in reach. The press end does: `canvas::textsel::drag` takes its anchor
+from `EditableTextModel::hit_test`, which answers only within one
+line-height of a line, so a band that starts on blank paper selects nothing
+however much text it crosses. The title-block bands therefore start inside
+the first glyph of their row.
 
 ⚠ That reach is **bounded**, so a full-width band only works because of the
 clamp: a band that crosses no text at all selects nothing, which is why the
