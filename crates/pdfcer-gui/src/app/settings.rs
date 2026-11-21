@@ -765,4 +765,25 @@ mod tests {
             "the image-export path's builder chain reintroduced the hairline mode"
         );
     }
+
+    /// `view.highlight_fields` reaches the canvas request and its key, and the
+    /// funnel every export and print path builds from carries no tint.
+    #[test]
+    fn the_field_tint_reaches_the_canvas_and_no_export() {
+        let mut doc = crate::app::state::open_local_fixture("a1-titleblock.pdf");
+        let plain = doc.render_key_for(0, 2.0);
+        doc.view.highlight_fields = true;
+        let request = doc
+            .render_request_for(0, 2.0)
+            .expect("the fixture has a first page");
+        assert!(
+            request.field_highlight.is_some(),
+            "the canvas request lost the tint"
+        );
+        let tinted = doc.render_key_for(0, 2.0);
+        assert!(tinted.fields_highlighted());
+        assert_ne!(plain.discrete_inputs(), tinted.discrete_inputs());
+        assert_eq!(crate::render::worker::RenderKey::of(&request), tinted);
+        assert_eq!(doc.settings.render_options().field_highlight, None);
+    }
 }

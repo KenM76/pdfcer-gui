@@ -184,6 +184,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(spots_flattened::ExtraSpotInksAreDisclosed),
         Box::new(fields_redrawn::FieldsRedrawnForNeedAppearancesAreDisclosed),
         Box::new(field_outline::DefaultFieldIsOutlined),
+        Box::new(field_highlight::HighlightFieldsTintsEveryField),
         Box::new(text_render_mode::ChoosingARenderModeReachesTheDocument),
         Box::new(text_spacing::SuperscriptReachesTheDocument),
         Box::new(run_width::TypingARunWidthReachesTheDocument),

@@ -444,9 +444,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 263 → 267: Group and Ungroup, on Edit ▸ Arrange and Markup ▸ Arrange.
     // 267 → 269: Continue path and Open path here, Format ▸ Nodes.
     // 269 → 270: `edit.cut_as_vector`, Edit ▸ Clipboard (O435).
+    // 270 → 271: `view.highlight_fields`, View ▸ Display.
     assert_eq!(
         registry().len(),
-        270 + 2 * usize::from(cfg!(feature = "signing"))
+        271 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -900,9 +901,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 230 → 232: `markup.add_text` and `markup.paragraphs` share `add-text`
     // and `paragraphs`.
     // 232 → 233: `edit.cut_as_vector` shares `cut`.
+    // 233 → 234: `view.highlight_fields` shares `form-field`.
     assert_eq!(
         named,
-        233 + 2 * usize::from(cfg!(feature = "signing"))
+        234 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

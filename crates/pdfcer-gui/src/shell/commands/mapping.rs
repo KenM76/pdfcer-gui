@@ -49,6 +49,7 @@ pub fn chrome_command(chrome: crate::app::actions::ViewChrome) -> &'static str {
         C::LineWeights => "view.line_weights",
         // ui-text-exempt: command ids, never displayed
         C::SkipTinyDetails => "view.skip_tiny_details",
+        C::HighlightFields => "view.highlight_fields",
         // ui-text-exempt: command ids, never displayed
         C::OverprintPreview => "view.overprint_preview",
         // ui-text-exempt: command ids, never displayed

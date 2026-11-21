@@ -135,4 +135,16 @@ pub(super) fn publish_coverage(
             u8::from(doc.view.overprint_preview)
         )
     });
+    // `view.highlight_fields`: asked for, and whether the texture on screen
+    // was drawn with the tint.
+    crate::diag::trace_on_change("canvas-field-highlight", || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "mode={} drawn={}",
+            u8::from(doc.view.highlight_fields),
+            doc.page_texture
+                .as_ref()
+                .map_or(0, |t| u8::from(t.key.fields_highlighted()))
+        )
+    });
 }

@@ -50,6 +50,7 @@ impl OpenDoc {
         .with_region(self.region_for(page_index))
         .with_tiny_details_skipped(self.view.skip_tiny_details)
         .with_overprint(self.view.overprint_preview)
+        .with_fields_highlighted(self.view.highlight_fields)
         .with_separations(self.separations.as_ref())
     }
 
@@ -95,6 +96,11 @@ impl OpenDoc {
             } else {
                 pdfcer_render::OverprintPreview::Off
             },
+            // `view.highlight_fields`, canvas only for `stroke_display`'s reason.
+            field_highlight: self
+                .view
+                .highlight_fields
+                .then(pdfcer_render::FieldHighlight::default),
             separations: self.separations.clone(),
             image_magnify: self.prefs.pictures.magnify(),
             layers: self.layer_visibility(),
