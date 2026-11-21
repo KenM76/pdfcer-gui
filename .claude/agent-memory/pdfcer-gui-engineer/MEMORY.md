@@ -21,7 +21,7 @@
 - [A delete that frees nothing](project_drive_holds_deleted_target.md) — a sync client's hard links hold the data; check `fsutil hardlink list`.
 - [A backlog row is a record, not evidence](feedback_backlog_row_record.md) — verify absence against source.
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.
-- [A SKIP is not red](feedback_skip_red_check_stop.md) — can be a misfiled FAIL; [or the scratch folder](feedback_skip_on_missing_asset.md); [hid a stale gesture](feedback_retargeted_check_keeps_gesture.md).
+- [A SKIP is not red](feedback_skip_red_check_stop.md) — a misfiled FAIL; [scratch](feedback_skip_on_missing_asset.md); [old gesture](feedback_retargeted_check_keeps_gesture.md); [worktree](feedback_gate_scans_worktrees.md).
 - [A check that cannot fail is not evidence](feedback_check_cannot_fail.md) — falsify it, [on real files](feedback_falsify_on_real_files.md); self-tests aren't enough.
 - [A check's failure messages never run](feedback_failure_messages_unrun.md) — a plant fires one arm; the rest say anything.
 - [His sentences are reports, not measurements](feedback_kens_sentences.md) — "800%" named a setting.
