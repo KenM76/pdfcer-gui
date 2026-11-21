@@ -552,6 +552,16 @@ pub fn text_style_used_standard_face(bold: bool, italic: bool, to: &str) -> Stri
     )
 }
 
+/// Disclosure, **ladder rung 3**: a font file the operator offered was bound,
+/// and the letters this text uses were embedded from it.
+#[must_use]
+pub fn text_style_used_supplied_face(bold: bool, italic: bool, to: &str) -> String {
+    let style = axes(bold, italic);
+    format!(
+        "No {style} face on this page could show this text, so pdfcer set it in {to} from the font file you offered, and copied into the document only the letters this text uses."
+    )
+}
+
 /// Disclosure, **ladder rung `AlreadyStyled`**: the text was already that way.
 #[must_use]
 pub fn text_style_already_that_way(bold: bool, italic: bool) -> String {

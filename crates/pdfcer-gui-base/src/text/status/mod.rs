@@ -97,6 +97,7 @@ pub use selection::{
     text_style_used_other_family,
     text_style_used_sibling_face,
     text_style_used_standard_face,
+    text_style_used_supplied_face,
     // O69's sibling of `too_many_anchors` below. It lives in `selection`
     // rather than in this file because this file is at 1,482 lines against
     // R2's 1,500, and it is re-exported here so a caller says

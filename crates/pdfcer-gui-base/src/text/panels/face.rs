@@ -28,6 +28,34 @@ pub const fn font_file_hover() -> &'static str {
      only the letters this text uses."
 }
 
+/// The button beside Bold and Italic that offers a font file as their face.
+#[must_use]
+pub const fn style_donor_button() -> &'static str {
+    "Bold/Italic from a font file…"
+}
+
+/// Hover for [`style_donor_button`].
+#[must_use]
+pub const fn style_donor_hover() -> &'static str {
+    "Offer a bold or italic font file of this text's own typeface. When this page has no such      face, Bold and Italic use the file and copy into the document only the letters the text uses."
+}
+
+/// The bold button's hover text when **pdfcer will embed an offered face**.
+#[must_use]
+pub fn text_bold_hint_supplied_face(face: &str) -> String {
+    format!(
+        "Set this text in bold. This page carries no bold face, so pdfcer will use {face} from the font file you offered, copying in only the letters this text uses."
+    )
+}
+
+/// The italic button's twin of [`text_bold_hint_supplied_face`].
+#[must_use]
+pub fn text_italic_hint_supplied_face(face: &str) -> String {
+    format!(
+        "Set this text in italic. This page carries no italic face, so pdfcer will use {face} from the font file you offered, copying in only the letters this text uses."
+    )
+}
+
 /// Title of the file picker [`font_file_button`] opens.
 #[must_use]
 pub const fn font_file_dialog_title() -> &'static str {

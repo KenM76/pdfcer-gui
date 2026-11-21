@@ -195,6 +195,12 @@ preview run under a default posture would promise thickened letters to
 an operator who had ticked *never fake it*, which is the exact defect
 the deleted `Refuse`-pinned probe used to cause from the other side.
 
+The forecast is `EditSession::preview_style_ladder_with_donors`, given the
+donors [`crate::app::actions::textstyle::donor::plans`] builds from
+`OpenDoc::style_donors` for the run's characters, so a file the operator
+offered changes the forecast as it will change the press. Each resolved
+forecast traces `text-style-forecast axis= rung= donors=`.
+
 A single axis per call, because the two buttons issue two separate
 single-axis requests; see [`TextStyleDraft::italic_outlook`] for why
 neither may borrow the other's answer.
@@ -209,6 +215,7 @@ neither may borrow the other's answer.
 | [`StyleOutlook::SiblingOnPage`] | *this page already carries **Arial-Bold**, the bold form of this text's own typeface* |
 | [`StyleOutlook::OtherFamilyOnPage`] | *pdfcer will use **Arial-Bold**, a real bold face from a different typeface* |
 | [`StyleOutlook::StandardSibling`] | *pdfcer will add **Helvetica-Bold**, a standard PDF face, without embedding a font file* |
+| [`StyleOutlook::SuppliedFace`] | *pdfcer will embed **pdfceSubsetDemo-Bold** from the font file you offered* |
 | [`StyleOutlook::Synthesized`] | *no real bold face can show this text, so pdfcer will thicken the letters* |
 | [`StyleOutlook::Declined`] | *your settings say never fake it, so Bold will be refused here* |
 | `None` — the probe did not answer | the conditional hint, unchanged |
@@ -222,12 +229,23 @@ operator staring at a title block full of `Times-Bold` wants the second.
 
 The last row is not a fallback that should have been designed away. A probe
 returns `None` for a page whose content cannot be planned, for an
-`#[non_exhaustive]` rung this build has never seen — rung 3, the
-`--font-dir` donor, is exactly that — and for an encrypted document; and in
+`#[non_exhaustive]` rung this build has never seen, and for an encrypted
+document; and in
 every one of those the honest thing to say is the mechanism rather than a
 prediction. That is what
 [`crate::text::panels::properties::text_bold_hint`] already said, which is
 why it stays.
+
+### `fn donor_button`
+
+*Bold/Italic from a font file…* (`DONOR_REGION`,
+`properties.text.style-donor`), drawn beside Italic only while either
+forecast is [`StyleOutlook::Synthesized`], [`StyleOutlook::Declined`] or
+[`StyleOutlook::SuppliedFace`]: the cases where a face the page lacks would
+change the answer. It pushes `Action::AddStyleDonor`. The engine binds a
+donor (rung 3) only when its name has the run's family stem and claims
+exactly the wanted bold and italic, so the hover says to pick the family's
+bold or italic file.
 
 # None of the seven greys the button, and that is still the engine's ruling
 

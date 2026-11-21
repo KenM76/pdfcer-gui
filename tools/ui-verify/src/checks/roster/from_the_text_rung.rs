@@ -33,6 +33,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(word_styles::TheRibbonAlignsTheParagraphAtTheCaret),
         Box::new(repeated_word::CtrlBBoldsTheSecondCopyOfARepeatedWord),
         Box::new(synthetic_bold::BoldDrawnByAStrokeReadsAsBold),
+        Box::new(style_donor::ADonorFaceMakesBoldReal),
         Box::new(tied_underline::CtrlUUnderlinesTheTextItself),
         Box::new(tagged_underline::UnderliningPartOfATaggedParagraphSaysItIsNotRecorded),
         Box::new(rich_comment::AFormattedCommentSaysItIsFormatted),

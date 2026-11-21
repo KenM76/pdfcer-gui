@@ -643,6 +643,7 @@ impl PdfcerApp {
             Action::TextStyle { page, runs, change } => {
                 super::textstyle::apply(doc, page, &runs, &change);
             }
+            Action::AddStyleDonor => super::textstyle::donor::add(doc),
             // Everything else in the family needs the document and nothing
             // else, so it routes the way `Vector`, `Dimension` and `Page` do.
             Action::Field(FieldAction::Sign { field, page, rect }) => {

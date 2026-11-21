@@ -126,10 +126,19 @@ pub(in crate::app::actions) fn apply(
     let Some(pieces) = checked_pieces(doc, page, span) else {
         return;
     };
+    // Bold and Italic offer the operator's donor faces to the ladder's rung 3.
+    let donors = if matches!(change, StyleChange::Weight { .. }) {
+        super::donor::plans(doc, &super::donor::chars_of([expected]))
+    } else {
+        Vec::new()
+    };
     let pieces = pieces
         .into_iter()
         .map(|p| Piece {
-            req: change.stamp(p.req),
+            req: donors
+                .iter()
+                .cloned()
+                .fold(change.stamp(p.req), FormatRequest::style_donor),
             ..p
         })
         .collect();

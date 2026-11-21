@@ -899,6 +899,8 @@ pub mod rich_comment;
 pub mod selection_gestures;
 /// A strikethrough says where its line's height came from.
 pub mod strike_source;
+/// A font file offered for Bold or Italic is bound and embedded.
+pub mod style_donor;
 /// Ctrl+B and Ctrl+I pressed again take their style off.
 pub mod style_off;
 /// A letter an embedded subset outlines but never showed can be typed.
