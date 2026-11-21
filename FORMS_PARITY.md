@@ -372,6 +372,8 @@ there; the two surfaces still disagree on the other two.
 
 **Hover and press looks.** A PB, CB or RB whose `/AP` carries `/R` or `/D` is drawn in that look under the pointer while filling (`canvas/forms/looks.rs`, through `RenderOptions::appearance_states` on the canvas render only). That is the look, not the action: whether a PB's click *runs* `/A` is still A2. Driven: `a_buttons_rollover_and_down_looks_are_drawn`.
 
+**The text editor's own layout.** While a TX field is open on the canvas its typed glyphs, caret and selection are painted from the engine's layout of the draft (`WidgetAppearances::text_geometry`: `/DA` size, Comb cells, `/Q`, Multiline wrap, Password mask), so committing moves nothing, and a click places the caret on the character it lands on (`canvas/forms/caret.rs`). Driven: `a_field_editor_sets_text_where_the_field_draws_it`.
+
 **What is left, and it is no longer the fork.** `BoxKind` now has four variants
 (`canvas/forms/boxes/mod.rs:88-210`) and `classify()` (`:461-549`) matches TX, CB, RB
 and CO/LB alike; PB and SG fall to `_ => Err(NotOffered)` at `:547`. **That omission

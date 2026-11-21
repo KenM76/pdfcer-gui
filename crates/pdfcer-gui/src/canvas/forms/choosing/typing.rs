@@ -80,6 +80,7 @@ pub(super) fn type_into(
             multiline: false,
             password: false,
             trace: (!focus.seated).then_some(focus.field.as_str()),
+            engine_drawn: false,
         },
     );
     tabnav::publish(&ctx, tabnav::Scope::Field, id);

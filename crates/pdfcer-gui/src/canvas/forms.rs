@@ -25,6 +25,8 @@ mod ring;
 /// it waits for a Space. Split out under R2; see its header.
 mod tabbing;
 
+/// The text editor's glyphs, caret and selection from the field's own layout.
+mod caret;
 /// A choice field's option list: the popup's side, its keyboard, and what a
 /// pick sends. Split out under R2; see its header, and in particular its on
 /// why the side is chosen before the constraint rather than after it.
@@ -98,7 +100,7 @@ pub(super) struct Focus {
     /// What the operator has typed and not yet committed.
     pub(super) draft: String,
     /// `false` until the frame after the click, so the editor knows to ask for
-    /// keyboard focus and to put the caret at the end exactly once.
+    /// keyboard focus and to seat the caret exactly once.
     pub(super) seated: bool,
     /// How many more frames this focus survives not being drawable.
     ///
@@ -660,25 +662,30 @@ fn editor(
 
     let id = focus.editor_id();
     let mut draft = truncate(&focus.draft, max_len);
-    // Which font, which end of the box, and what colour — all three are
-    // properties of the document rather than of this interaction, so they live
-    // in [`textbox`] and the editable combo box reads the same rules. The
-    // three arguments that admit `/Q` and `/MK` `/BG` and refuse `/DA` are
-    // on [`textbox::lay`].
-    let response = textbox::lay(
+    // Font, alignment and colour are properties of the document, so they live
+    // in [`textbox`] and the editable combo box reads the same rules; the
+    // glyphs, caret and selection are set from the engine's layout of the
+    // draft by [`caret`], which also seats the caret on the first frame —
+    // where the opening click landed, or at the end after a Tab.
+    let response = caret::lay(
         ui,
+        doc,
+        (widget_box, map),
         &mut draft,
-        &textbox::Spec {
-            id,
-            rect,
-            align,
-            fill: widget_box.fill,
-            multiline,
-            password,
-            // One line per opened editor, not one per frame: the seating
-            // branch below fires on the frame the caret is placed.
-            trace: (!focus.seated).then_some(focus.field.as_str()),
-        },
+        (
+            &textbox::Spec {
+                id,
+                rect,
+                align,
+                fill: widget_box.fill,
+                multiline,
+                password,
+                // One line per opened editor, not one per frame.
+                trace: (!focus.seated).then_some(focus.field.as_str()),
+                engine_drawn: true,
+            },
+            !focus.seated,
+        ),
     );
     // The canvas now holds the keyboard, and says so -- this is what lets
     // `app::keyclaim` take the next Tab away from egui's focus walk before
@@ -686,16 +693,8 @@ fn editor(
     // drawn, because the identity test that reads it is also its freshness
     // test: see `canvas::tabnav`'s header.
     crate::canvas::tabnav::publish(&ctx, crate::canvas::tabnav::Scope::Field, id);
-
-    // Seat the caret exactly once, at the END rather than over a selection.
-    // The click that asked for this editor was consumed by the PAGE (see the
-    // module header §4), so there is no click position to place a caret from,
-    // and selecting all would turn the operator's next keystroke into a
-    // deletion of the field's contents. [`textbox::seat`] carries why an
-    // editable combo box answers this differently.
     if !focus.seated {
         response.request_focus();
-        textbox::seat(&ctx, id, &draft, false);
     }
 
     // Escape closes the editor and **writes what is in it**, and says so.
@@ -825,6 +824,9 @@ fn click(
                     waiting: 0,
                 }),
             );
+            if let Some(focus) = load_focus(ctx) {
+                caret::opened_at(ctx, focus.editor_id(), point);
+            }
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!(
