@@ -5,18 +5,16 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/redact_plural.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list};
-use crate::checks::redact_menu::mark_through_the_menu;
+use crate::checks::scripteddrive::{aim, mark_through_the_menu, offscreen, press_the_chunk_toggle};
 use crate::checks::text_chunks::{
-    EXPECTED_CHUNKS, MODE, PAGE_REGION, SELECTION_EVENT, Verdict, press_the_toggle, verdict,
+    EXPECTED_CHUNKS, MODE, PAGE_REGION, SELECTION_EVENT, Verdict, verdict,
 };
-use crate::checks::text_selection::aim;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{PageGeometry, ScreenPoint};
+use crate::coords::{PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::{Driver, Key};
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 use crate::trace::Trace;
 
 /// The rung one chunk is selected at.
@@ -95,9 +93,9 @@ fn selection(trace: &Trace) -> Option<(String, usize, String)> {
 ///
 /// Returns the failure prose rather than reporting it, so each caller can say
 /// which of its two undos went wrong.
-fn undo_once(session: &Session, driver: &Driver, what: &str) -> Result<Option<String>> {
+fn undo_once(session: &Session, driver: &ScriptedPointer, what: &str) -> Result<Option<String>> {
     let mark = session.trace()?.mark();
-    driver.press_chord(&[vk::CONTROL], vk::Z)?;
+    driver.key(session, None, "Z", Some("ctrl"))?;
     session.settle(26);
     let trace = session.trace()?;
     if trace.last_after(UNDO_EVENT, mark).is_some() {
@@ -121,16 +119,16 @@ fn undo_once(session: &Session, driver: &Driver, what: &str) -> Result<Option<St
 /// under `at`.
 fn descend_to_a_chunk(
     session: &Session,
-    driver: &Driver,
-    at: ScreenPoint,
+    driver: &ScriptedPointer,
+    at: WindowPoint,
 ) -> Result<std::result::Result<String, String>> {
-    driver.press(vk::ESCAPE)?;
+    driver.key(session, None, "Escape", None)?;
     session.settle(12);
-    driver.press(vk::ESCAPE)?;
+    driver.key(session, None, "Escape", None)?;
     session.settle(12);
-    driver.click_at(at)?;
+    driver.click(session, at)?;
     session.settle(26);
-    driver.click_at(at)?;
+    driver.click(session, at)?;
     session.settle(26);
 
     let Some((level, _held, raw)) = selection(&session.trace()?) else {
@@ -155,13 +153,6 @@ fn descend_to_a_chunk(
 
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks two lines of text, Shift-clicks to \
-             build a set, opens a context menu over it and presses a row. Reported as SKIPPED \
-             rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -225,17 +216,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
+    let pointer = offscreen(ctx, &mut spec, "redact-plural")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     session.settle(60);
-    let driver = Driver::new(session.window());
+    let driver = &pointer;
 
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, driver, ui_rect, MODE)?;
     session.settle(20);
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(
@@ -285,13 +278,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the chunk boxes were OFF at launch. Turning them on: the chunk rung is offered only \
              where a box is drawn, so this check has no subject without them.",
         );
-        if let Some(failure) = press_the_toggle(&session, &driver, ui_rect, true, report)? {
+        if let Some(failure) = press_the_chunk_toggle(&session, driver, ui_rect, true, report)? {
             return Ok(Some(failure));
         }
     }
 
     // --- C: the CONTROL — one line, marked singly --------------------------
-    match descend_to_a_chunk(&session, &driver, aims[0])? {
+    match descend_to_a_chunk(&session, driver, aims[0])? {
         Ok(raw) => {
             report.note(format!("★ descended to one line: `{raw}`"));
         }
@@ -312,7 +305,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
     }
 
-    let singular = match mark_through_the_menu(&session, &driver, ui_rect, aims[0], "one line")? {
+    let singular = match mark_through_the_menu(&session, driver, ui_rect, aims[0], "one line")? {
         Ok(marked) => marked,
         Err(failure) => return Ok(Some(failure)),
     };
@@ -344,10 +337,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- D: undo it, so the set is marked on the same document -------------
-    if let Some(failure) = undo_once(&session, &driver, "THE CONTROL MARK")? {
+    if let Some(failure) = undo_once(&session, driver, "THE CONTROL MARK")? {
         return Ok(Some(failure));
     }
-    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
+    crate::checks::redaction::raise_panel(&session, driver, ui_rect)?;
     let cleared = marks(&session.trace()?);
     if cleared != Some(before) {
         return Ok(Some(format!(
@@ -363,14 +356,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("★ undid the control mark — the set is marked on the same document");
 
     // --- E: build the SET: descend to chunk 0, Shift-click chunk 2 ---------
-    match descend_to_a_chunk(&session, &driver, aims[0])? {
+    match descend_to_a_chunk(&session, driver, aims[0])? {
         Ok(raw) => {
             report.note(format!("★ re-descended to chunk {}: `{raw}`", PAIR[0]));
         }
         Err(failure) => return Ok(Some(failure)),
     }
     let mark = session.trace()?.mark();
-    driver.click_with_modifier(aims[1], Key::Shift)?;
+    driver.click_with(&session, aims[1], "shift")?;
     session.settle(26);
     let trace = session.trace()?;
     let Some(line) = trace.last_after(SELECTION_EVENT, mark) else {
@@ -401,7 +394,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // --- F: mark the SET, in ONE gesture -----------------------------------
     let plural = match mark_through_the_menu(
         &session,
-        &driver,
+        driver,
         ui_rect,
         aims[0],
         "two lines held together",
@@ -446,7 +439,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(reading));
     }
 
-    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
+    crate::checks::redaction::raise_panel(&session, driver, ui_rect)?;
     let after = marks(&session.trace()?);
     if after != Some(before + 1) {
         let reading = match after {
@@ -532,10 +525,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // document holds a single annotation, and it does NOT prove the history
     // holds a single entry. A build that folded the annotation and not the
     // undo log reads +1 here and still costs the operator two presses.
-    if let Some(failure) = undo_once(&session, &driver, "THE PLURAL MARK")? {
+    if let Some(failure) = undo_once(&session, driver, "THE PLURAL MARK")? {
         return Ok(Some(failure));
     }
-    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
+    crate::checks::redaction::raise_panel(&session, driver, ui_rect)?;
     let restored = marks(&session.trace()?);
     if restored != Some(before) {
         return Ok(Some(format!(

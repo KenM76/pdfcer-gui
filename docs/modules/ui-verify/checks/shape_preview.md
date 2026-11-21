@@ -63,3 +63,5 @@ the list is the OVERLAY's contract about what it publishes, and two checks
 naming it independently is what would catch a rename in one of them. A
 shared constant would make both agree with each other and neither with the
 application.
+
+The window is placed off the desktop and every click, double-click and drag comes from the scripted pointer, so the check runs under `--no-input`.

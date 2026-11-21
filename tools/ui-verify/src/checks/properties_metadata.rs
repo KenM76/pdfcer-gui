@@ -7,11 +7,11 @@ use crate::checks::driving::{
     SHELL_DIAG_ENV, declared, declared_names, declared_or_in_overflow, list,
 };
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::Click;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 
 /// The mode this runs in. `file` is in every mode's tab list, so Review is
 /// chosen only because the rest of the harness uses it.
@@ -28,8 +28,8 @@ const COMMAND: &str = "file.document_properties";
 const COMMITTED: &str = "info-field-commit";
 /// The label `vector_edit` traces when `set_info_field` succeeded.
 const APPLIED: &str = "set-info-field";
-/// The keystrokes that spell the title. Every letter is already in `sys::vk`.
-const TITLE_KEYS: [u16; 5] = [vk::T, vk::I, vk::T, vk::L, vk::E];
+/// The title typed into the field.
+const TITLE: &str = "title"; // ui-text-exempt: typed input, never displayed by the harness
 
 /// See the module documentation.
 pub struct PropertiesMetadataRoundTrips;
@@ -68,13 +68,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, a ribbon \
-             control and two text fields, types five letters and presses Ctrl+Z. Reported as \
-             SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot say \
@@ -93,23 +86,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = crate::checks::scripteddrive::offscreen(ctx, &mut spec, "properties_metadata")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {}",
         exe.display(),
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
-    // last two groups fold away entirely and this check reports a lost
-    // command. See `about.rs` for the measurement; three checks shared it.
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
+    session.settle(60);
+    let driver = &pointer;
 
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    crate::checks::driving::click_mode_segment(&session, driver, ui_rect, MODE)?;
 
     // --- 1: the panel on screen --------------------------------------------
     //
@@ -119,7 +109,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // tab of the inspector stack, so on a fresh profile it is mounted, behind
     // a sibling, and publishing nothing — which is the case this click is for.
     if declared(&session.trace()?, ui_rect, SECTION).is_none() {
-        open_document_properties(&session, &driver, ui_rect)?;
+        open_document_properties(&session, driver, ui_rect)?;
     }
     let trace = session.trace()?;
     if declared(&trace, ui_rect, SECTION).is_none() {
@@ -158,12 +148,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })?;
 
     // --- 2: type a title, then leave the field -----------------------------
-    driver.click_at(session.frame()?.declared_center(title))?;
+    driver.click(&session, WindowPoint::centre_of(title))?;
     session.settle(10);
-    for key in TITLE_KEYS {
-        driver.press(key)?;
-        session.settle(3);
-    }
+    driver.type_text(&session, None, TITLE)?;
     session.settle(8);
 
     // Committing is what LEAVING the field does, not what typing does — the
@@ -172,7 +159,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // word must not be a dozen undo entries. So the commit is provoked by
     // clicking the next field, which is what an operator does.
     let committed_before = session.trace()?.events(COMMITTED).count();
-    driver.click_at(session.frame()?.declared_center(author))?;
+    driver.click(&session, WindowPoint::centre_of(author))?;
     session.settle(18);
 
     let trace = session.trace()?;
@@ -211,9 +198,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // action was raised and dropped commits again here, for ever, once per
     // focus change.
     let committed_before = trace.events(COMMITTED).count();
-    driver.click_at(session.frame()?.declared_center(title))?;
+    driver.click(&session, WindowPoint::centre_of(title))?;
     session.settle(10);
-    driver.click_at(session.frame()?.declared_center(author))?;
+    driver.click(&session, WindowPoint::centre_of(author))?;
     session.settle(16);
 
     let trace = session.trace()?;
@@ -251,9 +238,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The chord stays as the fallback, so a build where the button vanishes
     // still has somewhere to go before it gives up.
     if let Some(rect) = declared(&trace, ui_rect, "ribbon.qat.edit.undo") {
-        driver.click_at(session.frame()?.declared_center(rect))?;
+        driver.click(&session, WindowPoint::centre_of(rect))?;
     } else {
-        driver.press_chord(&[vk::CONTROL], vk::Z)?;
+        driver.key(&session, None, "Z", Some("ctrl"))?;
     }
     session.settle(20);
     let trace = session.trace()?;
@@ -269,9 +256,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // epoch bump, the box still holds the typed title while the document holds
     // the original — so leaving the field writes it straight back, and the undo
     // the operator watched succeed is silently reversed.
-    driver.click_at(session.frame()?.declared_center(title))?;
+    driver.click(&session, WindowPoint::centre_of(title))?;
     session.settle(10);
-    driver.click_at(session.frame()?.declared_center(author))?;
+    driver.click(&session, WindowPoint::centre_of(author))?;
     session.settle(16);
 
     let trace = session.trace()?;
@@ -285,11 +272,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
     }
     report.note("after undo the box follows the document — the drafts re-seed on the epoch");
+    driver.gone(&session)?;
     Ok(None)
 }
 
 /// Bring the Document properties panel up from the ribbon.
-pub fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub fn open_document_properties(
+    session: &Session,
+    driver: &impl Click,
+    ui_rect: &str,
+) -> Result<()> {
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.file").ok_or_else(|| {
         Error::new(format!(
@@ -297,7 +289,7 @@ pub fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &st
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    driver.click_rect(session, tab)?;
     session.settle(14);
     let item_region = format!("ribbon.item.{COMMAND}");
     let Some(item) = declared_or_in_overflow(session, driver, ui_rect, &item_region)? else {
@@ -311,7 +303,7 @@ pub fn open_document_properties(session: &Session, driver: &Driver, ui_rect: &st
             ))
         )));
     };
-    driver.click_at(session.frame()?.declared_center(item))?;
+    driver.click_rect(session, item)?;
     session.settle(20);
     Ok(())
 }

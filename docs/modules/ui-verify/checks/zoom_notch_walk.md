@@ -63,5 +63,9 @@ the sheet cannot hide a miss.
 ### `fn rig`
 
 # Errors
-Missing binary, PDF, target or page size; input disabled (a SKIP); launch
-or trace failures.
+Missing binary, PDF, target or page size; launch or trace failures.
+
+The window is placed off the desktop and the Ctrl+wheel notches come from the
+scripted pointer, so the walk runs under `--no-input`. The shared `rig` that
+`zoom_burst` uses still drives the OS pointer, because a burst's timing is the
+thing it measures.

@@ -9,7 +9,7 @@ use std::path::Path;
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -83,31 +83,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.name
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, the File tab and \
-             the Document properties item, twice. Reported as SKIPPED rather than passed: a \
-             check that did not run has learned nothing.",
-        ));
-    }
 
     // --- 1: the damaged file, and the block it earns -----------------------
-    let session = launch(ctx, &exe, DAMAGED, "recovery_losses.damaged.trace.txt")?;
+    let (session, pointer) = launch(ctx, &exe, DAMAGED, "recovery_losses.damaged")?;
     report.note(format!(
         "launched {} on fixtures/{DAMAGED} as pid {}",
         exe.display(),
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    // MAXIMISE — at the harness's default 1,100 pt window the File tab's
-    // last two groups fold away entirely and a check reports a lost command.
-    // `about.rs` holds the measurement; several checks already share it.
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_properties(&session, &driver, ui_rect)?;
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_properties(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     // The document has to be OPEN before the presence or absence of a
@@ -160,18 +148,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     drop(session);
 
     // --- 2: THE CONTROL, and it is the half that makes this a check -----
-    let session = launch(ctx, &exe, CONTROL, "recovery_losses.control.trace.txt")?;
+    let (session, pointer) = launch(ctx, &exe, CONTROL, "recovery_losses.control")?;
     report.note(format!(
         "control launch on fixtures/{CONTROL} as pid {} — the same damage, nothing dropped",
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    session.maximize();
-    session.settle(20);
-    let driver = Driver::new(session.window());
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_properties(&session, &driver, ui_rect)?;
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
+    crate::checks::driving::click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_properties(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     if trace.last(STATUS_LINE).is_none() {
@@ -224,9 +210,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 // shared
 // ---------------------------------------------------------------------------
 
-/// A launch on the real desktop, because this one is going to be clicked.
-fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Result<Session> {
-    let mut spec = LaunchSpec::new(exe, ctx.out(trace_name));
+/// A launch off the desktop, driven by a scripted pointer whose files are
+/// named after `stem`.
+fn launch(
+    ctx: &CheckContext,
+    exe: &Path,
+    fixture: &str,
+    stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
+    let mut spec = LaunchSpec::new(exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(crate::checks::driving::repo_fixture(
         fixture,
         "This check pins its own two documents and ignores --pdf: its whole method is one \
@@ -241,13 +233,14 @@ fn launch(ctx: &CheckContext, exe: &Path, fixture: &str, trace_name: &str) -> Re
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    Session::launch(&spec, ctx.profile.trace_prefix)
+    let pointer = crate::checks::scripteddrive::offscreen(ctx, &mut spec, stem)?;
+    Ok((Session::launch(&spec, ctx.profile.trace_prefix)?, pointer))
 }
 
 /// Bring the Document properties panel to the front, if it is not already.
-fn open_properties(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn open_properties(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     if declared(&session.trace()?, ui_rect, PANEL_OPEN_WITNESS).is_some() {
         return Ok(());
     }
-    crate::checks::properties_metadata::open_document_properties(session, driver, ui_rect)
+    crate::checks::properties_metadata::open_document_properties(session, pointer, ui_rect)
 }

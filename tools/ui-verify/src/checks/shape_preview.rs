@@ -4,10 +4,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/shape_preview.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::{offscreen, offset};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -26,7 +26,7 @@ const DRAWN: &str = "canvas-shape-drawn";
 /// The preview was handed to the document to outlive the gesture.
 const HELD: &str = "canvas-held-preview";
 
-/// How far to drag the anchor, in screen pixels.
+/// How far to drag the anchor, in logical points.
 const DRAG_PX: f32 = 25.0;
 
 /// See the module documentation.
@@ -56,12 +56,6 @@ impl Check for DraggingANodeBendsTheLine {
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check descends to a node and drags it. \
-             Reported as SKIPPED rather than passed.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -108,22 +102,22 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = offscreen(ctx, &mut spec, "shape-preview")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    let driver = Driver::new(session.window());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
 
     // --- Edit mode, then descend twice to the Part rung ---------------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
-    let window_point = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
-    let at = session.frame()?.to_screen(window_point);
-    driver.click_at(at)?;
+    let at = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
+    pointer.click(&session, at)?;
     session.settle(12);
-    driver.double_click_at(at)?;
+    pointer.double_click(&session, at)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -153,21 +147,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         ))
     })?;
-    let from = session.frame()?.declared_center(anchor);
+    let from = WindowPoint::centre_of(anchor);
     // A DOUBLE click, because the Node rung is descended into rather than merely
     // clicked — `multi_node`'s header carries the driven run that established
     // this, and a plain click at the Part rung re-picks the *part*.
-    driver.double_click_at(from)?;
+    pointer.double_click(&session, from)?;
     session.settle(16);
 
     // --- drag it ------------------------------------------------------------
-    // The destination is produced by `WindowFrame::offset_from`, never by
-    // arithmetic on a `ScreenPoint`'s fields — `coords` keeps those private
-    // precisely so a check cannot invent a desktop coordinate. One conversion,
-    // one place.
-    let frame = session.frame()?;
-    driver.drag(from, frame.offset_from(from, DRAG_PX, DRAG_PX))?;
+    pointer.drag(&session, from, offset(from, DRAG_PX, DRAG_PX), 8)?;
     session.settle(30);
+    pointer.gone(&session)?;
 
     let trace = session.trace()?;
 

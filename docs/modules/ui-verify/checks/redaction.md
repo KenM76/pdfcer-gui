@@ -287,8 +287,12 @@ rather than as a failure of the feature.
 A rectangle does not carry the viewport it was measured in, and this check
 drives two of them: the marking panel is in the application window, the
 apply dialog is a child viewport with its own client origin. Converting a
-dialog rect against the application window produces a *plausible* screen
-point several hundred points from the control — no error, no missed-click
-report, just an acknowledgement that never takes and a confirm control that
-is never offered. [`driving::frame_of`] answers with the right origin for
-either, and it can only be asked once the name is in hand.
+dialog rect against the application window produces a *plausible* point
+several hundred points from the control — no error, no missed-click report,
+just an acknowledgement that never takes and a confirm control that is never
+offered. `scripteddrive::ClickNamed::click_named` sends the click to the
+viewport that declared the name, and it can only be asked once the name is
+in hand.
+
+Both processes are placed off the desktop and driven by a scripted pointer
+(`launch_offscreen`), so the check runs under `--no-input`.

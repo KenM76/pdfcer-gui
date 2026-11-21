@@ -78,11 +78,11 @@ has to keep apart, and the fixture carries both on purpose.
 
 ### `fn launch`
 
-⚠ Unlike `load_anomalies`' status-bar half there is no off-desktop variant
-here: every assertion in this file needs the properties panel open, the panel
-is opened by clicking, and a click needs a window a pointer can reach. So
-this check cannot run while the operator is at the machine, and that is a
-cost rather than an oversight.
+Places the window off the desktop and attaches a scripted pointer: every
+assertion in this file needs the properties panel open, and the panel is
+opened by clicking, which the pointer delivers to a window no OS input
+reaches. The check runs under `--no-input` while the operator uses the
+machine.
 
 ### `fn open_properties`
 

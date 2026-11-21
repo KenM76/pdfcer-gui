@@ -13,7 +13,8 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
 pub(super) use super::scriptedmarks::{
-    census_baseline, census_refresh, mark_through_the_menu, resolve_pick,
+    ClickNamed, census_baseline, census_refresh, mark_through_the_menu, open_pages_panel,
+    press_the_chunk_toggle, resolve_pick,
 };
 
 /// The trace event every region is declared under.

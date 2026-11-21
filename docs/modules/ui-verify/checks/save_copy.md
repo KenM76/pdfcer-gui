@@ -188,7 +188,9 @@ Continuing the original note:
 
 # Every way this reports SKIP, and why none of them is a pass
 
-* no binary, no `--pdf`, `--no-input` — the harness never began;
+* no binary, no `--pdf`, a profile naming no viewport variable — the harness
+  never began (both processes are placed off the desktop and driven by a
+  scripted pointer, so `--no-input` does not skip it);
 * the diagnostic switches did not reach the process;
 * the page size could not be read and no `--page-size` was given;
 * a mode segment, a tab or a control was never declared, or took no click;

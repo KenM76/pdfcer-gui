@@ -3,13 +3,9 @@
 `properties_metadata_round_trips` — typing a title reaches the document,
 and undo takes it back out of the box as well as out of the file.
 
-
-It was **passing** before that session and it has **not been re-run since**:
-the machine's pointer and keyboard belonged to another track, and a driven
-run cannot share them. What changed here is which control opens the surface
-(see [`open_document_properties`]); nothing about the four assertions moved.
-⇒ A reader looking for evidence that the metadata panel still works after
-the move will not find it in this file. Run it.
+The window is placed off the desktop and driven by a scripted pointer, so the
+check runs under `--no-input`: its clicks, the typed title and the undo all
+reach the application through its pointer seam.
 
 
 > *"the document properties are still always visible in the properties tab.

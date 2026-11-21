@@ -5,12 +5,12 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/stamp_size.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
+    SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, list, shell_trace,
 };
+use crate::checks::scripteddrive::{ClickNamed, offscreen};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -59,14 +59,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .pdf
         .clone()
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control, drags on the \
-             canvas, opens a combo box and picks an entry from its popup. Reported as SKIPPED \
-             rather than passed, because a check that cannot press the control it is named \
-             after has measured nothing.",
-        ));
-    }
     let ui_rect = ctx
         .profile
         .vocab
@@ -103,6 +95,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = offscreen(ctx, &mut spec, "stamp_size")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched {} as pid {}",
@@ -110,11 +103,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    let driver = Driver::new(session.window());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
+    let driver = &pointer;
 
     // --- 1: Review mode and the Markup tab ---------------------------------
-    crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
+    crate::checks::driving::click_mode_segment(&session, driver, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.markup").ok_or_else(|| {
         Error::new(format!(
@@ -122,7 +116,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    driver.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
     if !shell_trace(&session)?
         .events(TAB_EVENT)
@@ -138,7 +132,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let item = crate::checks::driving::declared_or_in_overflow(
         &session,
-        &driver,
+        driver,
         ui_rect,
         "ribbon.item.markup.stamp",
     )?
@@ -148,7 +142,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(item))?;
+    driver.click(&session, WindowPoint::centre_of(item))?;
     session.settle(14);
     let trace = session.trace()?;
     if !trace
@@ -164,14 +158,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: drag the box and open the dialog --------------------------------
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let from = frame.to_screen(mapping.doc_to_window(target)?);
-    let to = frame.to_screen(mapping.doc_to_window(DocPoint {
+    let from = mapping.doc_to_window(target)?;
+    let to = mapping.doc_to_window(DocPoint {
         page: target.page,
         x: target.x + BOX_PT,
         y: target.y + BOX_PT,
-    })?);
-    driver.drag(from, to)?;
+    })?;
+    driver.drag(&session, from, to, 8)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -268,9 +261,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note("a fresh chooser opens on `derived`, so existing habits are unchanged");
 
     // --- 6: open the popup and press 24 pt ----------------------------------
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "text-annot.stamp-size")?.declared_center(combo),
-    )?;
+    driver.click_named(&session, &trace, ui_rect, "text-annot.stamp-size", combo)?;
     session.settle(14);
 
     // ⚠ Read the frame AFTER the press. The entries are declared only while the
@@ -294,7 +285,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             list(&offered)
         )));
     };
-    driver.click_at(frame_of(&session, &trace, ui_rect, WANTED_REGION)?.declared_center(entry))?;
+    driver.click_named(&session, &trace, ui_rect, WANTED_REGION, entry)?;
     session.settle(14);
 
     // The control must now REPORT its own state, and this is a **separate
@@ -322,10 +313,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the dialog declared no `text-annot.accept` region.".to_owned(),
         ));
     };
-    driver.click_at(
-        frame_of(&session, &trace, ui_rect, "text-annot.accept")?.declared_center(accept),
-    )?;
+    driver.click_named(&session, &trace, ui_rect, "text-annot.accept", accept)?;
     session.settle(24);
+    driver.gone(&session)?;
 
     let trace = session.trace()?;
     let styles: Vec<String> = trace

@@ -7,6 +7,7 @@ use crate::checks::comments_census::Census;
 use crate::checks::driving::{declared_in, declared_names, list};
 use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
+use crate::geom::LRect;
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 
@@ -247,4 +248,129 @@ pub fn census_baseline(
         census.listed, census.raw
     ));
     Ok(census)
+}
+
+/// A [`crate::input::Click`] that also clicks a named region in whichever
+/// viewport declared it, so a helper shared by OS-driven and scripted checks
+/// reaches a dialog's controls either way.
+pub trait ClickNamed: crate::input::Click {
+    /// Click the centre of `rect`, the region `name` as `trace` last declared
+    /// it, in that region's own viewport.
+    fn click_named(
+        &self,
+        session: &Session,
+        trace: &crate::trace::Trace,
+        ui_rect: &str,
+        name: &str,
+        rect: LRect,
+    ) -> Result<()>;
+}
+
+impl ClickNamed for ScriptedPointer {
+    fn click_named(
+        &self,
+        session: &Session,
+        trace: &crate::trace::Trace,
+        ui_rect: &str,
+        name: &str,
+        rect: LRect,
+    ) -> Result<()> {
+        let viewport = declared_in(trace, ui_rect, name).and_then(|(_, vp)| vp);
+        self.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))
+            .map(|_| ())
+    }
+}
+
+/// Open the Pages panel from the View tab, wherever the responsive band has
+/// put its item: the scripted twin of `pages_drag::open_pages_panel`.
+pub fn open_pages_panel(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
+    use crate::checks::driving::{declared, declared_or_in_overflow};
+    let trace = session.trace()?;
+    let tab = declared(&trace, ui_rect, "ribbon.tab.view").ok_or_else(|| {
+        Error::new(format!(
+            "no `ribbon.tab.view` region. Tabs declared: {}.",
+            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
+        ))
+    })?;
+    pointer.click(session, WindowPoint::centre_of(tab))?;
+    session.settle(14);
+    let Some(item) =
+        declared_or_in_overflow(session, pointer, ui_rect, "ribbon.item.view.panel_pages")?
+    else {
+        return Err(Error::new(
+            "the View tab declares no `ribbon.item.view.panel_pages`, on the band or in the \
+             overflow, so the Pages panel cannot be opened.",
+        ));
+    };
+    pointer.click(session, WindowPoint::centre_of(item))?;
+    session.settle(20);
+    Ok(())
+}
+
+/// Press the View tab's text-chunk switch and confirm it went to `want`: the
+/// scripted twin of `text_chunks::press_the_toggle`. `Ok(Some(_))` is a
+/// failure message.
+pub fn press_the_chunk_toggle(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    want: bool,
+    report: &mut crate::report::CheckReport,
+) -> Result<Option<String>> {
+    use crate::checks::driving::{
+        INVOKE_EVENT, TAB_EVENT, VIEW_TAB, declared, declared_or_in_overflow,
+    };
+    use crate::checks::text_chunks::{SWITCH_EVENT, TOGGLE_ID, TOGGLE_REGION, toggle_invokes};
+    if declared(&session.trace()?, ui_rect, TOGGLE_REGION).is_none() {
+        let Some(tab) = declared(&session.trace()?, ui_rect, VIEW_TAB.0) else {
+            return Ok(Some(format!(
+                "no `{}` region to open the toggle's tab.",
+                VIEW_TAB.0
+            )));
+        };
+        pointer.click(session, WindowPoint::centre_of(tab))?;
+        session.settle(14);
+        if !crate::checks::driving::shell_trace(session)?
+            .events(TAB_EVENT)
+            .any(|l| l.get("tab") == Some(VIEW_TAB.1))
+        {
+            return Ok(Some(format!(
+                "the click on `{}` produced no `{TAB_EVENT} tab={}` line.",
+                VIEW_TAB.0, VIEW_TAB.1
+            )));
+        }
+    }
+    let Some(item) = declared_or_in_overflow(session, pointer, ui_rect, TOGGLE_REGION)? else {
+        return Ok(Some(format!(
+            "★★★ THE SWITCH IS REGISTERED AND UNREACHABLE: the View tab declares no \
+             `{TOGGLE_REGION}`, on the band, in a collapsed group or in the overflow."
+        )));
+    };
+    let invokes_before = toggle_invokes(session)?;
+    let mark = session.trace()?.mark();
+    pointer.click(session, WindowPoint::centre_of(item))?;
+    session.settle(22);
+    if toggle_invokes(session)? <= invokes_before {
+        return Ok(Some(format!(
+            "★★ THE CONTROL DID NOT TAKE THE CLICK: no new `{INVOKE_EVENT} \
+             id={TOGGLE_ID}` after a click on `{TOGGLE_REGION}`. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    let wanted = if want { "true" } else { "false" };
+    let trace = session.trace()?;
+    match trace.last_after(SWITCH_EVENT, mark) {
+        Some(l) if l.get("enabled") == Some(wanted) => {
+            report.note(format!("★ the toggle was pressed: `{}`", l.raw));
+            Ok(None)
+        }
+        other => Ok(Some(format!(
+            "★★★ THE SWITCH DID NOT GO TO `enabled={wanted}`: {}. Trace: {}.",
+            other.map_or_else(
+                || format!("no `{SWITCH_EVENT}` line followed"),
+                |l| format!("`{}`", l.raw)
+            ),
+            session.trace_path().display()
+        ))),
+    }
 }

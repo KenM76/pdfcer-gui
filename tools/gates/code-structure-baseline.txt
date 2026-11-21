@@ -29,7 +29,6 @@ dup tools/ui-verify::leading_number in tools/ui-verify/src/checks/dimension_tool
 dup tools/ui-verify::list in tools/ui-verify/src/checks/markup_rectangle.rs, tools/ui-verify/src/checks/move_line_of_text.rs
 dup tools/ui-verify::list_str in tools/ui-verify/src/checks/add_text.rs, tools/ui-verify/src/checks/escape_commits_text.rs, tools/ui-verify/src/checks/navigate_commits_text.rs
 dup tools/ui-verify::local_fixture in tools/ui-verify/src/checks/form_groups.rs, tools/ui-verify/src/checks/smart_select.rs
-dup tools/ui-verify::open_properties in tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/recovery_losses.rs
 dup tools/ui-verify::open_window in tools/ui-verify/src/checks/remove_metadata.rs, tools/ui-verify/src/checks/remove_ocr_pages.rs
 dup tools/ui-verify::resolve_exe in tools/ui-verify/src/checks/graphics_pressure.rs, tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/off_page_ceiling.rs, tools/ui-verify/src/checks/scripted_keys.rs, tools/ui-verify/src/checks/stamp_collection.rs
 dup tools/ui-verify::same in tools/ui-verify/src/checks/model_saved_view.rs, tools/ui-verify/src/checks/model_views_saved.rs
@@ -661,7 +660,6 @@ fn tools/ui-verify/src/checks/read_mode_chrome.rs::fullscreen_round_trip
 fn tools/ui-verify/src/checks/read_mode_exit.rs::drive
 fn tools/ui-verify/src/checks/recovery_losses.rs::drive
 fn tools/ui-verify/src/checks/redact_chunk.rs::drive
-fn tools/ui-verify/src/checks/redact_menu.rs::mark_through_the_menu
 fn tools/ui-verify/src/checks/redact_plural.rs::drive
 fn tools/ui-verify/src/checks/redact_preview.rs::drive
 fn tools/ui-verify/src/checks/redact_selection.rs::drive

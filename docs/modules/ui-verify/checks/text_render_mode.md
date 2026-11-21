@@ -31,3 +31,5 @@ a different `change`, or `applied=0` fails with its own diagnosis.
 
 With the entry's `chosen = Some(mode)` removed, the check fails: no summary
 line follows the pick.
+
+The window is placed off the desktop; the `T` key, the sweep, the clicks and the Properties scroll come from the scripted pointer, so this check and `text_spacing`, which shares its driver, run under `--no-input`.

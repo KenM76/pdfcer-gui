@@ -5,13 +5,14 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment, frame_of, stable_rect};
+use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment, declared_in, stable_rect};
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
-use crate::sys::vk;
 use crate::trace::Trace;
 
 /// The mode the Pages panel belongs to, and the one `pages_drag` uses.
@@ -92,13 +93,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check is entirely input: it clicks a mode \
-             segment, a checkbox and a spinner, and it types a digit. Reported as SKIPPED rather \
-             than passed — a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the Pages panel's controls \
@@ -130,10 +124,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // -----------------------------------------------------------------------
     // Launch 1 — plant the starting state, clear the tick, and be killed.
     // -----------------------------------------------------------------------
-    let session = launch(ctx, report, &exe, &pdf, "1")?;
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_panel(&session, &driver, ui_rect)?;
+    let (session, pointer) = launch(ctx, report, &exe, &pdf, "1")?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_panel(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     let start = panel_state(&trace).ok_or_else(|| {
@@ -171,7 +164,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let before = trace.events(PERSIST_EVENT).count();
     click_region(
         &session,
-        &driver,
+        &pointer,
         ui_rect,
         PREVIEWS,
         "the previews checkbox",
@@ -268,10 +261,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // -----------------------------------------------------------------------
     // Launch 2 — the tick survived; now type the zero.
     // -----------------------------------------------------------------------
-    let session = launch(ctx, report, &exe, &pdf, "2")?;
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_panel(&session, &driver, ui_rect)?;
+    let (session, pointer) = launch(ctx, report, &exe, &pdf, "2")?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_panel(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     let second = panel_state(&trace).ok_or_else(|| {
@@ -306,15 +298,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         second.budget_ms
     ));
 
-    keyboard_reaches_the_window(&session, &driver)?;
+    keyboard_reaches_the_window(&session, &pointer)?;
 
     let before = session.trace()?.events(PERSIST_EVENT).count();
     // ONE click on the `DragValue`, which is what puts egui into keyboard
     // editing and selects the whole of the displayed text. See `type_the_zero`
     // for why nothing else is pressed first.
-    click_region(&session, &driver, ui_rect, BUDGET, "the time-limit spinner")?;
+    click_region(
+        &session,
+        &pointer,
+        ui_rect,
+        BUDGET,
+        "the time-limit spinner",
+    )?;
     session.settle(12);
-    type_the_zero(&session, &driver)?;
+    type_the_zero(&session, &pointer)?;
 
     let trace = session.trace()?;
     let Some(persisted) = persisted_after(&trace, before) else {
@@ -388,10 +386,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // -----------------------------------------------------------------------
     // Launch 3 — both halves, from a file written by two different gestures.
     // -----------------------------------------------------------------------
-    let session = launch(ctx, report, &exe, &pdf, "3")?;
-    let driver = Driver::new(session.window());
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
-    open_panel(&session, &driver, ui_rect)?;
+    let (session, pointer) = launch(ctx, report, &exe, &pdf, "3")?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
+    open_panel(&session, &pointer, ui_rect)?;
 
     let trace = session.trace()?;
     let third = panel_state(&trace).ok_or_else(|| {
@@ -451,7 +448,7 @@ fn launch(
     exe: &Path,
     pdf: &Path,
     tag: &str,
-) -> Result<Session> {
+) -> Result<(Session, ScriptedPointer)> {
     let mut spec = LaunchSpec::new(exe, ctx.out(&format!("page-previews-pref.{tag}.trace.txt")));
     spec.pdf = Some(pdf.to_path_buf());
     spec.env.push((
@@ -464,16 +461,13 @@ fn launch(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, &format!("page-previews-pref.{tag}"))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!("launch {tag}: pid {}", session.pid()));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    // Maximized so the dock has room for the Pages panel's controls. A panel
-    // squeezed to nothing declares no regions, and the failure would read as
-    // the controls being missing.
-    session.maximize();
-    session.settle(14);
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(54);
 
     let trace = session.trace()?;
     if !trace.started(ctx.profile.vocab.start_event) {
@@ -484,21 +478,21 @@ fn launch(
             session.trace_path().display()
         )));
     }
-    Ok(session)
+    Ok((session, pointer))
 }
 
 /// Put the Pages panel on screen, unless it already is.
-fn open_panel(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn open_panel(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     if driving::declared(&session.trace()?, ui_rect, GRID).is_some() {
         return Ok(());
     }
-    super::pages_drag::open_pages_panel(session, driver, ui_rect)
+    super::scripteddrive::open_pages_panel(session, pointer, ui_rect)
 }
 
 /// Click a named region, once it has stopped moving.
 fn click_region(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     ui_rect: &str,
     name: &str,
     what: &str,
@@ -511,15 +505,15 @@ fn click_region(
              refuses to name the wrong one."
         )));
     };
-    let frame = frame_of(session, &session.trace()?, ui_rect, name)?;
-    driver.click_at(frame.declared_center(rect))?;
+    let viewport = declared_in(&session.trace()?, ui_rect, name).and_then(|(_, vp)| vp);
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
     Ok(())
 }
 
 /// **Prove a keystroke reaches this window before typing anything that matters.**
-fn keyboard_reaches_the_window(session: &Session, driver: &Driver) -> Result<()> {
+fn keyboard_reaches_the_window(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
     let before = session.trace()?.events(CHORD_EVENT).count();
-    driver.press_chord(&[vk::CONTROL], vk::DIGIT_2)?;
+    pointer.key(session, None, "2", Some("ctrl"))?;
     session.settle(12);
     let probe = session.trace()?;
     let landed = probe
@@ -538,10 +532,10 @@ fn keyboard_reaches_the_window(session: &Session, driver: &Driver) -> Result<()>
 }
 
 /// Type the zero and commit it.
-fn type_the_zero(session: &Session, driver: &Driver) -> Result<()> {
-    driver.type_ascii("0")?;
+fn type_the_zero(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
+    pointer.type_text(session, None, "0")?;
     session.settle(8);
-    driver.press(vk::ENTER)?;
+    pointer.key(session, None, "Enter", None)?;
     session.settle(18);
     Ok(())
 }
