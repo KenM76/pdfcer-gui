@@ -244,7 +244,8 @@ run_checks() {
     # rather than by position. Reading the last line instead would read one
     # batch's total and call it the maximum.
     local biggest
-    biggest=$(find "$root" \( -name target -o -name .git \) -prune -o \
+    # `.claude/worktrees` holds other builders' trees, not this one's files.
+    biggest=$(find "$root" \( -name target -o -name .git -o -path "*/.claude/worktrees" \) -prune -o \
         -type f -name '*.rs' -print0 2>/dev/null \
         | xargs -0 wc -l 2>/dev/null \
         | awk '$2 != "total" { if ($1 + 0 > m) m = $1 + 0 } END { print m + 0 }')
@@ -273,7 +274,7 @@ run_checks() {
                 fi
                 ;;
         esac
-    done < <(cd "$root" && find . \( -name target -o -name .git \) -prune -o \
+    done < <(cd "$root" && find . \( -name target -o -name .git -o -path "*/.claude/worktrees" \) -prune -o \
         -type f \( -name '*.rs' -o -name '*.md' -o -name '*.sh' -o -name '*.py' \) \
         -print0 2>/dev/null)
 
@@ -300,7 +301,7 @@ run_checks() {
     done < <(cd "$root" && grep -rnoE \
         'ENGINE:`[^`]*\.rs:[0-9]+(-[0-9]+)?|[A-Za-z0-9_./\\:-]+\.rs:[0-9]+(-[0-9]+)?|`:[0-9]+(-[0-9]+)?`' \
         --include='*.rs' --include='*.md' --include='*.sh' --include='*.py' \
-        --exclude-dir=target --exclude-dir=.git \
+        --exclude-dir=target --exclude-dir=.git --exclude-dir=worktrees \
         . 2>/dev/null | sort)
 
     if [ "$rc" -ne 0 ]; then
