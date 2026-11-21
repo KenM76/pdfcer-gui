@@ -546,6 +546,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(system_theme::SystemThemeFollowsTheHost),
         Box::new(small_first_page::ASmallFirstPageIsTheCurrentPage),
         Box::new(export_image_emf::ExportImageWritesAMetafile),
+        Box::new(export_image_plates::ExportImageWritesOneMetafilePerInk),
         Box::new(copy_as_vector::CopyAsVectorPlacesTheMeasuredOrder),
         Box::new(copy_as_vector_scripted::CopyAsVectorWithoutTheMouse),
         Box::new(vector_paste_cut::AVectorPastesAndCuts),

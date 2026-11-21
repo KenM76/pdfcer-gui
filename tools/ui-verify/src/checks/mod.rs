@@ -176,6 +176,8 @@ pub mod vector_paste_cut;
 pub mod export_image_emf;
 /// File ▸ Export image writes JPEG XL.
 pub mod export_image_jxl;
+/// File > Export image writes one EMF per separation plate.
+pub mod export_image_plates;
 pub mod highlight_shapes;
 pub mod page_crop_boxes;
 pub mod page_crop_even;

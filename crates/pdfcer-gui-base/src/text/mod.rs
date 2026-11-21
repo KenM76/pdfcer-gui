@@ -434,6 +434,8 @@ pub mod embed;
 pub mod export_image;
 /// The SVG/EMF keep-text choice and what an export that kept text owes afterwards.
 pub mod export_keeptext;
+/// The EMF separation-plates choice and its receipt.
+pub mod export_plates;
 /// The FORM-FIELD clipboard's sentences — five refusals and the paste's
 /// off-canvas loss note. Separate from [`clipboard`] because the loss note is
 /// not a refusal: the paste worked, and the sentence exists because part of the

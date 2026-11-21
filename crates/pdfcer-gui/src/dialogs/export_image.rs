@@ -49,6 +49,8 @@
 //!   of the wait is predictable. A background export with a progress bar is the
 //!   right answer and it is a change to `app::actions`, not to this file.
 
+mod plates;
+
 use egui::Ui;
 use pdfcer_gui_base::entry;
 
@@ -160,6 +162,8 @@ pub struct ExportImageDialog {
     /// SVG/EMF: keep text as text rather than outlines. Carried whatever the
     /// format, like `quality`.
     keep_text: bool,
+    /// EMF: one file per ink. Never remembered, like `standard`.
+    plates: bool,
     /// The background colour as typed; Export waits while it is not a colour.
     background_text: String,
     /// The rendering standard for this export only; never remembered, because
@@ -200,6 +204,7 @@ impl ExportImageDialog {
             transparent: remembered.transparent,
             quality: remembered.quality,
             keep_text: remembered.keep_text,
+            plates: false,
             background_text: remembered.background.to_hex(),
             standard: None,
             export_requested: false,
@@ -304,7 +309,7 @@ impl ExportImageDialog {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "export-image-requested format={} pages={} dpi={} \
-                     transparent={} quality={} keep_text={} background={} standard={}",
+                     transparent={} quality={} keep_text={} background={} standard={} plates={}",
                     // A token, never `{:?}`: the same reduction the
                     // preferences file performs, so a check reading this line
                     // and a check reading the file cannot disagree.
@@ -316,6 +321,7 @@ impl ExportImageDialog {
                     u8::from(plan.keep_text),
                     plan.background.to_hex(),
                     plan.standard.map_or("none", |s| s.as_str()),
+                    u8::from(plan.plates),
                 )
             });
             actions.push(Action::Write(
@@ -350,6 +356,7 @@ impl ExportImageDialog {
             // the field is not a colour (`Self::footer`).
             background: self.background()?,
             standard: self.standard,
+            plates: self.plates && self.format == ImageFormat::Emf,
         })
     }
 
@@ -370,6 +377,10 @@ impl ExportImageDialog {
         if self.format.is_vector() {
             ui.add_space(8.0);
             self.text_group(ui);
+            if self.format == ImageFormat::Emf {
+                ui.add_space(8.0);
+                plates::show(ui, &mut self.plates);
+            }
         } else {
             ui.add_space(8.0);
             self.quality_group(ui);
