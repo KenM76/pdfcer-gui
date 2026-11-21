@@ -30,10 +30,12 @@ pub enum Path {
     Bounce,
     /// Measure light's bounce volume.
     Meter,
+    /// Colour by light level's map.
+    Map,
 }
 
 /// Every path, in the window's order.
-pub const ALL: [Path; 4 + PARTS] = [
+pub const ALL: [Path; 5 + PARTS] = [
     Path::Pages,
     Path::Picture,
     Path::Part(0),
@@ -45,6 +47,7 @@ pub const ALL: [Path; 4 + PARTS] = [
     Path::Part(6),
     Path::Bounce,
     Path::Meter,
+    Path::Map,
 ];
 
 impl Path {
@@ -57,6 +60,7 @@ impl Path {
             Self::Part(i) => 2 + if i < PARTS { i } else { PARTS - 1 },
             Self::Bounce => 2 + PARTS,
             Self::Meter => 3 + PARTS,
+            Self::Map => 4 + PARTS,
         }
     }
 
@@ -69,6 +73,7 @@ impl Path {
             Self::Part(i) => format!("part{i}"), // ui-text-exempt: trace token
             Self::Bounce => "bounce".into(),     // ui-text-exempt: trace token
             Self::Meter => "meter".into(),       // ui-text-exempt: trace token
+            Self::Map => "map".into(),           // ui-text-exempt: trace token
         }
     }
 }

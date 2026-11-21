@@ -41,6 +41,7 @@ mod gpu;
 mod gpu_bounce;
 mod gpu_bounce_card;
 mod gpu_lens;
+mod gpu_lightmap;
 mod gpu_meter;
 mod gpu_paint;
 mod gpu_uniforms;
@@ -548,6 +549,7 @@ impl ModelView {
             }
             _ if gpu && self.gpu.declined().is_none() => self.gpu.paint(ui.painter(), rect),
             (Some(texture), None) => {
+                self.gpu.paint_work(ui.painter(), rect);
                 ui.painter().image(
                     texture.id(),
                     rect,

@@ -279,6 +279,32 @@ impl Gpu {
         (self.live() && self.declined.is_none()).then(|| self.bounce.card())
     }
 
+    /// The queue a light map is measured through: while the card draws or
+    /// will try to, since a paint is what advances it ([`Self::paint_work`]
+    /// while the picture is the processor's).
+    pub(super) fn map_card(&self) -> Option<super::gpu_bounce_card::CardQueue> {
+        self.drawing().then(|| self.bounce.card())
+    }
+
+    /// While the processor's picture is shown and the card has work
+    /// queued, a paint that only advances that work.
+    pub(super) fn paint_work(&self, painter: &egui::Painter, rect: egui::Rect) {
+        if !self.bounce.card_busy() {
+            return;
+        }
+        let shared = Arc::clone(&self.shared);
+        let callback = egui_glow::CallbackFn::new(move |_info, painter| {
+            let gl = painter.gl();
+            let card = lock(&shared).card.clone();
+            card.set_supported(native_mesh::compute::Compute::supported(gl));
+            super::gpu_bounce_card::advance(gl, &card);
+        });
+        painter.add(egui::PaintCallback {
+            rect,
+            callback: Arc::new(callback),
+        });
+    }
+
     /// The model was replaced: rebuild everything from it.
     pub(super) fn forget_model(&mut self) {
         self.prepared = None;

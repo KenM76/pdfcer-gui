@@ -67,7 +67,13 @@ pub fn meter() -> &'static str {
     "3D Measure light"
 }
 
-/// The two rows with no switch: they follow the 3D picture's.
+/// The light map row.
+#[must_use]
+pub fn light_map() -> &'static str {
+    "3D Colour by light level"
+}
+
+/// The rows with no switch: they follow the 3D picture's.
 #[must_use]
 pub fn follows_picture() -> &'static str {
     "Follows the 3D viewer's picture switch; no switch of its own."
@@ -76,7 +82,7 @@ pub fn follows_picture() -> &'static str {
 /// The closing line: what never uses the card.
 #[must_use]
 pub fn processor_only() -> &'static str {
-    "Always on the processor: thumbnails, printing, every export, saved 3D pictures and the 3D light map (Colour by light level)."
+    "Always on the processor: thumbnails, printing, every export, saved 3D pictures, and the picture of Colour by light level (its figures are measured on the card)."
 }
 
 /// The tip on the 3D rows: where else they are set, and what changing one here does.
@@ -138,6 +144,12 @@ pub fn meter_refused() -> &'static str {
 #[must_use]
 pub fn meter_timeout(seconds: u64) -> String {
     format!("the graphics card had not finished it in {seconds} s")
+}
+
+/// The light map's reason when its points need a texture wider than the card's largest.
+#[must_use]
+pub fn map_too_large() -> &'static str {
+    "too many points for the card's largest picture"
 }
 
 /// A part's reason when the frame shows it with its switch off.

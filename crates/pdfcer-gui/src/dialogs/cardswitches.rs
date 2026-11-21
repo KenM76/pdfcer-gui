@@ -130,7 +130,11 @@ fn body(ui: &mut Ui, rows: &mut Rows<'_>) {
             #[cfg(feature = "3d")]
             model_rows(ui, rows);
             #[cfg(feature = "3d")]
-            for (path, label) in [(Path::Bounce, t::bounce()), (Path::Meter, t::meter())] {
+            for (path, label) in [
+                (Path::Bounce, t::bounce()),
+                (Path::Meter, t::meter()),
+                (Path::Map, t::light_map()),
+            ] {
                 let r = ui.label(label).on_hover_text(t::follows_picture());
                 region(REGION_SWITCH, path, &r, ui);
                 status(ui, rows, path);

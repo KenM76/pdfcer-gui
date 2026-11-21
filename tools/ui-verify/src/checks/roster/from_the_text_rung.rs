@@ -793,6 +793,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_controls::TheViewerControlsHide),
         Box::new(model_render_mode::TheModelViewerDrawsAPickedMode),
         Box::new(model_light_map::TheViewerColoursByLightLevel),
+        Box::new(model_light_map_card::TheLightMapIsMeasuredOnTheCard),
         Box::new(model_inferences::TheViewerSaysTheAssemblyColouredIt),
         Box::new(model_inferences::TheViewerSaysAMeshWasBestFit),
         Box::new(model_inferences::TheViewerDrawsADamagedModel),

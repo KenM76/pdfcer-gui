@@ -1,8 +1,11 @@
 //! *Colour by light level*: every surface drawn in the colour of the light
 //! arriving on it, stepped at the recommended lighting levels.
 //!
-//! The figures are the engine's (`LightMeter::map`), measured as the light
-//! meter reads a point: the same lights, options and glow switch. The side
+//! The figures are the engine's, measured as the light meter reads a point:
+//! the same lights, options and glow switch. They are measured on the
+//! graphics card (`LightMeter::gpu_map`, [`super::gpu_lightmap`]) while the
+//! viewer draws there and the card can, else on the processor
+//! (`LightMeter::map`); the trace's `card=` says which. The side
 //! measured is the side the camera sees (`MapSide::FacingCamera`), so a
 //! moved camera is measured again once it has stood still for [`SETTLE`];
 //! until then the last map is drawn from the new view, and until the first
@@ -70,7 +73,8 @@ impl Key {
 /// A map being measured; dropping it stops the work.
 struct Pending {
     key: Key,
-    rx: Receiver<Result<IlluminanceMap, String>>,
+    /// The map, or why not; and whether the card measured it.
+    rx: Receiver<(Result<IlluminanceMap, String>, bool)>,
     done: Arc<AtomicUsize>,
     total: Arc<AtomicUsize>,
     stop: Arc<AtomicBool>,
@@ -132,14 +136,14 @@ impl LightMap {
         let Some(p) = &self.pending else {
             return;
         };
-        let arrived = match p.rx.try_recv() {
+        let (arrived, card) = match p.rx.try_recv() {
             Ok(arrived) => arrived,
             Err(TryRecvError::Empty) => return,
-            Err(TryRecvError::Disconnected) => Err(String::new()),
+            Err(TryRecvError::Disconnected) => (Err(String::new()), false),
         };
         let (key, ms) = (p.key, p.started.elapsed().as_secs_f64() * 1000.0);
         self.pending = None;
-        trace_arrived(&arrived, ms);
+        trace_arrived(&arrived, card, ms);
         match arrived {
             Ok(map) => {
                 self.ready = Some((key, Arc::new(map)));
@@ -198,26 +202,56 @@ struct Job {
     camera: Camera,
     glow: GlowLight,
     spacing: f64,
+    /// The card's queue, while the viewer draws there.
+    card: Option<super::gpu_bounce_card::CardQueue>,
 }
 
-/// Measure `job`, coarser each time the engine refuses the density.
+/// Measure `job`, coarser each time the engine refuses the density; on the
+/// card first when the job has one. The flag says whether the card did.
 fn measure(
     job: &Job,
-    done: &AtomicUsize,
+    done: &Arc<AtomicUsize>,
     total: &AtomicUsize,
     stop: &AtomicBool,
-) -> Result<IlluminanceMap, String> {
+) -> (Result<IlluminanceMap, String>, bool) {
+    let meter = match job_meter(job) {
+        Ok(meter) => meter,
+        Err(why) => return (Err(why), false),
+    };
+    if let Some(card) = &job.card {
+        use super::gpu_lightmap::{NotOnCard, measure as on_card};
+        match on_card(&meter, card, job.spacing, (done, total, stop)) {
+            Ok(map) => return (Ok(map), true),
+            Err(NotOnCard::Engine(e)) => return (Err(e.to_string()), true),
+            Err(NotOnCard::Processor) => {}
+        }
+    } else {
+        super::gpu_lightmap::passed_over(crate::text::cardstatus::meter_not_drawing().to_owned());
+    }
+    (on_processor(&meter, job.spacing, done, total, stop), false)
+}
+
+fn job_meter(job: &Job) -> Result<LightMeter<'_>, String> {
     let mut settings = MeterSettings::default();
     settings.glow = job.glow;
-    let meter = LightMeter::new(
+    LightMeter::new(
         &job.model,
         &job.prepared,
         &job.camera,
         &job.options,
         &settings,
     )
-    .map_err(|e| e.to_string())?;
-    let mut spacing = job.spacing;
+    .map_err(|e| e.to_string())
+}
+
+fn on_processor(
+    meter: &LightMeter<'_>,
+    spacing: f64,
+    done: &AtomicUsize,
+    total: &AtomicUsize,
+    stop: &AtomicBool,
+) -> Result<IlluminanceMap, String> {
+    let mut spacing = spacing;
     let mut refused = String::new();
     for _ in 0..COARSER_TRIES {
         let mut progress = |p: pdfcer_3d::MapProgress| {
@@ -240,13 +274,14 @@ fn measure(
     Err(refused)
 }
 
-fn trace_arrived(arrived: &Result<IlluminanceMap, String>, ms: f64) {
+fn trace_arrived(arrived: &Result<IlluminanceMap, String>, card: bool, ms: f64) {
+    let card = u8::from(card);
     crate::diag::trace(|| match arrived {
         Ok(map) => {
             let (lo, hi) = map.range().unwrap_or((0.0, 0.0));
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-light-map-ready unit={} lo={lo:.3} hi={hi:.3} triangles={} reasons={} notes={} ms={ms:.0}",
+                "model-light-map-ready unit={} lo={lo:.3} hi={hi:.3} triangles={} reasons={} notes={} card={card} ms={ms:.0}",
                 if map.unit == IlluminanceUnit::Lux {
                     "lux"
                 } else {
@@ -258,7 +293,7 @@ fn trace_arrived(arrived: &Result<IlluminanceMap, String>, ms: f64) {
             )
         }
         // ui-text-exempt: diagnostic trace, never displayed
-        Err(why) => format!("model-light-map-failed why={why:?}"),
+        Err(why) => format!("model-light-map-failed why={why:?} card={card}"),
     });
 }
 
@@ -304,6 +339,7 @@ impl ModelView {
             camera: key.camera,
             glow: key.glow,
             spacing: 2.0 * self.bounds.radius() / PER_DIAGONAL,
+            card: self.gpu.map_card(),
         };
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed

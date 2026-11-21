@@ -12,6 +12,9 @@
 //! hands the build to the processor on a thread, down the same channel. A job
 //! whose build was superseded is dropped unfinished.
 //!
+//! Once both bounce slots are empty, the paint advances the light map
+//! measured on the card ([`super::gpu_lightmap`]) the same way.
+//!
 //! `PDFCER_3D_BOUNCE_CPU=1` keeps every build on the processor, for
 //! comparison.
 
@@ -20,6 +23,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 use std::time::{Duration, Instant};
 
+use super::gpu_lightmap::MapJob;
 use eframe::egui_glow::glow;
 use native_mesh::Value;
 use native_mesh::compute::{Bind, Compute, Input};
@@ -35,11 +39,11 @@ pub(super) type Built = Result<Option<FrameBounce>, String>;
 pub(super) type Fallback = Box<dyn FnOnce() -> Result<Option<FrameBounce>, RenderError> + Send>;
 
 /// `PDFCER_3D_BOUNCE_CPU=1` keeps the bounce build on the processor.
-const BOUNCE_CPU: &str = "PDFCER_3D_BOUNCE_CPU";
+pub(super) const BOUNCE_CPU: &str = "PDFCER_3D_BOUNCE_CPU";
 /// The card's time per paint: a paint stays well inside a 60 Hz frame.
-const BUDGET: Duration = Duration::from_millis(12);
+pub(super) const BUDGET: Duration = Duration::from_millis(12);
 /// The first band's rows; a band then doubles or halves to fit [`BUDGET`].
-const FIRST_BAND: u32 = 8;
+pub(super) const FIRST_BAND: u32 = 8;
 /// The trace target, then the two atlases a bounce alternates between.
 const TRACE: usize = 0;
 const ATLAS: [usize; 2] = [1, 2];
@@ -75,6 +79,11 @@ impl Slot {
     }
 }
 
+/// `PDFCER_3D_BOUNCE_CPU=1` is set.
+pub(super) fn forced_cpu() -> bool {
+    std::env::var_os(BOUNCE_CPU).is_some_and(|v| v == "1")
+}
+
 /// How long a build waits for the first paint to say whether the card can
 /// trace it; past this it traces on the processor.
 const SUPPORT_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
@@ -83,6 +92,9 @@ const SUPPORT_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
 struct Inner {
     /// Indexed by `Slot as usize`.
     jobs: Mutex<[Option<CardJob>; 2]>,
+    /// The light map measured on the card (`super::gpu_lightmap`), advanced
+    /// once both bounce slots are empty.
+    map: Mutex<Option<MapJob>>,
     /// 0 not yet known, 1 the card renders into float targets, 2 it cannot.
     support: AtomicU8,
 }
@@ -90,7 +102,7 @@ struct Inner {
 impl CardQueue {
     /// A build is queued or part-way through on the card.
     pub(super) fn busy(&self) -> bool {
-        self.lock().iter().any(Option::is_some)
+        self.lock().iter().any(Option::is_some) || self.lock_map().is_some()
     }
 
     /// Whether a build should be packed for the card. A build started before
@@ -99,13 +111,9 @@ impl CardQueue {
     /// a first build on the processor and every later one on the card would
     /// change the picture with nothing changed. Runs on the build thread.
     pub(super) fn wanted(&self) -> bool {
-        let started = std::time::Instant::now();
-        while self.0.support.load(Ordering::Relaxed) == 0 && started.elapsed() < SUPPORT_WAIT {
-            std::thread::sleep(std::time::Duration::from_millis(5));
-        }
         use pdfcer_gui_base::cardstatus::{Outcome, Path, note};
-        let forced = std::env::var_os(BOUNCE_CPU).is_some_and(|v| v == "1");
-        let supported = self.0.support.load(Ordering::Relaxed) == 1;
+        let forced = forced_cpu();
+        let supported = self.supported();
         note(
             Path::Bounce,
             match (forced, supported) {
@@ -117,6 +125,23 @@ impl CardQueue {
             },
         );
         supported && !forced
+    }
+
+    /// Whether the card renders into float targets, waiting up to
+    /// [`SUPPORT_WAIT`] for the first paint to say. Runs off the paint.
+    pub(super) fn supported(&self) -> bool {
+        let started = Instant::now();
+        while self.0.support.load(Ordering::Relaxed) == 0 && started.elapsed() < SUPPORT_WAIT {
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        self.0.support.load(Ordering::Relaxed) == 1
+    }
+
+    /// Queue the light map `job`, dropping any map it supersedes.
+    pub(super) fn hand_map(&self, job: MapJob) {
+        if let Some(old) = self.lock_map().replace(job) {
+            old.abandon();
+        }
     }
 
     /// Record what the paint found the card can do.
@@ -142,6 +167,13 @@ impl CardQueue {
         for job in self.lock().iter_mut().filter_map(Option::take) {
             job.abandon();
         }
+        if let Some(job) = self.lock_map().take() {
+            job.abandon();
+        }
+    }
+
+    fn lock_map(&self) -> std::sync::MutexGuard<'_, Option<MapJob>> {
+        self.0.map.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, [Option<CardJob>; 2]> {
@@ -222,7 +254,7 @@ impl CardJob {
 /// GL objects of jobs dropped outside a paint; the next paint deletes them.
 static RETIRED: Mutex<Vec<Compute>> = Mutex::new(Vec::new());
 
-fn retire(c: Compute) {
+pub(super) fn retire(c: Compute) {
     RETIRED
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
@@ -239,12 +271,15 @@ pub(super) fn advance(gl: &glow::Context, queue: &CardQueue) {
     {
         c.destroy(gl);
     }
+    let paint = Instant::now();
     let mut jobs = queue.lock();
     let Some(index) = Slot::ORDER
         .into_iter()
         .map(|s| s as usize)
         .find(|&i| jobs[i].is_some())
     else {
+        drop(jobs);
+        super::gpu_lightmap::advance(gl, &mut queue.lock_map(), paint);
         return;
     };
     let slot = &mut jobs[index];
@@ -267,7 +302,6 @@ pub(super) fn advance(gl: &glow::Context, queue: &CardQueue) {
             }
         }
     }
-    let paint = Instant::now();
     while paint.elapsed() < BUDGET {
         if !step(gl, job) {
             if let Some(job) = slot.take() {
@@ -372,7 +406,7 @@ fn step(gl: &glow::Context, job: &mut CardJob) -> bool {
 }
 
 /// The next band's rows from how long this one took.
-fn fit(band: u32, took: Duration) -> u32 {
+pub(super) fn fit(band: u32, took: Duration) -> u32 {
     if took < BUDGET / 4 {
         (band * 2).min(1024)
     } else if took > BUDGET / 2 {

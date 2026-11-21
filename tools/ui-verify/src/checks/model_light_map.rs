@@ -35,11 +35,11 @@ use crate::report::CheckReport;
 const METHOD: &str = "python fixtures/glow-room.PROVENANCE.py <pdfcer.exe>";
 /// `dialogs::model3d::lightmap::REGION_MAP`.
 const SWITCH: &str = "model3d.light_map";
-const READY: &str = "model-light-map-ready";
-const FAILED: &str = "model-light-map-failed";
+pub(crate) const READY: &str = "model-light-map-ready";
+pub(crate) const FAILED: &str = "model-light-map-failed";
 const RENDERED: &str = "model-view-rendered";
 /// Settles waited for the map, which is measured off the frame loop.
-const WAITS: usize = 120;
+pub(crate) const WAITS: usize = 120;
 
 /// See the module documentation.
 pub struct TheViewerColoursByLightLevel;
@@ -103,7 +103,7 @@ fn picture_until(
 /// The opened picture once two reads a settle apart agree: the viewport
 /// changes height while its panels lay out, and each height is a new
 /// picture.
-fn steady(session: &Session) -> Result<Option<[String; 3]>> {
+pub(crate) fn steady(session: &Session) -> Result<Option<[String; 3]>> {
     let mut last = drawn(session)?;
     for _ in 0..WAITS {
         session.settle(15);
@@ -117,7 +117,7 @@ fn steady(session: &Session) -> Result<Option<[String; 3]>> {
 }
 
 /// Tick the switch; `false` when it is drawn nowhere.
-fn toggle(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<bool> {
+pub(crate) fn toggle(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<bool> {
     let Some((rect, vp)) = reach(session, pointer, ui_rect, SWITCH)? else {
         return Ok(false);
     };

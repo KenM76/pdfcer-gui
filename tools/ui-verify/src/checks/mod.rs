@@ -994,6 +994,7 @@ pub mod button_icon_paste;
 /// window of its own.
 pub mod model_close_asks;
 pub mod model_light_map;
+pub mod model_light_map_card;
 /// The 3D viewer's Measure tab reads the light arriving on a surface.
 pub mod model_light_meter;
 /// The 3D viewer switches a model's lamps and glowing parts off and on.
