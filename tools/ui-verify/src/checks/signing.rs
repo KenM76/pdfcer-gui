@@ -162,10 +162,6 @@ use reaching::{
     disclosed_appearance, drawn, engine_fixture, field_name_of, last_refusal, repo_fixture,
 };
 
-/// `reaching::raise_signatures` has no caller left in this module; the binding
-/// keeps the shared file warning-free until its owner removes it.
-const _: fn(&Session, &crate::input::Driver, &str) -> Result<()> = reaching::raise_signatures;
-
 /// Press ribbon command `id` wherever it is, requiring the shell's invoke.
 fn press(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, id: &str) -> Result<()> {
     click_command(

@@ -123,26 +123,6 @@ pub(super) fn click_tab(
     }
     Ok(())
 }
-
-/// **Click a ribbon tab without requiring that it CHANGED.**
-fn click_tab_tolerant(
-    session: &Session,
-    driver: &Driver,
-    ui_rect: &str,
-    region: &str,
-) -> Result<()> {
-    let trace = session.trace()?;
-    let rect = declared(&trace, ui_rect, region).ok_or_else(|| {
-        Error::new(format!(
-            "the application declared no `{region}` region. Tabs declared: {}.",
-            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
-        ))
-    })?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
-    session.settle(14);
-    Ok(())
-}
-
 /// **Find a ribbon control and press it**, through the overflow if it is there.
 pub(super) fn press(session: &Session, driver: &Driver, ui_rect: &str, id: &str) -> Result<()> {
     let name = format!("{ITEM_PREFIX}{id}");
@@ -291,23 +271,6 @@ pub(super) fn engine_fixture(rel: &str, what: &str) -> Result<PathBuf> {
         )));
     }
     Ok(path)
-}
-
-/// **Bring the Signatures panel to the front, mounting it if it is not there.**
-pub(super) fn raise_signatures(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
-    if !super::super::reaching::raise_dock_tab(session, driver, ui_rect, "view.panel_signatures")? {
-        click_tab_tolerant(session, driver, ui_rect, "ribbon.tab.view")?;
-        press(session, driver, ui_rect, "view.panel_signatures")?;
-        session.settle(24);
-        let _ = super::super::reaching::raise_dock_tab(
-            session,
-            driver,
-            ui_rect,
-            "view.panel_signatures",
-        )?;
-    }
-    session.settle(30);
-    Ok(())
 }
 
 /// **Whether the text the signature box will show was put in front of the
