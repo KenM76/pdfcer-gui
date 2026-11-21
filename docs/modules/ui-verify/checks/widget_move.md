@@ -3,6 +3,9 @@
 `dragging_a_form_field_moves_it` — **a form field's box follows the
 pointer.**
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # What this is for
 
 The operator's standing instruction that week was *"work on form field

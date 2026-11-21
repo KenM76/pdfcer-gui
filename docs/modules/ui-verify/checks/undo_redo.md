@@ -4,6 +4,9 @@
 not take anything back**: author a change, undo it, redo it, and prove all
 three states from outside the process.
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 # What was wrong, and why nothing noticed
 
 `edit.undo` and `edit.redo` have been registered since the ribbon landed.
@@ -151,7 +154,7 @@ what is not proven is that the chord reaches the arm.
 
 # Every way this reports SKIP, and why none of them is a pass
 
-* no binary, no `--pdf`, `--no-input` — the harness never began;
+* no binary or no `--pdf` — the harness never began;
 * the diagnostic switches did not reach the process;
 * the page size could not be read and no `--page-size` was given;
 * a mode segment, a tab or a control was never declared, or took no click;

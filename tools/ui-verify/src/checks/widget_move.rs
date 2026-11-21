@@ -4,10 +4,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/widget_move.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
+use crate::checks::scripteddrive::offscreen;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -59,12 +59,6 @@ impl Check for DraggingAFormFieldMovesIt {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check places a field with a click, selects it \
-             with another, and then drags it — the drag being the gesture under test.",
-        ));
-    }
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -108,16 +102,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((ACCEPT_ENV.0.to_owned(), ACCEPT_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "widget_move")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
     session.settle(45);
-    let driver = Driver::new(session.window());
 
     if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
         return Err(Error::new(format!(
@@ -129,9 +124,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- A: place a field ---------------------------------------------------
     let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
-    let frame = session.frame()?;
     let at = DocPoint::new(0, PLACE_AT.0 * page.width_pt, PLACE_AT.1 * page.height_pt);
-    driver.click_at(frame.to_screen(mapping.doc_to_window(at)?))?;
+    pointer.click(&session, mapping.doc_to_window(at)?)?;
     session.settle(35);
 
     let trace = session.trace()?;
@@ -159,7 +153,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // field rather than select one — and the check would fail with a message
     // about selection when the cause was arming. `form_field` records the same
     // step for the same reason.
-    driver.press(crate::sys::vk::ESCAPE)?;
+    pointer.key(&session, None, "Escape", None)?;
     session.settle(12);
 
     // AND THEN A CLICK ON BLANK PAPER, WHICH IS NOT SCENERY — see
@@ -193,7 +187,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ))
         })?;
     let blank_point = mapping.doc_to_window(DocPoint::new(0, blank.0, page.height_pt - blank.1))?;
-    driver.click_at(session.frame()?.to_screen(blank_point))?;
+    pointer.click(&session, blank_point)?;
     session.settle(20);
 
     let trace = session.trace()?;
@@ -221,8 +215,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // flip is the one arithmetic this check does: `canvas_y = height - doc_y`.
     let doc_y = page.height_pt - centre.1;
     let field_point = mapping.doc_to_window(DocPoint::new(0, centre.0, doc_y))?;
-    let field_screen = session.frame()?.to_screen(field_point);
-    driver.click_at(field_screen)?;
+    pointer.click(&session, field_point)?;
     session.settle(25);
 
     let trace = session.trace()?;
@@ -285,9 +278,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             mapping.zoom
         )));
     }
-    let body_screen = session
-        .frame()?
-        .to_screen(mapping.doc_to_window(DocPoint::new(0, body.0, page.height_pt - body.1))?);
+    let body_window = mapping.doc_to_window(DocPoint::new(0, body.0, page.height_pt - body.1))?;
     report.note(format!(
         "★ pressing the body at canvas ({:.1}, {:.1}) — a quarter of the box's width in, which \
          is the furthest any point of a {:.1} px-wide box gets from a grip anchor",
@@ -299,7 +290,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         MOVE_TO.0 * page.width_pt,
         MOVE_TO.1 * page.height_pt,
     ))?;
-    driver.drag(body_screen, session.frame()?.to_screen(landing))?;
+    pointer.drag(&session, body_window, landing, 12)?;
     session.settle(40);
 
     let trace = session.trace()?;
@@ -377,5 +368,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // single-widget field this check authors, and a non-zero value is a
     // disclosure about a field drawn on several pages — a fact about the
     // document, not about the move.
+    pointer.gone(&session)?;
     Ok(None)
 }
