@@ -13,8 +13,9 @@
 //!   file name cannot hold a tab, so the fields split unambiguously. The
 //!   named fields are `carry=<absolute path>` (a copy holding unsaved edits,
 //!   read in place of the file and deleted by the receiver), `edits=<n>` (how
-//!   many it holds) and `key=<hex>` (the password the document was opened
-//!   with). `ok` is answered only once the receiving frame has the document
+//!   many it holds), `history=<absolute path>` (the session's exported undo
+//!   history, also deleted by the receiver) and `key=<hex>` (the password the
+//!   document was opened with). `ok` is answered only once the receiving frame has the document
 //!   open; a refusal, or no answer within [`ANSWER_WAIT`], leaves the
 //!   sender's copy where it is.
 //! * `paste\t<x>\t<y>\n` asks the window to paste the clip on the clipboard
@@ -109,6 +110,8 @@ pub struct Carry {
     pub file: PathBuf,
     /// How many unsaved edits it holds, for the receiver's unsaved count.
     pub edits: u64,
+    /// The session's exported undo history, absolute, when it was written.
+    pub history: Option<PathBuf>,
 }
 
 /// A request, and for an open the channel the frame answers on.
@@ -324,11 +327,14 @@ fn request(connection: &mut impl Read) -> Option<Request> {
                 Some("-") | None => None,
                 Some(p) => Some(p.parse().ok()?),
             };
-            let (mut carry, mut edits, mut key) = (None, 0, None);
+            let (mut carry, mut edits, mut key, mut history) = (None, 0, None, None);
             for field in fields.by_ref() {
                 match field.split_once('=')? {
                     ("carry", v) => carry = Some(PathBuf::from(v)).filter(|p| p.is_absolute()),
                     ("edits", v) => edits = v.parse().ok()?,
+                    ("history", v) => {
+                        history = Some(Some(PathBuf::from(v)).filter(|p| p.is_absolute())?);
+                    }
                     ("key", v) => key = Some(Secret::new(unhex(v)?)),
                     _ => return None,
                 }
@@ -336,7 +342,11 @@ fn request(connection: &mut impl Read) -> Option<Request> {
                     return None;
                 }
             }
-            let carry = carry.map(|file| Carry { file, edits });
+            let carry = carry.map(|file| Carry {
+                file,
+                edits,
+                history,
+            });
             path.is_absolute().then_some(Request::Open(Arrival {
                 path,
                 page,
@@ -379,6 +389,9 @@ fn open_line(arrival: &Arrival) -> Result<String, String> {
             name(&carry.file)?,
             carry.edits
         ));
+        if let Some(history) = &carry.history {
+            line.push_str(&format!("\thistory={}", name(history)?));
+        }
     }
     if let Some(key) = &arrival.key {
         line.push_str(&format!("\tkey={}", hex(key.expose())));
@@ -498,8 +511,8 @@ mod tests {
     }
 
     /// What a carried open sends is what the receiver reads back, including
-    /// a password holding the line's own separators; a relative carry, an
-    /// unknown field and a malformed key each refuse the request.
+    /// a password holding the line's own separators; a relative carry or
+    /// history, an unknown field and a malformed key each refuse the request.
     #[test]
     fn a_carried_open_round_trips() {
         let root = if cfg!(windows) { "C:\\" } else { "/" };
@@ -509,6 +522,7 @@ mod tests {
             carry: Some(Carry {
                 file: PathBuf::from(format!("{root}carry 1.pdf")),
                 edits: 4,
+                history: Some(PathBuf::from(format!("{root}carry 1.history"))),
             }),
             key: Some(Secret::new("p\tw\n\u{e9}".to_owned())),
         };
@@ -517,6 +531,8 @@ mod tests {
         assert_eq!(request(&mut line.as_bytes()), Some(Request::Open(sent)));
         let relative = line.replace(&format!("carry={root}"), "carry=");
         assert_eq!(request(&mut relative.as_bytes()), None);
+        let loose = line.replace(&format!("history={root}"), "history=");
+        assert_eq!(request(&mut loose.as_bytes()), None);
         let unknown = line.replace("edits=", "colour=");
         assert_eq!(request(&mut unknown.as_bytes()), None);
         let odd = line.replace("\tkey=", "\tkey=0");

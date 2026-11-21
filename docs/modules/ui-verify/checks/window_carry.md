@@ -31,11 +31,12 @@ others.
 - Opening the arrival without its key (`PdfcerApp::open_arrival` passing
   `None`) fails step 3: `window-move-opened ok=false unsaved=false why="the document
   did not open there"`.
-- Opening the arrival from its file instead of the carry copy (`source` as
-  `None` in `parcel`'s `PdfcerApp::take`) fails step 4: 1872 -> 1872 bytes,
-  appended `/Rotate` false.
+- Opening the arrival from its file with neither the history replayed nor
+  the carry copy read (`source` as `None` in `parcel`'s `PdfcerApp::take`,
+  with no history written) fails step 4: 1872 -> 1872 bytes, appended
+  `/Rotate` false.
 
 ## What it does not reach
 
-The undo history's absence in the receiver (G184) is a disclosure, read from
-the code rather than asserted here.
+Undoing the carried edits in the receiver, which
+`a_moved_document_keeps_its_undo` drives.

@@ -126,7 +126,10 @@ mod handsign;
 /// Stepping the command log, in both directions — `Direction`, its four
 /// per-direction answers, and `history_step`.
 mod history;
+/// A moved document's undo history, replayed in the window it reaches.
+mod historymove;
 pub use chrome::ViewChrome;
+pub(crate) use historymove::import_history;
 /// Pages ▸ Insert blank…, as copies of a one-page blank document.
 mod insertblank;
 /// The four page verbs' bodies, and the structural resync every edit owes.

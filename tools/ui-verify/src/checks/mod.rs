@@ -926,6 +926,8 @@ pub mod two_codes;
 pub mod window_carry;
 /// A document moves to another window, or tears off into its own.
 pub mod window_move;
+/// A document moved to another window keeps its undo history.
+pub mod window_undo;
 pub mod word_line_edit;
 pub mod word_styles;
 /// A refused text edit offers the way the engine can make it.
