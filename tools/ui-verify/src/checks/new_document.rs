@@ -6,9 +6,11 @@
 use crate::checks::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, SHELL_TRACE_PREFIX, UNIMPLEMENTED_EVENT,
 };
+use crate::checks::scripteddrive;
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
 /// The command this check is about.
@@ -70,14 +72,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         )
     })?;
 
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input), and this check is a click on a ribbon control. \
-             Reported as SKIPPED rather than passed — a check that did not run has learned \
-             nothing.",
-        ));
-    }
-
     let mut spec = LaunchSpec::new(&exe, ctx.out("new_document.trace.txt"));
     spec.pdf = Some(pdf);
     spec.env.push((
@@ -88,6 +82,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = scripteddrive::offscreen(ctx, &mut spec, "new_document")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -138,7 +133,6 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
         }
     }
 
-    let driver = Driver::new(session.window());
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or("ui-rect");
 
     // --- 1. is there a control at all? -------------------------------------
@@ -176,20 +170,20 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     ));
 
     // --- 2 and 3, twice: press New, and check what it did -------------------
-    let first = press_new(&session, &driver, report, rect, 1)?;
+    let first = press_new(&session, &pointer, report, rect, 1)?;
     if let Some(failure) = first {
         return Ok(Some(failure));
     }
 
     // --- 6. and again, because "it worked once" is not "it works" -----------
-    let second = press_new(&session, &driver, report, rect, 2)?;
+    let second = press_new(&session, &pointer, report, rect, 2)?;
     Ok(second)
 }
 
 /// One press of New, and everything that must follow it.
 fn press_new(
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     report: &mut CheckReport,
     rect: crate::geom::LRect,
     ordinal: usize,
@@ -210,7 +204,7 @@ fn press_new(
         .filter(|l| l.get("name") == Some(expected))
         .count();
 
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(session, WindowPoint::centre_of(rect))?;
     // Enough for the click, the action queue, the open and a raster of one
     // blank A4 page — which is the cheapest render this application ever does.
     session.settle(30);
