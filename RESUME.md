@@ -318,9 +318,8 @@ the zoom and says why in the status bar (`canvas::textedit::fallback`);
 measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_why`.
 A key a run's font lacks goes into the draft when a nearby face has it
 (`canvas::textedit::reface::plan`, confirmed with the engine's fallback, `route=engine`), previews in that face in the line's place, and commits set in that face, the rest of
-the line untouched, as one undo entry (`app::actions::reface`: the engine's G078 fallback when
-the match lies in one show operator, else placeholder tokens; a refused step rolls back to a checkpoint, so Redo is untouched,
-G083). Before that, a key the subset never carried is added to it from the
+the line untouched, as one undo entry (`app::actions::reface`: the engine's G078 fallback, for a
+match in one text object across any number of show operators; across `ET` the engine refuses). Before that, a key the subset never carried is added to it from the
 same-name installed face (`editmodel::installedfaces`, indexed on a
 background thread at start, about 3 s over 542 files here; until then the
 key is re-faced); measure with
@@ -331,7 +330,8 @@ where it types `z` through both the paragraph and the line route (SW41177 at
 engine's cell-aware numbering (`canvas::textedit::reflow`); Up/Down in a
 table still reads the plain recognition (G080's caret half). The notice under the editor box names the keys and the face, with one
 click to the whole line in it (`canvas::textedit::refused`); measure with
-`ui-verify --check a_key_the_font_lacks_is_set_in_the_nearest_face` and
+`ui-verify --check a_key_the_font_lacks_is_set_in_the_nearest_face`,
+`a_change_across_show_operators_is_set_in_the_nearest_face` and
 `every_refused_key_is_named_with_a_face_that_takes_them`.
 A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 `app::frame` settles any draft whose tool is not armed; measure with

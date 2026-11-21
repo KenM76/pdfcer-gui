@@ -23,6 +23,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(preview_fallback::AStandInPreviewIsTheTextsSize),
         Box::new(refused_keys::EveryRefusedKeyIsNamed),
         Box::new(reface_commit::AKeyTheFontLacksIsSetInTheNearestFace),
+        Box::new(reface_commit::AChangeAcrossShowOperatorsIsSetInTheNearestFace),
         Box::new(mid_line_preview::AKeyTypedMidLinePreviewsWhereItCommits),
         Box::new(augment_subset::AKeyTheSubsetLacksComesFromItsInstalledFace),
         Box::new(text_tool_click_types::ATextToolClickTypes),
