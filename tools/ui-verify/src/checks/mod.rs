@@ -1009,6 +1009,8 @@ pub mod model_poster;
 pub mod model_saved_view;
 /// The 3D viewer's Measure tab measures between two picked surfaces.
 pub mod model_select_measure;
+/// The 3D viewer's face, edge, corner measure converts, projects and reframes.
+pub mod model_select_readout;
 pub mod model_surface_measure;
 /// The 3D viewer draws at an exposure fixed in lux.
 pub mod model_true_light;

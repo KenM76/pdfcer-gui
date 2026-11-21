@@ -191,6 +191,8 @@ pub mod model3dlook;
 pub mod model3dmap;
 /// The 3D viewer's measure tool.
 pub mod model3dmeasure;
+/// How the 3D viewer's face, edge and corner measure says its figures.
+pub mod model3dreadout;
 /// The 3D viewer's face, edge and corner measure.
 pub mod model3dselect;
 pub mod model3dshot;

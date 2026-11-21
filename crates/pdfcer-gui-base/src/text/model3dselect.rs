@@ -1,7 +1,7 @@
 //! Strings for the 3D viewer's *Face, edge, corner* measure. Consumed by
 //! `pdfcer_gui::dialogs::model3d::select`.
 
-use super::model3dmeasure::with_unit;
+use super::model3dreadout::Lengths;
 
 /// The measure's button in the kind row.
 pub const SELECT: &str = "Face, edge, corner";
@@ -52,33 +52,30 @@ pub fn next(done: usize, entity: usize) -> String {
     }
 }
 
-fn squared(value: f64, unit: &str) -> String {
-    if unit.is_empty() {
-        format!("{value:.3}")
-    } else {
-        format!("{value:.3} {unit}\u{b2}")
-    }
-}
-
 /// A corner's position.
 #[must_use]
-pub fn corner([x, y, z]: [f64; 3]) -> String {
-    format!("Corner at X {x:.3}, Y {y:.3}, Z {z:.3}")
+pub fn corner([x, y, z]: [f64; 3], l: &Lengths<'_>) -> String {
+    format!(
+        "Corner at X {}, Y {}, Z {}",
+        l.coordinate(x),
+        l.coordinate(y),
+        l.coordinate(z)
+    )
 }
 
 /// An edge's headline.
 #[must_use]
-pub fn edge_length(length: f64, unit: &str) -> String {
-    format!("Edge length {}", with_unit(length, unit))
+pub fn edge_length(length: f64, l: &Lengths<'_>) -> String {
+    format!("Edge length {}", l.length(length))
 }
 
 /// A straight edge, or an open one's chord.
 #[must_use]
-pub fn edge_chord(chord: f64, closed: bool, unit: &str) -> String {
+pub fn edge_chord(chord: f64, closed: bool, l: &Lengths<'_>) -> String {
     if closed {
         "Closes on itself.".to_owned()
     } else {
-        format!("End to end {}", with_unit(chord, unit))
+        format!("End to end {}", l.length(chord))
     }
 }
 
@@ -88,34 +85,34 @@ pub const STRAIGHT: &str = "Straight.";
 /// A circular edge or face: its radius and diameter, and how closely the
 /// triangles fit it.
 #[must_use]
-pub fn circle(radius: f64, residual: f64, unit: &str) -> String {
+pub fn circle(radius: f64, residual: f64, l: &Lengths<'_>) -> String {
     format!(
         "Radius {}, diameter {}, fitted within {}",
-        with_unit(radius, unit),
-        with_unit(radius * 2.0, unit),
-        with_unit(residual, unit)
+        l.length(radius),
+        l.length(radius * 2.0),
+        l.length(residual)
     )
 }
 
 /// How far round a circular edge reaches, and its arc length.
 #[must_use]
-pub fn arc(sweep_degrees: f64, arc_length: f64, unit: &str) -> String {
+pub fn arc(sweep_degrees: f64, arc_length: f64, l: &Lengths<'_>) -> String {
     format!(
         "Arc of {sweep_degrees:.1}\u{b0}, {} long",
-        with_unit(arc_length, unit)
+        l.length(arc_length)
     )
 }
 
 /// A face's headline.
 #[must_use]
-pub fn face_area(area: f64, unit: &str) -> String {
-    format!("Face area {}", squared(area, unit))
+pub fn face_area(area: f64, l: &Lengths<'_>) -> String {
+    format!("Face area {}", l.area(area))
 }
 
 /// A face's perimeter: its outline and the rims of its holes.
 #[must_use]
-pub fn perimeter(perimeter: f64, unit: &str) -> String {
-    format!("Perimeter {}", with_unit(perimeter, unit))
+pub fn perimeter(perimeter: f64, l: &Lengths<'_>) -> String {
+    format!("Perimeter {}", l.length(perimeter))
 }
 
 /// A flat face.
@@ -126,10 +123,10 @@ pub fn flat(flatness_degrees: f64) -> String {
 
 /// A cylindrical face's length and sweep.
 #[must_use]
-pub fn cylinder(length: f64, sweep_degrees: f64, unit: &str) -> String {
+pub fn cylinder(length: f64, sweep_degrees: f64, l: &Lengths<'_>) -> String {
     format!(
         "Cylinder {} long, {sweep_degrees:.1}\u{b0} round",
-        with_unit(length, unit)
+        l.length(length)
     )
 }
 
@@ -141,20 +138,20 @@ pub fn refused(why: &str) -> String {
 
 /// The headline of two picks: their smallest distance.
 #[must_use]
-pub fn minimum(length: f64, unit: &str) -> String {
-    format!("Smallest distance {}", with_unit(length, unit))
+pub fn minimum(length: f64, l: &Lengths<'_>) -> String {
+    format!("Smallest distance {}", l.length(length))
 }
 
 /// The largest distance between two picks.
 #[must_use]
-pub fn maximum(length: f64, unit: &str) -> String {
-    format!("Largest distance {}", with_unit(length, unit))
+pub fn maximum(length: f64, l: &Lengths<'_>) -> String {
+    format!("Largest distance {}", l.length(length))
 }
 
 /// Between the centres of two picks that have one.
 #[must_use]
-pub fn centres(length: f64, unit: &str) -> String {
-    format!("Centre to centre {}", with_unit(length, unit))
+pub fn centres(length: f64, l: &Lengths<'_>) -> String {
+    format!("Centre to centre {}", l.length(length))
 }
 
 #[cfg(test)]
@@ -163,8 +160,11 @@ mod tests {
 
     #[test]
     fn an_area_carries_a_squared_unit_and_a_bare_one_none() {
-        assert_eq!(face_area(16.0, "m"), "Face area 16.000 m\u{b2}");
-        assert_eq!(face_area(16.0, ""), "Face area 16.000");
+        assert_eq!(
+            face_area(16.0, &Lengths::plain("m")),
+            "Face area 16.000 m\u{b2}"
+        );
+        assert_eq!(face_area(16.0, &Lengths::plain("")), "Face area 16.000");
     }
 
     #[test]

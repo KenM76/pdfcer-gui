@@ -66,6 +66,7 @@ mod parts;
 mod partstree;
 mod phone;
 mod picture;
+mod readout;
 mod rows;
 mod saved;
 mod select;
