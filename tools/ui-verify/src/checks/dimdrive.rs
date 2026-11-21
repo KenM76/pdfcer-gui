@@ -9,6 +9,7 @@ use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
+use crate::geom::LRect;
 use crate::input::Click;
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
