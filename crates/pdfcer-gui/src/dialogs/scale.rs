@@ -47,7 +47,7 @@ use pdfcer_gui_base::entry;
 use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
 use crate::app::state::OpenDoc;
-use crate::canvas::measure::scale::ScaleEntryFields;
+use crate::canvas::measure::scale::{Reference, ScaleEntryFields};
 use crate::text::dimension_groups as gt;
 use crate::text::scale as t;
 
@@ -115,16 +115,10 @@ pub struct ScaleDialog {
     accept_requested: bool,
     /// Set by Close, consumed by [`Self::show`].
     close_requested: bool,
-    /// The reference line's measured length in PDF points, when the operator
-    /// calibrated by picking two points on the drawing.
-    ///
-    ///
-    /// It is threaded straight through to `ScaleEntryFields`, whose `entry`,
-    /// `preview` and `commit` all take `drawn_pdf_length: Option<f64>` and have
-    /// since the Phase 7 salvage. **No arithmetic was added anywhere for this**
-    /// — the model always supported both paths and had no caller for the
-    /// second.
-    drawn_pdf_length: Option<f64>,
+    /// The reference line, when the operator calibrated by picking two points
+    /// on the drawing. `ScaleEntryFields::entry` reads it through
+    /// `ScaleEntry::real_length_on`, so the page's `/UserUnit` is honoured.
+    reference: Option<Reference>,
     /// Set by the calibrate button, consumed after the window's closure.
     ///
     /// It no longer means "close me". See [`Self::hidden`] for what replaced
@@ -178,7 +172,7 @@ impl ScaleDialog {
             parse_error: None,
             accept_requested: false,
             close_requested: false,
-            drawn_pdf_length: None,
+            reference: None,
             calibrate_requested: false,
         };
         dialog.reseed(&doc.session.dimension_model());
@@ -192,12 +186,14 @@ impl ScaleDialog {
 
     /// **Open on `group` with a reference line already measured.**
     #[must_use]
-    pub fn calibrated(doc: &OpenDoc, group: GroupId, drawn_pdf_length: f64) -> Self {
+    pub fn calibrated(doc: &OpenDoc, group: GroupId, reference: Reference) -> Self {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 "scale-open group={group:?} path=calibrated \
-                 calibrated_pdf_length={drawn_pdf_length:.3}"
+                 calibrated_pdf_length={:.3} points={:.3}",
+                reference.measured,
+                reference.points()
             )
         });
         let mut dialog = Self {
@@ -206,7 +202,7 @@ impl ScaleDialog {
             parse_error: None,
             accept_requested: false,
             close_requested: false,
-            drawn_pdf_length: Some(drawn_pdf_length),
+            reference: Some(reference),
             calibrate_requested: false,
         };
         dialog.reseed(&doc.session.dimension_model());
@@ -257,16 +253,18 @@ impl ScaleDialog {
     }
 
     /// **Hand a measured reference line back to the window that asked for it.**
-    pub fn deliver_measured(&mut self, drawn_pdf_length: f64) {
-        self.drawn_pdf_length = Some(drawn_pdf_length);
-        self.fields.use_real_length = true;
+    pub fn deliver_measured(&mut self, reference: Reference) {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "scale-delivered group={:?} measured_pt={drawn_pdf_length:.3}",
-                self.group
+                "scale-delivered group={:?} measured_pt={:.3} points={:.3}",
+                self.group,
+                reference.measured,
+                reference.points()
             )
         });
+        self.reference = Some(reference);
+        self.fields.use_real_length = true;
     }
 
     /// **Is this window out on the page, waiting for the operator to point?**
@@ -357,7 +355,7 @@ impl ScaleDialog {
         //
         // The gesture now exists (`MeasureKind::Scale`), and the two states
         // this dialog can be in are genuinely different questions:
-        match self.drawn_pdf_length {
+        match self.reference.as_ref().map(Reference::points) {
             // Calibrated: a line was picked, so the useful question is what it
             // represents. The measured length is shown because it is the half
             // of the equation pdfcer contributed, and an operator checking their
@@ -482,7 +480,7 @@ impl ScaleDialog {
         // `None` means a degenerate entry (a zero somewhere), and Accept then
         // has nothing to commit. Shown as a refusal rather than as a blank, so
         // a greyed Accept has a reason beside it.
-        let preview = self.fields.preview(self.drawn_pdf_length);
+        let preview = self.fields.preview(self.reference.as_ref());
         match &preview {
             Some(p) => {
                 // `ratio_label` is the engine's own `/R`-style display string —
@@ -564,9 +562,8 @@ impl ScaleDialog {
 
     /// Turn the entry into the one action that changes the document.
     fn commit(&self, actions: &mut Vec<Action>) {
-        // `None` for the drawn length: this dialog offers the ratio path, which
-        // needs no line. `ScaleEntryFields::entry` routes on exactly that.
-        let Some((scale, format)) = self.fields.commit(self.drawn_pdf_length) else {
+        // `ScaleEntryFields::entry` takes the real-length path only with a line.
+        let Some((scale, format)) = self.fields.commit(self.reference.as_ref()) else {
             // Unreachable from the UI — Accept is disabled without a preview,
             // and a preview exists exactly when `commit` will. Handled rather
             // than unwrapped because an `Action` is plain data a test can
@@ -641,4 +638,14 @@ fn fraction_combo(ui: &mut Ui, fraction: &mut Option<FractionMode>) {
                 ui.selectable_value(fraction, Some(*mode), t::fraction_name(Some(*mode)));
             }
         });
+}
+
+/// The reference line `measured` user-space units long on page `page` of `doc`.
+pub(super) fn reference_on(
+    doc: &crate::app::state::OpenDoc,
+    measured: f64,
+    page: usize,
+) -> Option<crate::canvas::measure::scale::Reference> {
+    let page = doc.pages.get(page)?.clone();
+    Some(crate::canvas::measure::scale::Reference { page, measured })
 }

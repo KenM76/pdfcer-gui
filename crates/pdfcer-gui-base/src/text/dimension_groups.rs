@@ -213,13 +213,6 @@ pub const fn new_scale_hint() -> &'static str {
      group's unit."
 }
 
-/// The disclosure when the new group and its copied scale are two undo steps.
-#[must_use]
-pub const fn new_group_two_undos() -> &'static str {
-    "The new group and its scale were added as two steps; undo takes two \
-     presses to remove both."
-}
-
 /// The Tool options label over the group the next dimension joins.
 #[must_use]
 pub const fn tool_group_label() -> &'static str {

@@ -56,7 +56,9 @@ as one:
   §3.1), live-refit on every toggle (§3.2).
 - [`ScalePick`] + [`ScaleEntryFields`] — draw a reference line, then the
   two co-equal scale-entry paths (real-length recommended, ratio) that
-  back-calc through [`preview_group_scale`] (§4).
+  back-calc through [`preview_group_scale`] (§4). The line reaches the
+  entry as a [`Reference`]: its page and its length in that page's
+  user-space units.
 - [`super::state::MeasureState`] — the container built on tool entry that
   holds all of the above.
 
@@ -229,8 +231,10 @@ of, so the seed declines and shows the default instead.
 
 - **Real length (recommended, default):** the operator typed the drawn
   reference line's real length + unit; back-calc `scale = real /
-  drawn_pdf_length` — needs a drawn line, so it is offered only where one
-  exists ([`ScalePick`]).
+  points`, where `points` is the line's [`Reference`] converted by
+  `ScaleEntry::real_length_on` (user-space units × the page's `/UserUnit`)
+  — needs a drawn line, so it is offered only where one exists
+  ([`ScalePick`]).
 - **Direct ratio:** `paper : real` on a disclosed paper-unit basis;
   needs no drawn line, so it is the path the group panel uses to set a
   scale by typing alone (ui-spec §7.2 accessibility win).

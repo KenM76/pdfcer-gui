@@ -12,6 +12,7 @@ use pdfcer_core::dimension::{
     FractionMode, LengthParseError, NumberFormat, ScaleEntry, ScalePreview, ScaleState, Unit,
     parse_length, preview_group_scale,
 };
+use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::Point;
 
 use super::pick::LinearPick;
@@ -235,19 +236,17 @@ impl ScaleEntryFields {
     }
 
     /// The [`ScaleEntry`] these fields describe, given the optional drawn
-    /// reference length `drawn_pdf_length` (points). Chooses the real-length
-    /// path only when it is selected AND a drawn length is available; else the
-    /// ratio path (which needs no line). This is what routes the group-panel
-    /// (no line) path to Ratio and the [`ScalePick`] (line drawn) path to
-    /// whichever the operator picked.
+    /// reference line. Chooses the real-length path only when it is selected
+    /// AND a line is available; else the ratio path (which needs no line).
+    /// The real-length path goes through `ScaleEntry::real_length_on`, so a
+    /// line on a `/UserUnit` page is converted to default user-space points
+    /// the same way the page's ce dimensions are when they are measured.
     #[must_use]
-    pub fn entry(&self, drawn_pdf_length: Option<f64>) -> ScaleEntry {
-        match (self.use_real_length, drawn_pdf_length) {
-            (true, Some(drawn)) => ScaleEntry::RealLength {
-                drawn_pdf_length: drawn,
-                real_length: self.real_length,
-                unit: self.unit,
-            },
+    pub fn entry(&self, reference: Option<&Reference>) -> ScaleEntry {
+        match (self.use_real_length, reference) {
+            (true, Some(line)) => {
+                ScaleEntry::real_length_on(&line.page, line.measured, self.real_length, self.unit)
+            }
             // The engine's ratio is in one unit, so the real side is carried
             // into the paper side's: `1 in = 20 ft` becomes `1 : 240` inches.
             _ => ScaleEntry::Ratio {
@@ -263,8 +262,8 @@ impl ScaleEntryFields {
     /// via the shipped [`preview_group_scale`] — pure, no mutation. `None`
     /// for a degenerate entry (Accept then shows nothing to commit).
     #[must_use]
-    pub fn preview(&self, drawn_pdf_length: Option<f64>) -> Option<ScalePreview> {
-        preview_group_scale(self.entry(drawn_pdf_length)).map(|raw| self.in_display_unit(raw))
+    pub fn preview(&self, reference: Option<&Reference>) -> Option<ScalePreview> {
+        preview_group_scale(self.entry(reference)).map(|raw| self.in_display_unit(raw))
     }
 
     /// Re-express an engine preview in the unit the operator asked to **see**
@@ -288,8 +287,8 @@ impl ScaleEntryFields {
     /// "never-set" — the tri-state's third state). `None` for a degenerate
     /// entry.
     #[must_use]
-    pub fn commit(&self, drawn_pdf_length: Option<f64>) -> Option<(ScaleState, NumberFormat)> {
-        let preview = self.preview(drawn_pdf_length)?;
+    pub fn commit(&self, reference: Option<&Reference>) -> Option<(ScaleState, NumberFormat)> {
+        let preview = self.preview(reference)?;
         // An explicit display choice wins over the unit's default, and
         // survives a unit change — an operator who asked for eighths does not
         // want them silently reverted by switching from inches to feet.
@@ -312,22 +311,42 @@ impl ScaleEntryFields {
     }
 }
 
+/// A reference line measured on a page: what calibration by two points
+/// hands the scale entry.
+#[derive(Debug, Clone)]
+pub struct Reference {
+    /// The page the line was drawn on; its `/UserUnit` converts `measured`.
+    pub page: Page,
+    /// The line's length in that page's user-space units.
+    pub measured: f64,
+}
+
+impl Reference {
+    /// The line's length in default user-space points, as
+    /// `ScaleEntry::real_length_on` reads it, for display and traces.
+    #[must_use]
+    pub fn points(&self) -> f64 {
+        match ScaleEntry::real_length_on(&self.page, self.measured, 1.0, Unit::Inch) {
+            ScaleEntry::RealLength {
+                drawn_pdf_length, ..
+            } => drawn_pdf_length,
+            ScaleEntry::Ratio { .. } => self.measured,
+        }
+    }
+}
+
 /// The scale-dimension tool's state (ui-spec §4.1): draw a reference line with
-/// the SAME [`super::pick::LinearPick`] mechanic as a linear dimension, then —
-/// once both points are picked — switch to the scale-entry dialog
-/// ([`Self::fields`]) keyed on the drawn line's length.
+/// the SAME [`super::pick::LinearPick`] mechanic as a linear dimension; once
+/// both points are picked, [`Self::measured`] holds its length and the
+/// Set-scale dialog takes it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScalePick {
     /// The reference-line two-point pick (reused verbatim from the linear
     /// tool, ui-spec §4.1 — including H/V/aligned + snapping).
     pub line: LinearPick,
-    /// The drawn reference line's measured length (points) once both points
-    /// are picked — `Some` switches the property bar to the scale-entry
-    /// dialog (ui-spec §4.1). `None` while still drawing the line.
-    pub drawn_pdf_length: Option<f64>,
-    /// The scale-entry dialog's fields (both paths available here, since a
-    /// line was drawn).
-    pub fields: ScaleEntryFields,
+    /// The drawn reference line's length in the page's user-space units once
+    /// both points are picked; `None` while still drawing the line.
+    pub measured: Option<f64>,
 }
 
 impl Default for ScalePick {
@@ -342,67 +361,41 @@ impl ScalePick {
     pub fn new() -> Self {
         Self {
             line: LinearPick::reference_line(),
-            drawn_pdf_length: None,
-            fields: ScaleEntryFields::default(),
+            measured: None,
         }
     }
 
-    /// Register a committed (snapped) reference-line pick `p`. While the
-    /// dialog is open ([`Self::drawn_pdf_length`] is `Some`) further picks are
-    /// ignored (the operator is typing the scale, ui-spec §4.1). Otherwise the
-    /// pick advances the line; when the line completes, the drawn length is
-    /// recorded and the dialog opens. Returns `true` when the dialog just
-    /// opened.
+    /// Register a committed (snapped) reference-line pick `p`. Once the line
+    /// is complete further picks are ignored (the operator is typing the
+    /// scale, ui-spec §4.1). Returns `true` when the line just completed.
     pub fn commit_point(&mut self, p: Point) -> bool {
-        if self.drawn_pdf_length.is_some() {
+        if self.measured.is_some() {
             return false;
         }
         if let Some(kind) = self.line.commit_point(p) {
-            // The measured length of the just-drawn reference line, under its
-            // own H/V/aligned constraint (kind.measured_points()).
-            self.drawn_pdf_length = Some(kind.measured_points());
+            self.measured = Some(kind.measured_points());
             true
         } else {
             false
         }
     }
 
-    /// Whether the scale-entry dialog is open (both reference points picked).
+    /// Whether both reference points are picked.
     #[must_use]
     pub fn dialog_open(&self) -> bool {
-        self.drawn_pdf_length.is_some()
+        self.measured.is_some()
     }
 
-    /// The live scale preview for the current dialog fields + drawn length
-    /// (ui-spec §4.2), or `None` if the dialog is closed or the entry is
-    /// degenerate.
-    #[must_use]
-    pub fn preview(&self) -> Option<ScalePreview> {
-        self.drawn_pdf_length
-            .and_then(|_| self.fields.preview(self.drawn_pdf_length))
-    }
-
-    /// The `(ScaleState, NumberFormat)` an Accept commits (ui-spec §4.4),
-    /// or `None` while the dialog is closed / the entry is degenerate.
-    #[must_use]
-    pub fn commit(&self) -> Option<(ScaleState, NumberFormat)> {
-        self.drawn_pdf_length
-            .and_then(|_| self.fields.commit(self.drawn_pdf_length))
-    }
-
-    /// Discard the whole gesture (Escape stage 1 / Reject, ui-spec §1.3):
-    /// forget the reference line and close the dialog, keeping the operator's
-    /// typed dialog values (so a mis-drawn line is cheap to redo).
+    /// Discard the whole gesture (Escape stage 1 / Reject, ui-spec §1.3).
     pub fn clear(&mut self) {
         self.line.clear();
-        self.drawn_pdf_length = None;
+        self.measured = None;
     }
 
-    /// Whether a gesture is in progress (a point picked or the dialog open —
-    /// a discardable gesture).
+    /// Whether a gesture is in progress (a point picked or the line complete).
     #[must_use]
     pub fn in_progress(&self) -> bool {
-        self.line.in_progress() || self.drawn_pdf_length.is_some()
+        self.line.in_progress() || self.measured.is_some()
     }
 }
 
@@ -498,7 +491,9 @@ mod tests {
             unit: Unit::DecimalFeet,
             ..ScaleEntryFields::default()
         };
-        let preview = fields.preview(Some(42.3)).expect("a real-length preview");
+        let preview = fields
+            .preview(Some(&line(42.3, 1.0)))
+            .expect("a real-length preview");
         assert_eq!(preview.unit, Unit::DecimalFeet);
         assert!(
             (preview.scale - 25.0 / 42.3).abs() < 1e-12,
@@ -551,7 +546,7 @@ mod tests {
     #[test]
     fn with_no_explicit_choice_the_units_default_format_is_used_in_lowest_terms() {
         let f = calibrated(Unit::FeetInches);
-        let (_scale, format) = f.commit(Some(200.0)).expect("commits");
+        let (_scale, format) = f.commit(Some(&line(200.0, 1.0))).expect("commits");
         assert_eq!(
             format,
             Unit::FeetInches.default_format(),
@@ -571,7 +566,7 @@ mod tests {
             denominator: 16,
             reduce: false,
         });
-        let (_scale, format) = f.commit(Some(200.0)).expect("commits");
+        let (_scale, format) = f.commit(Some(&line(200.0, 1.0))).expect("commits");
         assert_eq!(
             format.fraction,
             FractionMode::Fraction {
@@ -593,7 +588,7 @@ mod tests {
             reduce: true,
         });
         f.unit = Unit::FeetInches;
-        let (_scale, format) = f.commit(Some(200.0)).expect("commits");
+        let (_scale, format) = f.commit(Some(&line(200.0, 1.0))).expect("commits");
         assert_eq!(format.unit, Unit::FeetInches);
         assert_eq!(
             format.fraction,
@@ -616,7 +611,7 @@ mod tests {
         // Second reference point: the dialog opens, drawn length recorded.
         assert!(sp.commit_point(p(42.3, 0.0)));
         assert!(sp.dialog_open());
-        assert!((sp.drawn_pdf_length.unwrap() - 42.3).abs() < 1e-9);
+        assert!((sp.measured.unwrap() - 42.3).abs() < 1e-9);
         // Further picks are ignored while the dialog is open.
         assert!(!sp.commit_point(p(99.0, 99.0)));
     }
@@ -626,16 +621,53 @@ mod tests {
         let mut sp = ScalePick::new();
         sp.commit_point(p(0.0, 0.0));
         sp.commit_point(p(42.3, 0.0)); // 42.3 pt reference line
-        sp.fields.use_real_length = true;
-        sp.fields.real_length = 25.0;
-        sp.fields.unit = Unit::DecimalFeet;
-        let preview = sp.preview().expect("a real-length preview");
+        let fields = ScaleEntryFields {
+            use_real_length: true,
+            real_length: 25.0,
+            unit: Unit::DecimalFeet,
+            ..ScaleEntryFields::default()
+        };
+        let reference = line(sp.measured.unwrap(), 1.0);
+        let preview = fields
+            .preview(Some(&reference))
+            .expect("a real-length preview");
         assert!((preview.scale - 25.0 / 42.3).abs() < 1e-12);
         assert_eq!(preview.unit, Unit::DecimalFeet);
         // Commit resolves to a Calibrated tri-state + the unit's default format.
-        let (state, format) = sp.commit().unwrap();
+        let (state, format) = fields.commit(Some(&reference)).unwrap();
         assert!(matches!(state, ScaleState::Calibrated { .. }));
         assert_eq!(format.unit, Unit::DecimalFeet);
+    }
+
+    /// A line on a `/UserUnit 2` page is twice its user-space length in
+    /// points, so a 100-unit line called 5 m is 5 m per 200 pt.
+    #[test]
+    fn a_reference_on_a_user_unit_page_is_measured_in_points() {
+        let fields = ScaleEntryFields {
+            use_real_length: true,
+            real_length: 5.0,
+            unit: Unit::Meter,
+            ..ScaleEntryFields::default()
+        };
+        let reference = line(100.0, 2.0);
+        assert!((reference.points() - 200.0).abs() < 1e-12);
+        let preview = fields
+            .preview(Some(&reference))
+            .expect("a real-length preview");
+        assert!(
+            (preview.scale - 5.0 / 200.0).abs() < 1e-12,
+            "100 units at /UserUnit 2 called 5 m is 0.025 m per point; got {}",
+            preview.scale
+        );
+    }
+
+    /// A reference line `measured` user-space units long on a page whose
+    /// `/UserUnit` is `user_unit`.
+    fn line(measured: f64, user_unit: f64) -> Reference {
+        let media = pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 612.0, 792.0);
+        let mut page = Page::with_boxes(pdfcer_core::object::ObjId::new(3, 0), media, media, 0);
+        page.user_unit = user_unit;
+        Reference { page, measured }
     }
 
     /// **This test used to pin the defect**, and the correction is worth
@@ -826,7 +858,7 @@ mod tests {
         };
         assert!(matches!(fields.entry(None), ScaleEntry::Ratio { .. }));
         assert!(matches!(
-            fields.entry(Some(42.3)),
+            fields.entry(Some(&line(42.3, 1.0))),
             ScaleEntry::RealLength { .. }
         ));
     }

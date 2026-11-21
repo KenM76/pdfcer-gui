@@ -253,9 +253,9 @@ fn copy_scale(
     };
     report.note(format!("`{}`", copied.raw));
     let id = copied.get("group").unwrap_or_default().to_owned();
-    if copied.get("folded") != Some("1") {
+    if copied.get("undo_steps") != Some("1") {
         return Ok(Some(format!(
-            "the add and its scale are two undo steps: `{}`. Trace: {}.",
+            "the add and its scale are not one undo step: `{}`. Trace: {}.",
             copied.raw,
             session.trace_path().display()
         )));

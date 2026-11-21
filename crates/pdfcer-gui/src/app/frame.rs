@@ -1146,7 +1146,7 @@ impl eframe::App for PdfcerApp {
                 "scale-calibrate armed=true".to_owned()
             });
         }
-        if let Some(measured) = crate::canvas::measure::take_completed_scale_line(&ctx) {
+        if let Some((measured, page)) = crate::canvas::measure::take_completed_scale_line(&ctx) {
             // Delivery FIRST, and the fallback only if there is nowhere to
             // deliver to. The ordinary case is a window that is merely hidden,
             // still holding everything the operator entered before they went
@@ -1160,7 +1160,10 @@ impl eframe::App for PdfcerApp {
             // would have recalibrated whatever the canvas was drawing into.
             // Delivering into the window uses the window's group, which is the
             // one with the operator's name on it.
-            if !self.dialogs.deliver_scale_length(measured) {
+            if !self
+                .dialogs
+                .deliver_scale_length(&self.status, measured, page)
+            {
                 // No window: the pick completed with nowhere to land. Rebuild
                 // one rather than discard the measurement. `active_group`
                 // answers `None` only when no measure state exists, which
@@ -1170,7 +1173,7 @@ impl eframe::App for PdfcerApp {
                 // whole output is a number the operator is trusting.
                 if let Some(group) = crate::canvas::measure::active_group(&ctx) {
                     self.dialogs
-                        .open_scale_calibrated(&self.status, group, measured);
+                        .open_scale_calibrated(&self.status, group, measured, page);
                 }
             }
             // And this is the un-hide: disarming the tool is the whole of it.

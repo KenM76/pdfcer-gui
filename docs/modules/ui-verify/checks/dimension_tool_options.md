@@ -39,7 +39,7 @@ Review mode, linear tool armed, then Manage groups. Unfolds *Add*, names the
 group `Feet`, picks unit `ft`, scale *Same as Default*, presses *Add*, then
 the new group's *draw into* radio, draws.
 
-PASS: `dimension-group-scale-copied folded=1` (one undo step), the ce
+PASS: `dimension-group-scale-copied undo_steps=1` (one undo step), the ce
 dimension joins that group, and it reads 4.10 ft ±0.01
 (250 pt × 5 mm / 304.8).
 

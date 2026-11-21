@@ -69,25 +69,25 @@ fn add_group(
     });
     let mut created = None;
     super::apply::vector_edit(doc, "add-dimension-group", 0, 1, |session| {
-        let id = session.add_dimension_group_with_format(name, format)?;
-        created = Some(id);
-        let mut disclosures = Vec::new();
-        if let Some((scale, from)) = source {
-            let scale = scale.in_unit(from, unit);
-            session.set_group_scale(id, scale, format)?;
-            let folded = session.coalesce_last(2, pdfcer_core::edit::CommandKind::AddDimension);
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                format!(
-                    "dimension-group-scale-copied group={} unit={unit:?} scale={scale:?} folded={}",
-                    id.0,
-                    u8::from(folded)
-                )
-            });
-            if !folded {
-                disclosures.push(crate::text::dimension_groups::new_group_two_undos().to_owned());
+        let before = session.undo_depth();
+        let id = match source {
+            Some((scale, from)) => {
+                let scale = scale.in_unit(from, unit);
+                let id = session.add_dimension_group_with_scale(name, scale, format)?;
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        "dimension-group-scale-copied group={} unit={unit:?} scale={scale:?} \
+                         undo_steps={}",
+                        id.0,
+                        session.undo_depth().saturating_sub(before)
+                    )
+                });
+                id
             }
-        }
+            None => session.add_dimension_group_with_format(name, format)?,
+        };
+        created = Some(id);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
@@ -97,7 +97,7 @@ fn add_group(
                 session.undo_depth()
             )
         });
-        Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+        Ok::<_, pdfcer_core::edit::EditError>(Vec::new())
     });
     if let (true, Some(id)) = (author_into, created) {
         crate::canvas::measure::queue_active_group(id);

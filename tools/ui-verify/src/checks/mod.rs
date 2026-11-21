@@ -238,6 +238,7 @@ pub mod replaceimage;
 pub mod restack;
 /// The annotations a saved file finally lists on its pages.
 mod savedannots;
+pub mod scale_user_unit;
 pub mod snap_markup;
 pub mod stroke_style;
 /// A markup text box is typed on the page.

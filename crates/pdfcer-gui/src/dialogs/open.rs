@@ -208,25 +208,34 @@ impl DialogsState {
         self.scale = Some(scale::ScaleDialog::open(doc, group));
     }
 
-    /// **Open the Set-scale dialog with a reference line already measured.**
+    /// **Open the Set-scale dialog with a reference line already measured**,
+    /// `measured` user-space units long on page `page`.
     pub fn open_scale_calibrated(
         &mut self,
         status: &Status,
         group: pdfcer_core::dimension::GroupId,
-        drawn_pdf_length: f64,
+        measured: f64,
+        page: usize,
     ) {
         let Status::Open(doc) = status else {
             return;
         };
-        self.scale = Some(scale::ScaleDialog::calibrated(doc, group, drawn_pdf_length));
+        let Some(reference) = scale::reference_on(doc, measured, page) else {
+            return;
+        };
+        self.scale = Some(scale::ScaleDialog::calibrated(doc, group, reference));
     }
 
     /// **Hand a measured reference line back to the Set-scale window.**
-    pub fn deliver_scale_length(&mut self, drawn_pdf_length: f64) -> bool {
-        let Some(dialog) = self.scale.as_mut() else {
+    /// `false` when no window is open, or the page is not in the document.
+    pub fn deliver_scale_length(&mut self, status: &Status, measured: f64, page: usize) -> bool {
+        let (Some(dialog), Status::Open(doc)) = (self.scale.as_mut(), status) else {
             return false;
         };
-        dialog.deliver_measured(drawn_pdf_length);
+        let Some(reference) = scale::reference_on(doc, measured, page) else {
+            return false;
+        };
+        dialog.deliver_measured(reference);
         true
     }
 
