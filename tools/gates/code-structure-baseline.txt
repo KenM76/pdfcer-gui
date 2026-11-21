@@ -427,7 +427,6 @@ fn crates/pdfcer-gui/src/shell/manifest/view.rs::tab
 fn crates/pdfcer-gui/src/shell/menus.rs::built_in
 fn crates/pdfcer-gui/src/text/glyphs.rs::string_literals
 fn tools/ui-verify/src/checks/about.rs::drive
-fn tools/ui-verify/src/checks/add_text.rs::drive
 fn tools/ui-verify/src/checks/adopt_widget.rs::drive
 fn tools/ui-verify/src/checks/align_left.rs::drive
 fn tools/ui-verify/src/checks/align_left/arrange.rs::drive

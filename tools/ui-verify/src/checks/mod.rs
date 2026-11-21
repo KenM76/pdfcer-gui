@@ -116,6 +116,8 @@ pub mod region_press;
 /// Press a region, opening a collapsed ribbon group that holds it.
 pub mod ribbonpress;
 
+/// Off-screen driving of the run's own `--pdf` through the scripted pointer.
+pub mod ctxdrive;
 /// Helpers shared by checks that press through the scripted pointer.
 pub mod scripteddrive;
 
