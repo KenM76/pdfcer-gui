@@ -273,6 +273,15 @@ pub(super) fn insert_from_file(
     insert_from_view(doc, &source.view(), pages, position);
 }
 
+/// What an insert brings besides the pages: the bookmarks that reach them,
+/// after this document's own, and the named destinations naming them, as
+/// Acrobat's Insert Pages does.
+fn carry() -> pdfcer_core::pageops::InsertOptions {
+    pdfcer_core::pageops::InsertOptions::default()
+        .with_outline(pdfcer_core::pageops::InsertedOutline::Append)
+        .with_named_destinations(true)
+}
+
 /// **The half of an insert that does not care where the source came from.**
 pub(super) fn insert_from_view(
     doc: &mut OpenDoc,
@@ -313,7 +322,7 @@ pub(super) fn insert_from_view(
 
     super::apply::vector_edit(doc, "insert-pages", landing, count, |session| {
         session
-            .insert_pages(view, pages, position)
+            .insert_pages_with_options(view, pages, position, &carry())
             // `orphaned_widgets` is exact, so the number goes in front of the
             // operator unhedged and a zero drops the clause entirely.
             //
@@ -336,6 +345,22 @@ pub(super) fn insert_from_view(
                     },
                     landing.checked_sub(1),
                 )];
+                crate::diag::trace(|| {
+                    format!(
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        "insert-pages-carried outline_items={} dests={} dests_renamed={} \
+                         outline_dropped={}",
+                        outcome.outline_items_carried,
+                        outcome.dests_carried,
+                        outcome.dests_renamed,
+                        u8::from(outcome.source_outline_dropped),
+                    )
+                });
+                notes.extend(crate::text::insertoutline::carried(
+                    outcome.outline_items_carried,
+                    outcome.dests_carried,
+                    outcome.dests_renamed,
+                ));
                 notes.extend(crate::text::insertfields::carried(
                     outcome.fields_carried,
                     outcome.fields_renamed,
