@@ -75,7 +75,7 @@ fn read(doc: &OpenDoc, field: &str, index: usize) -> Option<Target> {
         .find(|f| f.fully_qualified_name == field)?
         .widgets
         .get(index)?;
-    let turn = widgetread::free_turn(&doc.session, widget);
+    let turn = widgetread::free_turn(widget);
     Some(Target {
         field: field.to_owned(),
         widget: index,

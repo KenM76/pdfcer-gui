@@ -165,68 +165,6 @@ pub const fn fields_pasted_not_one_undo() -> &'static str {
     "Placed, but it will take more than one Undo to remove them all."
 }
 
-/// **A candidate name for a pasted field** — `Text` + `2` -> `Text2`.
-///
-/// # NO SEPARATOR, and above all NO DOT
-///
-///
-/// **1. The convention is a plain numeric suffix.** Acrobat's bulk duplication
-/// ("Create Multiple Copies") auto-names its copies `Date1`, `Date2`, `Date3`,
-/// and the sourced rationale is explicitly about scripting: the suffix exists so
-/// a script can loop over every field sharing *"the non-number part of the field
-/// name"*. **A space breaks exactly that property** — the non-number part of
-/// `Drawn By 2` is `Drawn By ` with a trailing space, which no author would
-/// write and every string comparison would trip over. So the separator is not a
-/// house style to pick; it is load-bearing, and the convention has a reason.
-///
-/// **2. A DOT DESTROYS THE FIELD YOU COPIED. Measured, not reasoned.**
-///
-/// The other sourced account has Acrobat numbering copies `Text.0`, `Text.1`
-/// with a **dot**, and the two accounts are flagged as contested. The operator
-/// asked, reasonably, why pdfcer does not simply follow it. The answer turned
-/// out to be a four-command experiment rather than a spec argument:
-///
-/// ```text
-/// add-text-field --name "Text"     ...   -> field "Text",  value -
-/// fill-field     --set "Text=K. Mantle"  -> field "Text",  value "K. Mantle"
-/// add-text-field --name "Text.2"   ...   -> field "Text.2", value -
-///                                           and "Text" IS GONE
-/// ```
-///
-/// A period separates levels (§12.7.3.2), so `Text.2` asks for a field `2`
-/// inside a group `Text` — and §12.7.3.1 does not let one dictionary be both a
-/// terminal field and a group. Adding the child therefore **converts** `Text`
-/// into a group: its `/FT`, its `/V` and its widget stop being a field's. The
-/// filled-in value is discarded and the box stays on the page belonging to
-/// nothing, still drawn, no longer fillable.
-///
-/// ⇒ Acrobat's version of the scheme must rename the *original* to `Text.0` in
-/// the same operation, which is coherent — and is a **rename of a field that
-/// already exists**. A field's name is its identity to every calculation, FDF
-/// import and external mapping that references it, and a *copy* has no business
-/// changing it. The plain suffix has neither problem: both fields exist, both
-/// are independent, and neither is renamed.
-///
-/// The engine's silent conversion is a defect in its own right and is filed
-/// as `request_a_dotted_name_silently_swallows_an_existing_terminal_field.md`.
-/// This rule does not depend on that being fixed: even with a clean refusal,
-/// the dotted convention would make a paste fail rather than work.
-///
-/// # Why the catalog and not the call site
-///
-/// A field name is shown to the operator in three places — the Forms panel, the
-/// tab-order list and the Properties header — so it is operator-facing text and
-/// `check-ui-strings` was right to insist. The numbering itself is *logic* and
-/// lives with the caller; only the spelling is here.
-///
-/// The name is a placeholder the operator is expected to change, which is why a
-/// paste generates one rather than opening a dialog. Four boxes down a column is
-/// four keystrokes, not four interruptions.
-#[must_use]
-pub fn candidate_name(stem: &str, n: u32) -> String {
-    format!("{stem}{n}")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -7,7 +7,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/fieldclip.md`.
 
-use pdfcer_core::formclip::{FieldClip, FieldPastePolicy, PasteTooltip};
+use pdfcer_core::formclip::{FieldClip, FieldCopyNaming, FieldPastePolicy, PasteTooltip};
 use pdfcer_core::page_tree::Rect;
 
 use crate::app::actions::Action;
@@ -366,50 +366,17 @@ fn placed_rect(source: Rect, from_page: usize, to_page: usize, target: Option<eg
 }
 
 /// A field name neither this document nor `pending` uses, derived from
-/// `base`.
+/// `base` by the engine's default copy naming (`Text1` -> `Text2`).
 fn unique_name(doc: &OpenDoc, base: &str, pending: &[String]) -> String {
     let view = doc.session.view();
-    let Some(form) = pdfcer_core::forms::parse_acroform(&view) else {
-        return base.to_owned();
-    };
-    let taken = |candidate: &str| {
-        pending.iter().any(|p| p == candidate) || form.fields_named(candidate).next().is_some()
-    };
-    if !taken(base) {
+    let mut taken: std::collections::BTreeSet<String> = pending.iter().cloned().collect();
+    if let Some(form) = pdfcer_core::forms::parse_acroform(&view) {
+        taken.extend(form.fields.iter().map(|f| f.fully_qualified_name.clone()));
+    }
+    if !taken.contains(base) {
         return base.to_owned();
     }
-    let (stem, start) = split_trailing_number(base);
-    // Bounded, not unbounded. `start` can be large if the operator numbered a
-    // field `Rev2000`, so the ceiling is relative rather than absolute — a fixed
-    // `2..1000` would give up immediately on a high-numbered base.
-    for n in start..start.saturating_add(1000) {
-        let candidate = crate::text::fieldclip::candidate_name(stem, n);
-        if !taken(&candidate) {
-            return candidate;
-        }
-    }
-    base.to_owned()
-}
-
-/// Split a field name into its stem and the number to try first.
-fn split_trailing_number(base: &str) -> (&str, u32) {
-    let digits_start = base
-        .char_indices()
-        .rev()
-        .take_while(|(_, c)| c.is_ascii_digit())
-        .map(|(i, _)| i)
-        .last();
-    match digits_start {
-        // `Some(0)` means the name is ALL digits — a field called `12`. The
-        // stem is empty and the paste is named `13`, which is a legal field name
-        // and a terrible one, but it is exactly what the operator's own scheme
-        // implies. Left alone deliberately.
-        Some(i) => match base[i..].parse::<u32>() {
-            Ok(n) => (&base[..i], n.saturating_add(1)),
-            Err(_) => (base, 2),
-        },
-        None => (base, 2),
-    }
+    FieldCopyNaming::default().free_name(base, &taken)
 }
 
 /// Read every selected field into a clip, one per field with the primary
@@ -468,42 +435,6 @@ fn read_one(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// The naming convention, which was WRONG until 2026-08-29.
-    #[test]
-    fn a_numbered_base_continues_its_number_and_a_bare_one_starts_at_two() {
-        assert_eq!(
-            split_trailing_number("Text1"),
-            ("Text", 2),
-            "★ the placement dialog names a new text field `Text1`, so a numbered base is the ORDINARY case; appending gives `Text12`, which reads as field twelve"
-        );
-        assert_eq!(split_trailing_number("Text9"), ("Text", 10));
-        assert_eq!(
-            split_trailing_number("Drawn By"),
-            ("Drawn By", 2),
-            "a bare name starts at 2, because the source itself is the unwritten 1"
-        );
-        assert_eq!(
-            split_trailing_number("Rev2000"),
-            ("Rev", 2001),
-            "a high number continues rather than restarting"
-        );
-    }
-
-    /// The separator is load-bearing, and the DOT is refused.
-    #[test]
-    fn the_generated_name_carries_no_separator_and_never_a_dot() {
-        let name = crate::text::fieldclip::candidate_name("Text", 2);
-        assert_eq!(name, "Text2");
-        assert!(
-            !name.contains('.'),
-            "★★★ `.` is the fully-qualified-name separator (12.7.3.2), so `Text.2` would be a CHILD field named `2` under a parent named `Text` — a hierarchy nobody asked for"
-        );
-        assert!(
-            !name.contains(' '),
-            "a space breaks the sourced scripting rationale: the suffix exists so a script can loop over fields sharing the non-number part of the name"
-        );
-    }
 
     /// The offset rule, both halves, because they disagree on purpose.
     #[test]
