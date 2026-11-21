@@ -20,6 +20,9 @@ pub enum DraftNote {
     /// A recognised (OCR) run opened alone rather than its paragraph: a line,
     /// or a word on a page an older pdfcer recognised word by word.
     RecognisedWordOnly,
+    /// The caret landed on a run the engine will not edit in place, but
+    /// finishing the edit offers a workaround for this cause.
+    CannotEditInPlace(super::editcause::EditCause),
 }
 
 impl DraftNote {
@@ -32,6 +35,7 @@ impl DraftNote {
             Self::BreaksInferred => "breaks-inferred", // ui-text-exempt: a trace token, never displayed
             Self::LineOnlyRefused => "line-only-refused", // ui-text-exempt: a trace token, never displayed
             Self::RecognisedWordOnly => "recognised-word-only", // ui-text-exempt: a trace token, never displayed
+            Self::CannotEditInPlace(_) => "cannot-edit-in-place", // ui-text-exempt: a trace token, never displayed
         }
     }
 }
@@ -63,6 +67,10 @@ pub fn line(note: DraftNote) -> String {
                                           each word on its own; recognise the page again to edit \
                                           whole lines."
             .to_owned(),
+        DraftNote::CannotEditInPlace(cause) => format!(
+            "{} Type your change and finish the edit: pdfcer then offers a way to make it.",
+            cause.what()
+        ),
     }
 }
 
@@ -79,6 +87,7 @@ mod tests {
             DraftNote::BreaksInferred,
             DraftNote::LineOnlyRefused,
             DraftNote::RecognisedWordOnly,
+            DraftNote::CannotEditInPlace(crate::text::editcause::EditCause::Vertical),
         ];
         let lines: std::collections::HashSet<String> = all.iter().map(|n| line(*n)).collect();
         assert_eq!(lines.len(), all.len());

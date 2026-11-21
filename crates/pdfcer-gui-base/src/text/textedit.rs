@@ -122,6 +122,7 @@ pub const fn refusal(reason: Refusal) -> &'static str {
             "This page is a picture of text, not text, so there is nothing here to type into. \
              Recognise text reads its words so they can be found and copied."
         }
+        Refusal::CannotEdit(cause) => cause.refused(),
     }
 }
 
@@ -596,6 +597,7 @@ mod tests {
             Refusal::NoAnchor,
             Refusal::NoUsableEncoding,
             Refusal::PictureOfText,
+            Refusal::CannotEdit(crate::text::editcause::EditCause::Other),
         ] {
             let s = refusal(r);
             assert!(s.len() > 40, "{r:?} needs a real sentence, got {s:?}");

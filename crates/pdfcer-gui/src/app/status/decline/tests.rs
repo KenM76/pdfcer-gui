@@ -877,3 +877,27 @@ fn the_engines_split_answer_is_read_as_a_split() {
         NotFoundReason::NoSuchText
     )));
 }
+
+/// A committed edit the engine refuses for a named cause is said by that
+/// cause, with the workaround's door when one is offered; a cause outside the
+/// classes keeps the engine's generic sentence.
+#[test]
+fn a_named_cause_is_said_by_name() {
+    use pdfcer_core::text_edit::{EditError, UnsupportedCause};
+    use pdfcer_gui_base::text::editcause::EditCause;
+    let quote = textedit::cannot_edit(&EditError::Unsupported(UnsupportedCause::QuoteOperator));
+    assert_eq!(
+        quote,
+        Some(crate::text::textedit::EditRefusal::CannotEdit {
+            cause: EditCause::QuoteOperator,
+            offered: true,
+        })
+    );
+    assert!(quote.is_some_and(|r| r.line().contains("Open Properties")));
+    let form = textedit::cannot_edit(&EditError::Unsupported(UnsupportedCause::ReferenceXObject));
+    assert!(form.is_some_and(|r| r.line().contains("Add text")));
+    assert_eq!(
+        textedit::cannot_edit(&EditError::Unsupported(UnsupportedCause::NoContents)),
+        None
+    );
+}

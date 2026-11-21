@@ -297,6 +297,12 @@ pub enum EditRefusal {
     /// than one code (`RunRepertoire::ambiguous`): the font has it, and pdfcer
     /// will not pick which glyph a keystroke gets.
     RunDrawsTwoWays(char),
+    /// The engine refused the run for a cause other than its font;
+    /// `offered` when Properties offers a workaround for it.
+    CannotEdit {
+        cause: crate::text::editcause::EditCause,
+        offered: bool,
+    },
 }
 
 /// **Which of the two character-level font refusals the engine raised** —
@@ -410,6 +416,7 @@ impl EditRefusal {
             Self::Unstated => "Unstated",
             Self::RunCannotTake(_) => "RunCannotTake",
             Self::RunDrawsTwoWays(_) => "RunDrawsTwoWays",
+            Self::CannotEdit { .. } => "CannotEdit",
         }
     }
 
@@ -497,6 +504,17 @@ impl EditRefusal {
             }
             Self::RunDrawsTwoWays(c) => {
                 return std::borrow::Cow::Owned(run_draws_two_ways(c));
+            }
+            Self::CannotEdit { cause, offered } => {
+                return std::borrow::Cow::Owned(format!(
+                    "{} {} Your document is unchanged.",
+                    cause.what(),
+                    if offered {
+                        "Open Properties, which offers a way to make the change."
+                    } else {
+                        "Use Add text to write over it."
+                    }
+                ));
             }
         };
         Cow::Borrowed(fixed)

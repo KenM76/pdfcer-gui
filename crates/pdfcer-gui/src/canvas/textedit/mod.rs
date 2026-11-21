@@ -76,6 +76,8 @@ pub mod history;
 pub mod hit;
 /// What every key means inside a draft — the keystroke contract.
 pub mod keys;
+/// Whether the run a caret lands on can be edited at all.
+mod landing;
 /// What the last keystroke changed on its way into the draft.
 pub mod note;
 /// What a draft looks like on the page — the in-place editor and its caret. Its

@@ -95,6 +95,23 @@ fn record_edit_text(why: crate::text::textedit::EditRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::EditText(why)));
 }
 
+/// The refusal naming the engine's `UnsupportedCause`, or `None` when the
+/// error carries none or its class is `EditCause::Other`, which keeps the
+/// engine's generic sentence.
+pub(crate) fn cannot_edit(
+    error: &pdfcer_core::text_edit::EditError,
+) -> Option<crate::text::textedit::EditRefusal> {
+    use pdfcer_gui_base::text::editcause::EditCause;
+    let pdfcer_core::text_edit::EditError::Unsupported(cause) = error else {
+        return None;
+    };
+    let class = EditCause::of(cause);
+    (class != EditCause::Other).then(|| crate::text::textedit::EditRefusal::CannotEdit {
+        cause: class,
+        offered: cause.workaround().is_some(),
+    })
+}
+
 /// Whether the engine answered that the find text is on the page only across
 /// show operators or text objects it does not join.
 pub(crate) fn engine_says_split(error: &pdfcer_core::text_edit::EditError) -> bool {
@@ -148,7 +165,13 @@ pub(crate) fn record_edit_text_refusal(
                 | crate::text::textedit::RefusedCharacter::HeldTwoGlyphsFor(_)
         )
     );
-    let why = crate::text::textedit::EditRefusal::of(kind, one_operator, char_kind, stale_pin);
+    let why = char_kind
+        .is_none()
+        .then(|| cannot_edit(error))
+        .flatten()
+        .unwrap_or_else(|| {
+            crate::text::textedit::EditRefusal::of(kind, one_operator, char_kind, stale_pin)
+        });
     crate::diag::trace(|| {
         //
         //
