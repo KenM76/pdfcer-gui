@@ -4,10 +4,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/std14_face.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
+use crate::checks::scripteddrive::{offscreen, shot};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -41,10 +41,6 @@ const SELECTION_EVENT: &str = "canvas-text-selection";
 const SWEEP_PT: f64 = 60.0;
 /// How many scroll notches to spend looking for the chooser below the fold.
 const SCROLL_ATTEMPTS: usize = 6;
-/// `T`, as a Windows virtual key — the text-sweep tool.
-const VK_T: u16 = 0x54;
-/// `Esc`, to shut the popup if this check leaves early.
-const VK_ESCAPE: u16 = 0x1B;
 
 /// See the module documentation.
 pub struct TheFaceChooserOffersAFaceTheDocumentDoesNotContain;
@@ -99,13 +95,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          eight characters into a 12 pt line on a 612 × 792 page",
         pdf.display()
     ));
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check sweeps the pointer across text, opens a \
-             combo box and clicks a row in it, and none of the three can be simulated from the \
-             trace.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -137,35 +126,30 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, "std14-face")?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     report.note(format!(
         "launched {} as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
         exe.display(),
         session.pid()
     ));
     session.settle(40);
-    let driver = Driver::new(session.window());
 
     // --- 1: Edit mode -------------------------------------------------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
 
     // --- 2: sweep across the text ------------------------------------------
     let trace = session.trace()?;
     let mapping = CanvasMapping::from_trace(&trace, vocab, page, target.page)?;
-    let frame = session.frame()?;
-    let start =
-        frame.to_screen(mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?);
-    let end = frame.to_screen(mapping.doc_to_window(DocPoint::new(
-        target.page,
-        target.x + SWEEP_PT,
-        target.y,
-    ))?);
-    driver.press(VK_T)?;
+    let start = mapping.doc_to_window(DocPoint::new(target.page, target.x, target.y))?;
+    let end = mapping.doc_to_window(DocPoint::new(target.page, target.x + SWEEP_PT, target.y))?;
+    pointer.key(&session, None, "T", None)?;
     session.settle(16);
-    driver.drag(start, end)?;
+    pointer.drag(&session, start, end, 8)?;
     session.settle(24);
 
     let trace = session.trace()?;
@@ -222,7 +206,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 session.trace_path().display()
             )));
         };
-        driver.scroll_at(session.frame()?.declared_center(section), -1)?;
+        pointer.wheel(&session, WindowPoint::centre_of(section), -1.0, false)?;
         session.settle(12);
     }
     let Some(combo) = combo else {
@@ -255,17 +239,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 5: open the chooser ------------------------------------------------
-    let frame = session.frame()?;
-    driver.click_at(frame.declared_center(combo))?;
+    pointer.click(&session, WindowPoint::centre_of(combo))?;
     session.settle(24);
 
     let trace = session.trace()?;
     let Some(_addable) = driving::declared(&trace, ui_rect, ADDABLE_REGION) else {
-        let shot = ctx.out("std14_face.no-addable-group.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("std14_face.no-addable-group.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
-        driver.press(VK_ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?;
         return Ok(Some(format!(
             "★ THE FONT LIST OFFERS NOTHING THE DOCUMENT DOES NOT ALREADY CONTAIN: the chooser \
              opened and declared no `{ADDABLE_REGION}` region.\n\
@@ -288,11 +271,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 6: the disclosure is ON SCREEN, where the choice is made -------
     if driving::declared(&trace, ui_rect, DISCLOSURE_REGION).is_none() {
-        let shot = ctx.out("std14_face.no-disclosure.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("std14_face.no-disclosure.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
-        driver.press(VK_ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?;
         return Ok(Some(format!(
             "★★★ THE STANDARD-14 FACES ARE OFFERED AND THE DISCLOSURE IS NOT ON SCREEN: \
              `{ADDABLE_REGION}` is declared and `{DISCLOSURE_REGION}` is not.\n\
@@ -315,7 +298,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 7: click a face the document does not contain -----------------------
     let Some(row) = driving::declared(&trace, ui_rect, NEW_FACE_REGION) else {
-        driver.press(VK_ESCAPE)?;
+        pointer.key(&session, None, "Escape", None)?;
         return Ok(Some(format!(
             "the chooser drew the `{ADDABLE_REGION}` heading and no `{NEW_FACE_REGION}` row \
              under it, so the group is a caption over an empty band — the exact defect \
@@ -324,8 +307,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    let frame = session.frame()?;
-    driver.click_at(frame.declared_center(row))?;
+    pointer.click(&session, WindowPoint::centre_of(row))?;
 
     let waited = driving::wait_for_any(&session, &[STYLE_EVENT, SPAN_STYLE_EVENT, DECLINED_EVENT])?;
     report.note(format!(
@@ -356,9 +338,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .last()
         .or_else(|| trace.events(SPAN_STYLE_EVENT).last())
     else {
-        let shot = ctx.out("std14_face.no-effect.png");
-        if crate::capture::window_to_png(&session, &shot).is_ok() {
-            report.artifact(shot);
+        let png = ctx.out("std14_face.no-effect.png");
+        if shot(&session, &pointer, &png).is_ok() {
+            report.artifact(png);
         }
         return Ok(Some(format!(
             "★ A STANDARD-14 ROW WAS CLICKED AND NOTHING HAPPENED AND NOTHING WAS DECLINED: no \
@@ -403,5 +385,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★★ the swept text was restyled to a face the document did not contain, through \
          `format_text` — which wrote the `/Font` resource itself, in the same undo command",
     );
+    pointer.gone(&session)?;
     Ok(None)
 }
