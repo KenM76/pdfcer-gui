@@ -744,6 +744,7 @@ mod tests {
                 // fixture in this shell wants.
                 rotation: None,
                 free_angle: None,
+                free_size: None,
                 opacity: None,
                 has_off_appearance: false,
                 // THE POINT OF THIS FIXTURE.

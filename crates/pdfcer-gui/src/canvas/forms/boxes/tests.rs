@@ -98,6 +98,7 @@ fn drawn_widget() -> Widget {
         // fixture in this shell wants: an unrotated widget.
         rotation: None,
         free_angle: None,
+        free_size: None,
         opacity: None,
         has_off_appearance: false,
         page: None,
