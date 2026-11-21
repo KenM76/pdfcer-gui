@@ -344,14 +344,24 @@ fn paint_caret(ui: &egui::Ui, drop: Option<&DropTarget>) {
     } else {
         base.gamma_multiply(CARET_DIMMED)
     };
+    // A gap at the panel's edge (one column, or the last tile of a row) puts
+    // the line on the clip boundary, where half its stroke is cut away. Pull
+    // it inside the clip so the whole stroke shows.
+    let inner = ui.clip_rect().shrink(CARET_PTS);
+    let x = if inner.width() > 0.0 {
+        drop.caret.left().clamp(inner.left(), inner.right())
+    } else {
+        drop.caret.left()
+    };
+    let caret = egui::Rect::from_x_y_ranges(x..=x, drop.caret.y_range());
     ui.painter().line_segment(
-        [drop.caret.left_top(), drop.caret.left_bottom()],
+        [caret.left_top(), caret.left_bottom()],
         egui::Stroke::new(CARET_PTS, colour),
     );
     crate::diag::ui_rect_visible(
         // ui-text-exempt: trace region name, never displayed
         "panel-pages-drop-caret",
-        drop.caret.expand(CARET_PTS),
+        caret.expand(CARET_PTS),
         ui.clip_rect(),
     );
 }
