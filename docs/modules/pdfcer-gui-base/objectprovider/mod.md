@@ -55,7 +55,11 @@ the image and the ink beneath is picked instead. The cache's resolver needs a
 Queries read the filled cache through a view of an empty document; an image
 the build missed decodes to nothing there and counts as opaque. The provider
 is rebuilt whenever the page's content changes, which is the cache's
-validity contract. `from_parts` leaves the cache empty, so test providers
+validity contract. When a clear sample leaves nothing under the point, the
+plain deep hit is returned instead, so the image is still picked: a scan saved
+with a transparent background is clear almost everywhere, and passing those
+clicks to an empty page would leave it clickable only on its ink.
+`from_parts` leaves the cache empty, so test providers
 hit images as opaque. Rectangle hits are unchanged.
 
 ## [`TargetId`] encoding

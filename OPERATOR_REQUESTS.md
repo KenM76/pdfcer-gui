@@ -8242,3 +8242,33 @@ Said on 2026-11-20 while the v0.166.0 release sweep ran.
 **Scheduled for the release after v0.166.0's.** It is not a tack-on: the status column needs each path's last outcome recorded where the window can read it, and it needs a driven check. The release sweep in progress forbids code changes until it ends.
 
 **Built, for him to judge.** Settings ▸ Display ▸ *Every graphics-card switch, and what each did here…* opens one window: the renderer's widest texture, whether the card ran out of memory this session, and a row per path that can draw on the card: pages in the page view; the 3D picture and each of its seven parts; bounce light and Measure light. Each row has its switch where one exists and beside it what that path last did here: drawn on the card, drawn on the processor and why (the card's refusal, a part turned off, wide points, the light-level picture, no card, a timeout), forced off by `PDFCER_3D_CPU` or `PDFCER_3D_BOUNCE_CPU`, switched off, or not tried this session. The pages switch is Display's own setting, saved at once, and an open Settings window keeps it on Save. The 3D switches change the saved `model3d_card_*` defaults and the open viewer. Bounce light and Measure light have no switch of their own: they follow the picture's, and adding one was not cheap enough for this round. Thumbnails, printing, exports, saved 3D pictures and the light-level picture stay on the processor, and the window says so. Driven by `every_card_switch_is_in_one_window_beside_its_status`.
+
+## O453 — **OPEN** — a centre line from two picked lines
+
+*"a way to click two lines and get a center line"*
+
+Said on 2026-11-21, asking for the next release to go out first and this to be built when work resumes. Click two lines; a centre line is drawn midway between them, as the CAD centre-line tool does.
+
+## O454 — **OPEN** — one centre-mark tool, with a measurement and a mark each on its own checkbox
+
+*"add an option to add a center mark when making a diameter measurement, and also a way to add a center mark without the diameter measurement - maybe this is just one tool with a check box to add the measurement and a check box to add the center mark"*
+
+Said on 2026-11-21, same message as O453. On a circle or arc: a centre mark with the diameter ce dimension, the ce dimension alone, or the centre mark alone. He suggests one tool with two checkboxes, *Add measurement* and *Add centre mark*.
+
+## O455 — **OPEN** — ce dimensions taken from centre marks and from any object, markups included
+
+*"Also need to be able to take dimensions off center marks and any object including markups."*
+
+Said on 2026-11-21, same message as O453. The dimension tools snap to and measure from a centre mark, and from any object on the page, markups included, not only page paths.
+
+## O456 — **OPEN** — markups and all objects sized in the dimension group's scale
+
+*"Also if possible, markups and all objects should be able to use the dimension group scale so that their sizes can be typed in those scales."*
+
+Said on 2026-11-21, same message as O453. Where a ce dimension group sets a drawing scale, an object's or markup's size is shown and typed in that scale's units (for example, metres at 1:100) rather than in paper units.
+
+## O457 — **OPEN** — a group drags as one
+
+*"Also when items are grouped together need a way to be able to drag them as their group."*
+
+Said on 2026-11-21, same message as O453. Grouped items move together when one of them is dragged.

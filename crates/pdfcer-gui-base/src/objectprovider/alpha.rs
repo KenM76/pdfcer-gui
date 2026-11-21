@@ -70,6 +70,11 @@ impl PageAlpha {
     }
 
     /// The deep point hit test, skipping fully clear image samples.
+    ///
+    /// A clear sample with nothing beneath it still picks the image. A scan
+    /// saved with a transparent background is clear almost everywhere, and
+    /// passing those clicks through to an empty page would leave the picture
+    /// clickable only on its ink.
     pub(super) fn hits(
         &self,
         objects: &PageObjects,
@@ -81,6 +86,10 @@ impl PageAlpha {
         };
         let view = empty.view();
         let resolver = self.cache.with_view(&view);
-        hit_test_point_deep_with(objects, point, tolerance, &resolver)
+        let through = hit_test_point_deep_with(objects, point, tolerance, &resolver);
+        if through.is_empty() {
+            return pdfcer_core::vector::hit_test_point_deep(objects, point, tolerance);
+        }
+        through
     }
 }
