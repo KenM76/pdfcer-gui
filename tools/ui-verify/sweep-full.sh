@@ -365,6 +365,10 @@ text_selection_sweeps_and_copies|--pdf fixtures/layered-drawing.pdf --doc-point 
 text_markup_marks_a_selection|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
 text_tool_selects_and_marks_in_edit|--pdf fixtures/layered-drawing.pdf --doc-point 0,337.8,1505.0
 
+# Phase H rotates and reads back, so it needs a file with no /Rotate yet:
+# the engine's synthetic pageops sheet, read in place.
+page_ops_round_trip|--pdf D:/Dev/pdfcer/fixtures/synthetic/pageops/four-pages.pdf --doc-point 0,100,100
+
 # The refusal this check measures is a refusal on the document the
 # operator brought, so it names that file and the glyph in it. Its own module header
 # states exactly this pair.
