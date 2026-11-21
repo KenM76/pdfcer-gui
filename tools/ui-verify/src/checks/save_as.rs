@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use crate::checks::driving::{self, SHELL_DIAG_ENV};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
@@ -70,11 +70,22 @@ impl Check for SaveAsRebindsTheDocument {
 }
 
 /// One edit — a page rotation.
-fn make_an_edit(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+fn make_an_edit(session: &Session, driver: &ScriptedPointer, ui_rect: &str) -> Result<()> {
     crate::checks::ocr::click_tab(session, driver, ui_rect, "pages")?;
-    crate::checks::ocr::click_command(session, driver, ui_rect, "pages.rotate_right")?;
+    click_command(session, driver, ui_rect, "pages.rotate_right")?;
     session.settle(20);
     Ok(())
+}
+
+/// Click the band control for command `id` and confirm the shell reported it.
+fn click_command(
+    session: &Session,
+    driver: &ScriptedPointer,
+    ui_rect: &str,
+    id: &str,
+) -> Result<()> {
+    let region = format!("{}{id}", driving::ITEM_PREFIX);
+    crate::checks::save_copy::click_command(session, driver, ui_rect, (&region, id), 16)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -85,12 +96,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks ribbon controls. Reported as \
-             SKIPPED rather than passed: a check that did not run has learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new("the profile declares no ui-rect event, so no ribbon control can be found")
     })?;
@@ -138,6 +143,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = crate::checks::scripteddrive::offscreen(ctx, &mut spec, "save-as")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched {} as pid {}",
@@ -145,27 +151,26 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.pid()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    session.maximize();
-    session.settle(12);
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
     if !session.trace()?.started(ctx.profile.vocab.start_event) {
         return Err(Error::new(
             "the trace has no start line, so the diagnostic switch did not reach the process.",
         ));
     }
-    let driver = Driver::new(session.window());
-    driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    let driver = &pointer;
+    driving::click_mode_segment(&session, driver, ui_rect, MODE)?;
 
     // --- phase A: edit, then Save As ----------------------------------------
-    make_an_edit(&session, &driver, ui_rect)?;
+    make_an_edit(&session, driver, ui_rect)?;
     let before_save_as = digest_of(&original)?;
     report.note(format!(
         "one edit made; the original is {} bytes, digest {:016x}",
         before_save_as.0, before_save_as.1
     ));
 
-    crate::checks::ocr::click_tab(&session, &driver, ui_rect, "file")?;
-    crate::checks::ocr::click_command(&session, &driver, ui_rect, "file.save_as")?;
+    crate::checks::ocr::click_tab(&session, driver, ui_rect, "file")?;
+    click_command(&session, driver, ui_rect, "file.save_as")?;
     session.settle(40);
 
     let trace = session.trace()?;
@@ -201,9 +206,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The second edit is not decoration. Without it the second save has
     // nothing to write, and a correct build doing nothing is indistinguishable
     // from a broken one doing nothing because it is aimed at the wrong file.
-    make_an_edit(&session, &driver, ui_rect)?;
+    make_an_edit(&session, driver, ui_rect)?;
     report.note("a second edit, so the save below has something to write");
-    driver.press_chord(&[crate::sys::vk::CONTROL], crate::sys::vk::S)?;
+    driver.key(&session, None, "S", Some("ctrl"))?;
     session.settle(40);
 
     // --- phase D: the falsifying one ------------------------------------

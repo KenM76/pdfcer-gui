@@ -53,8 +53,10 @@ button having been pressed.
 
 # Every way this reports SKIP
 
-No binary, `--no-input`, no diagnostic channel, the fixture missing, or a
-ribbon control that was never declared or took no click.
+No binary, a profile naming no viewport variable, no diagnostic channel, the
+fixture missing, or a ribbon control that was never declared or took no click.
+The window is placed off the desktop and driven by a scripted pointer, so
+`--no-input` does not skip it.
 
 ## Item notes
 

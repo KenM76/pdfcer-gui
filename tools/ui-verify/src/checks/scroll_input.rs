@@ -5,9 +5,10 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/scroll_input.md`.
 
 use crate::checks::driving;
+use crate::checks::scripteddrive::{at_fraction, offscreen};
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 
 /// The canvas viewport's declared region — what the pointer is aimed into.
@@ -71,12 +72,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let pdf = ctx.pdf.clone().ok_or_else(|| {
         Error::new("no --pdf. This check needs a document long enough to scroll through.")
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check moves the pointer and turns the wheel. \
-             Reported as SKIPPED rather than passed.",
-        ));
-    }
     let ui_rect = vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
@@ -93,10 +88,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
 
+    let pointer = offscreen(ctx, &mut spec, "scroll-input")?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    let driver = Driver::new(session.window());
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
 
     // Where the canvas is. Read once — the viewport does not move in this
     // check, since no mode is changed and no panel is opened.
@@ -111,7 +107,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              no document is open or the region was renamed."
         ))
     })?;
-    let frame = session.frame()?;
     // Aimed at the PAGE, not at the middle of the viewport. `canvas-pointer`
     // is emitted when the pointer is over a **page**, so a control taken over
     // the pasteboard would count zero and abort the run with the wrong reason.
@@ -121,10 +116,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              there is nothing to scroll past. SKIPPED rather than reported as a defect."
         ))
     })?;
-    let centre = frame.declared_center(page_rect);
+    let centre = WindowPoint::centre_of(page_rect);
 
     // --- the control ---------------------------------------------------------
-    driver.move_to(centre)?;
+    pointer.hover(&session, centre)?;
     session.settle(20);
     let before = session.trace()?.events(POINTER_EVENT).count();
     if before == 0 {
@@ -144,7 +139,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut page_now = page_rect;
     let mut steps_taken = 0usize;
     for step in 1..=STEPS {
-        driver.scroll_at(centre, NOTCHES_PER_STEP)?;
+        pointer.wheel(&session, centre, NOTCHES_PER_STEP as f32, false)?;
         session.settle(14);
         let trace = session.trace()?;
         let Some(rect) = driving::declared(&trace, ui_rect, PAGE_REGION) else {
@@ -157,7 +152,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                     .last()
                     .map_or_else(|| "no page region".to_owned(), |l| l.raw.clone())
             ));
-            driver.scroll_at(centre, -NOTCHES_PER_STEP)?;
+            pointer.wheel(&session, centre, -(NOTCHES_PER_STEP as f32), false)?;
             session.settle(14);
             break;
         };
@@ -201,8 +196,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // separates "the canvas stopped seeing the pointer" from "this build never
     // emits the line" — but it is not the baseline.
     let settled = session.trace()?.events(POINTER_EVENT).count();
-    let elsewhere = frame.declared_at(page_now, 0.35, 0.6);
-    driver.move_to(elsewhere)?;
+    let elsewhere = at_fraction(page_now, 0.35, 0.6);
+    pointer.hover(&session, elsewhere)?;
     session.settle(20);
     let after = session.trace()?.events(POINTER_EVENT).count();
     let fresh = after.saturating_sub(settled);
@@ -211,6 +206,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          that follows must produce its own"
     ));
 
+    pointer.gone(&session)?;
     if fresh == 0 {
         return Ok(Some(format!(
             "★★★ THE CANVAS STOPPED SEEING THE POINTER AFTER SCROLLING. The pointer produced \

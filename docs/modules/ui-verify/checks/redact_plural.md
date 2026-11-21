@@ -131,3 +131,8 @@ Two clicks because the chunk rung is entered on the second — `chunk_click`
 owns that claim and it is assumed here rather than re-filed. The leading
 Escapes make this callable again after a mark and an undo, without
 inheriting a rung.
+
+The window is placed off the desktop and every click, Shift-click, key and
+menu press goes through the scripted pointer, so the check runs under
+`--no-input`. The aims are window points (`scripteddrive::aim`), and the menu
+press is `scripteddrive::mark_through_the_menu`.

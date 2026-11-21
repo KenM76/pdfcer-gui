@@ -52,6 +52,10 @@ emits them", "the window was not focused", and "the pointer never reached
 the canvas" — three things that look identical in a trace and none of which
 is the defect.
 
+The window is placed off the desktop; the moves and wheel turns are scripted
+pointer events (`wheel` in lines, the OS notch's sign), so the check runs
+under `--no-input`.
+
 Read mode, deliberately: it is the default, it defaults to continuous
 scrolling, and the question has nothing to do with editing. One fewer click
 is one fewer thing that can go wrong before the measurement.

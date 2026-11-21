@@ -9,10 +9,11 @@ use super::driving::{
     self, INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, list,
     list_str, shell_trace,
 };
+use super::scripteddrive::ClickNamed;
 use super::{Check, CheckContext};
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -195,6 +196,33 @@ pub(super) fn launch(
     target: &Path,
     trace_name: &str,
 ) -> Result<Session> {
+    let spec = launch_spec(ctx, pdf, target, trace_name)?;
+    start(ctx, report, &spec, pdf, target)
+}
+
+/// [`launch`] with the window placed off the desktop and a scripted pointer
+/// attached, its step file named after `stem`.
+pub(super) fn launch_offscreen(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    pdf: &Path,
+    target: &Path,
+    stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
+    let mut spec = launch_spec(ctx, pdf, target, &format!("{stem}.trace.txt"))?;
+    let pointer = super::scripteddrive::offscreen(ctx, &mut spec, stem)?;
+    report.artifact(pointer.path().to_path_buf());
+    let session = start(ctx, report, &spec, pdf, target)?;
+    Ok((session, pointer))
+}
+
+/// The launch both [`launch`] and [`launch_offscreen`] make.
+fn launch_spec(
+    ctx: &CheckContext,
+    pdf: &Path,
+    target: &Path,
+    trace_name: &str,
+) -> Result<LaunchSpec> {
     let mut spec = LaunchSpec::new(
         ctx.resolve_exe().ok_or_else(|| {
             Error::new(format!(
@@ -215,8 +243,18 @@ pub(super) fn launch(
         .push((SAVE_PATH_ENV.to_owned(), target.display().to_string()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    Ok(spec)
+}
 
-    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+/// Launch `spec` and confirm its trace started.
+fn start(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    spec: &LaunchSpec,
+    pdf: &Path,
+    target: &Path,
+) -> Result<Session> {
+    let session = Session::launch(spec, ctx.profile.trace_prefix)?;
     report.note(format!(
         "launched {} on {} as pid {} with {SAVE_PATH_ENV}={}",
         spec.exe.display(),
@@ -251,7 +289,7 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 /// Click a ribbon tab and confirm the shell reported it.
 pub(super) fn click_tab(
     session: &Session,
-    driver: &Driver,
+    driver: &impl ClickNamed,
     ui_rect: &str,
     (region, id): (&str, &str),
 ) -> Result<()> {
@@ -268,7 +306,7 @@ pub(super) fn click_tab(
         .events(TAB_EVENT)
         .filter(|l| l.get("tab") == Some(id))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    driver.click_rect(session, rect)?;
     session.settle(14);
     if shell_trace(session)?
         .events(TAB_EVENT)
@@ -305,7 +343,7 @@ pub(super) fn region(trace: &Trace, ui_rect: &str, name: &str, prefix: &str) -> 
 /// Click a ribbon band control and confirm the **shell** reported the invoke.
 pub(super) fn click_command(
     session: &Session,
-    driver: &Driver,
+    driver: &impl ClickNamed,
     ui_rect: &str,
     (name, id): (&str, &str),
     settle: u32,
@@ -342,7 +380,7 @@ pub(super) fn click_command(
             ))
         })?;
     let before = invokes(session, id)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    driver.click_rect(session, rect)?;
     session.settle(settle);
     if invokes(session, id)? <= before {
         return Err(Error::new(format!(
@@ -364,7 +402,7 @@ pub(super) fn click_command(
 /// Click a region the application published that is **not** a ribbon control.
 pub(super) fn click_region(
     session: &Session,
-    driver: &Driver,
+    driver: &impl ClickNamed,
     ui_rect: &str,
     name: &str,
     settle: u32,
@@ -374,7 +412,7 @@ pub(super) fn click_region(
     // control *was*.
     let trace = session.trace()?;
     let rect = region(&trace, ui_rect, name, REGION_PREFIX)?;
-    driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
+    driver.click_named(session, &trace, ui_rect, name, rect)?;
     session.settle(settle);
     Ok(())
 }
@@ -383,7 +421,11 @@ pub(super) fn click_region(
 /// Properties over it, and a panel behind another tab publishes no census, so
 /// a count read without this is the count from before the gesture. A narrow
 /// dock folds the panel's tab away, so the ribbon command is the second route.
-pub(super) fn raise_panel(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+pub(super) fn raise_panel(
+    session: &Session,
+    driver: &impl ClickNamed,
+    ui_rect: &str,
+) -> Result<()> {
     const PANEL: &str = "redact-panel"; // ui-text-exempt: a trace region name
     const TAB: &str = "dock.tab.edit.redact"; // ui-text-exempt: a trace region name
     const ITEM: &str = "ribbon.item.edit.redact"; // ui-text-exempt: a trace region name
@@ -402,7 +444,7 @@ pub(super) fn raise_panel(session: &Session, driver: &Driver, ui_rect: &str) -> 
         )));
     };
     let trace = session.trace()?;
-    driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
+    driver.click_named(session, &trace, ui_rect, name, rect)?;
     session.settle(20);
     if declared(&session.trace()?, ui_rect, PANEL).is_none() {
         return Err(Error::new(format!(
@@ -415,7 +457,7 @@ pub(super) fn raise_panel(session: &Session, driver: &Driver, ui_rect: &str) -> 
 /// `item` on the Security ribbon tab, switching to that tab when another is showing.
 fn ribbon_item(
     session: &Session,
-    driver: &Driver,
+    driver: &impl ClickNamed,
     ui_rect: &str,
     item: &str,
 ) -> Result<Option<LRect>> {
@@ -427,7 +469,7 @@ fn ribbon_item(
     let Some(tab) = declared(&trace, ui_rect, HOME_TAB) else {
         return Ok(None);
     };
-    driver.click_at(driving::frame_of(session, &trace, ui_rect, HOME_TAB)?.declared_center(tab))?;
+    driver.click_named(session, &trace, ui_rect, HOME_TAB, tab)?;
     session.settle(12);
     driving::declared_or_in_overflow(session, driver, ui_rect, item)
 }
@@ -442,7 +484,7 @@ pub(super) fn census(trace: &Trace) -> Option<(usize, usize)> {
 /// own extraction found.**
 fn extracted_chars(
     session: &Session,
-    driver: &Driver,
+    driver: &impl ClickNamed,
     ui_rect: &str,
     what: &str,
 ) -> Result<Option<usize>> {
@@ -470,13 +512,6 @@ fn extracted_chars(
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     // --- preconditions ----------------------------------------------------
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is eight clicks across two processes. \
-             Reported as SKIPPED rather than passed: a check that did not run has learned \
-             nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -541,10 +576,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // =======================================================================
     let extracted_before;
     {
-        let session = launch(ctx, report, &fixture, &target, "redaction.trace.txt")?;
-        let driver = Driver::new(session.window());
+        let (session, pointer) = launch_offscreen(ctx, report, &fixture, &target, "redaction")?;
+        let driver = &pointer;
 
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        driving::click_mode_segment(&session, driver, ui_rect, MODE)?;
         session.settle(16);
 
         // --- PHASE A: pdfcer can read page 1's text ------------------------
@@ -554,7 +589,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // search could not have found either, and every number below would be
         // measuring the extractor rather than the removal.
         extracted_before =
-            extracted_chars(&session, &driver, ui_rect, "the fixture")?.ok_or_else(|| {
+            extracted_chars(&session, driver, ui_rect, "the fixture")?.ok_or_else(|| {
                 Error::new(
                     "pdfcer extracted no text at all from page 1 of the fixture, so this check has \
                      no baseline and its phase-I assertion would pass on a build that removed \
@@ -570,8 +605,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
 
         // --- PHASE B: the marking panel -----------------------------------
-        click_tab(&session, &driver, ui_rect, PROTECT_TAB)?;
-        click_command(&session, &driver, ui_rect, REDACT, 20)?;
+        click_tab(&session, driver, ui_rect, PROTECT_TAB)?;
+        click_command(&session, driver, ui_rect, REDACT, 20)?;
         let trace = session.trace()?;
         region(&trace, ui_rect, WHOLE_PAGE_REGION, REGION_PREFIX).map_err(|e| {
             Error::new(format!(
@@ -592,7 +627,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         // --- PHASE C: mark page 1 ------------------------------------------
-        click_region(&session, &driver, ui_rect, WHOLE_PAGE_REGION, 18)?;
+        click_region(&session, driver, ui_rect, WHOLE_PAGE_REGION, 18)?;
         let trace = session.trace()?;
         let Some((marks, pages)) = census(&trace) else {
             return Err(Error::new(format!(
@@ -618,7 +653,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
         // --- PHASE D: the apply report -------------------------------------
         region(&session.trace()?, ui_rect, APPLY_REGION, REGION_PREFIX)?;
-        click_region(&session, &driver, ui_rect, APPLY_REGION, 20)?;
+        click_region(&session, driver, ui_rect, APPLY_REGION, 20)?;
         let trace = session.trace()?;
         let Some(prepared) = trace.last(PREPARED_EVENT) else {
             if let Some(refused) = trace.last(REFUSED_EVENT) {
@@ -787,7 +822,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         }
 
         region(&session.trace()?, ui_rect, ACK_REGION, REGION_PREFIX)?;
-        click_region(&session, &driver, ui_rect, ACK_REGION, 16)?;
+        click_region(&session, driver, ui_rect, ACK_REGION, 16)?;
         let confirm =
             region(&session.trace()?, ui_rect, CONFIRM_REGION, REGION_PREFIX).map_err(|e| {
                 Error::new(format!(
@@ -857,7 +892,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             DESTINATION_NEW_FILE_REGION,
             REGION_PREFIX,
         )?;
-        click_region(&session, &driver, ui_rect, DESTINATION_NEW_FILE_REGION, 16)?;
+        click_region(&session, driver, ui_rect, DESTINATION_NEW_FILE_REGION, 16)?;
         // The undo note disappears with the destination, so the layout moves
         // and the confirm control is somewhere else. Re-read it rather than
         // clicking a fossil — `declared`'s own header records what happens to a
@@ -887,7 +922,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         );
 
         // --- PHASE F: write ------------------------------------------------
-        click_region(&session, &driver, ui_rect, CONFIRM_REGION, 24)?;
+        click_region(&session, driver, ui_rect, CONFIRM_REGION, 24)?;
         let trace = session.trace()?;
         let Some(written) = trace.last(WRITTEN_EVENT) else {
             if let Some(failed) = trace.last(WRITE_FAILED_EVENT) {
@@ -993,17 +1028,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // none of the first one's state, cannot extract the redacted page's text
     // =======================================================================
     {
-        let session = launch(
+        let (session, pointer) = launch_offscreen(
             ctx,
             report,
             &target,
             // A second save path, set and never used. Harmless, and cheaper
             // than a second launch helper that differs in one field.
             &ctx.out("redaction-unused.pdf"),
-            "redaction.reopen.trace.txt",
+            "redaction.reopen",
         )?;
-        let driver = Driver::new(session.window());
-        driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+        let driver = &pointer;
+        driving::click_mode_segment(&session, driver, ui_rect, MODE)?;
         session.settle(16);
 
         let canvas = session
@@ -1020,7 +1055,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         };
         report.note(format!("phase I: the redacted file re-opens — `{canvas}`"));
 
-        match extracted_chars(&session, &driver, ui_rect, "the redacted output")? {
+        match extracted_chars(&session, driver, ui_rect, "the redacted output")? {
             None => {
                 report.note(
                     "phase I: a second process extracts NOTHING from the redacted page — \

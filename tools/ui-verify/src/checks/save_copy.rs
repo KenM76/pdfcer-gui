@@ -5,17 +5,18 @@
 
 use std::path::Path;
 
-use crate::checks::comments_census::{self, Census};
+use crate::checks::comments_census::Census;
 use crate::checks::driving::{
     INVOKE_EVENT, ITEM_PREFIX, SHELL_DIAG_ENV, TAB_EVENT, UNIMPLEMENTED_EVENT, declared,
     declared_names, list, list_str, shell_trace,
 };
-use crate::checks::text_selection::aim;
+use crate::checks::scripteddrive::{aim, comments_baseline, comments_refresh, offscreen};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
 use crate::geom::LRect;
-use crate::input::Driver;
+use crate::input::Click;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -123,7 +124,7 @@ fn invokes(session: &Session, id: &str) -> Result<usize> {
 /// that will not take a click as a broken application.
 pub(crate) fn click_tab(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     (region, id): (&str, &str),
 ) -> Result<()> {
@@ -141,7 +142,7 @@ pub(crate) fn click_tab(
         .events(TAB_EVENT)
         .filter(|l| l.get("tab") == Some(id))
         .count();
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    driver.click_rect(session, rect)?;
     session.settle(14);
     if shell_trace(session)?
         .events(TAB_EVENT)
@@ -181,7 +182,7 @@ fn control(trace: &Trace, ui_rect: &str, name: &str) -> Result<LRect> {
 /// Click a band control and confirm the **shell** reported the invoke.
 pub(crate) fn click_command(
     session: &Session,
-    driver: &impl crate::input::Click,
+    driver: &impl Click,
     ui_rect: &str,
     (region, id): (&str, &str),
     settle: u32,
@@ -211,12 +212,12 @@ pub(crate) fn click_command(
 /// report the census it publishes there.
 fn comments_count(
     session: &Session,
-    driver: &Driver,
+    driver: &impl Click,
     ui_rect: &str,
     report: &mut CheckReport,
     what: &str,
 ) -> Result<Census> {
-    comments_census::baseline(session, driver, ui_rect, MODE, what, "the save", report)
+    comments_baseline(session, driver, ui_rect, MODE, (what, "the save"), report)
 }
 
 /// Launch one process with both diagnostic channels armed and the save seam set.
@@ -225,8 +226,8 @@ fn launch(
     report: &mut CheckReport,
     pdf: &Path,
     target: &Path,
-    trace_name: &str,
-) -> Result<Session> {
+    stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
     let mut spec = LaunchSpec::new(
         ctx.resolve_exe().ok_or_else(|| {
             Error::new(format!(
@@ -234,7 +235,7 @@ fn launch(
                 ctx.profile.default_exe
             ))
         })?,
-        ctx.out(trace_name),
+        ctx.out(&format!("{stem}.trace.txt")),
     );
     spec.pdf = Some(pdf.to_path_buf());
     spec.env.push((
@@ -247,6 +248,7 @@ fn launch(
         .push((SAVE_PATH_ENV.to_owned(), target.display().to_string()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = offscreen(ctx, &mut spec, stem)?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
@@ -257,7 +259,8 @@ fn launch(
         target.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(60);
 
     if !session.trace()?.started(ctx.profile.vocab.start_event) {
         return Err(Error::new(format!(
@@ -269,7 +272,7 @@ fn launch(
             session.trace_path().display()
         )));
     }
-    Ok(session)
+    Ok((session, pointer))
 }
 
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
@@ -284,13 +287,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              measuring the gate rather than the feature.",
         )
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check is seven clicks and a drag across two \
-             processes. Reported as SKIPPED rather than passed: a check that did not run has \
-             learned nothing.",
-        ));
-    }
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event, so the application cannot state \
@@ -348,19 +344,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // =======================================================================
     let listed_before;
     {
-        let session = launch(ctx, report, &pdf, &target, "save_copy.trace.txt")?;
-        let driver = Driver::new(session.window());
+        let (session, pointer) = launch(ctx, report, &pdf, &target, "save_copy")?;
+        let driver = &pointer;
 
         // --- PHASE A: the baseline the whole round trip is measured against --
-        listed_before = comments_count(&session, &driver, ui_rect, report, "the fixture")?;
+        listed_before = comments_count(&session, driver, ui_rect, report, "the fixture")?;
 
         // --- PHASE B: author a rectangle on the page ------------------------
         //
         // The tab click is idempotent when phase A's fallback already made it,
         // and the shell reports every click on a tab including one that is
         // already active, so `click_tab`'s own assertion holds either way.
-        click_tab(&session, &driver, ui_rect, MARKUP_TAB)?;
-        click_command(&session, &driver, ui_rect, RECTANGLE, 16)?;
+        click_tab(&session, driver, ui_rect, MARKUP_TAB)?;
+        click_command(&session, driver, ui_rect, RECTANGLE, 16)?;
         let trace = session.trace()?;
         if !trace
             .events(ARM_EVENT)
@@ -388,7 +384,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             DocPoint::new(0, DRAG.1.0 * page.width_pt, DRAG.1.1 * page.height_pt),
         )?;
         let applies_before = session.trace()?.events(APPLY_EVENT).count();
-        driver.drag(from, to)?;
+        driver.drag(&session, from, to, 12)?;
         session.settle(24);
 
         let trace = session.trace()?;
@@ -424,8 +420,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             .trace()?
             .last(APPLY_EVENT)
             .map_or(commit.lineno, |l| l.lineno);
-        let Some(listed_after) =
-            comments_census::refresh(&session, &driver, ui_rect, caused_at, report)?
+        let Some(listed_after) = comments_refresh(&session, driver, ui_rect, caused_at, report)?
         else {
             return Err(Error::new(format!(
                 "the rectangle was authored (`{}`) and the Comments panel has published no census \
@@ -468,8 +463,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
 
         // --- PHASE C: save a copy -------------------------------------------
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
-        click_command(&session, &driver, ui_rect, SAVE, 40)?;
+        click_tab(&session, driver, ui_rect, FILE_TAB)?;
+        click_command(&session, driver, ui_rect, SAVE, 40)?;
 
         let trace = session.trace()?;
         let Some(saved) = trace.last(SAVED_EVENT) else {
@@ -604,15 +599,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let listed_reopened = {
         // A second `PDFCER_DIAG_SAVE_PATH` is set and never used; harmless, and
         // cheaper than a second launch helper that differs in one field.
-        let session = launch(
+        let (session, pointer) = launch(
             ctx,
             report,
             &target,
             &ctx.out("save-copy-unused.pdf"),
-            "save_copy.reopen.trace.txt",
+            "save_copy.reopen",
         )?;
-        let driver = Driver::new(session.window());
-        comments_count(&session, &driver, ui_rect, report, "the SAVED COPY")?
+        comments_count(&session, &pointer, ui_rect, report, "the SAVED COPY")?
     };
 
     if !listed_reopened.describes_one_more(&listed_before) {
@@ -639,7 +633,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "★★ ROUND TRIP PROVEN: a second process opened the saved copy from disk and its Comments \
          panel lists {} annotation(s), one more than the fixture's {}, and the extra row carries \
          neither words nor an author — which is the shape of a canvas-drawn rectangle rather than \
-         of any other row the count could have gained. The rectangle an OS-injected drag authored \
+         of any other row the count could have gained. The rectangle a scripted drag authored \
          in the first process is in the file the second one read",
         listed_reopened.listed, listed_before.listed
     ));
@@ -778,7 +772,7 @@ mod tests {
         // Read through the SHARED census reader and anchored at 0, which is
         // "anything in this capture" — the one place a zero anchor is right,
         // because the capture is three synthetic lines rather than a run.
-        let census = comments_census::Census::since(&app, 0)
+        let census = Census::since(&app, 0)
             .expect("a census with no filter field reads as unfiltered")
             .expect("the census line is in this capture");
         assert_eq!(census.listed, 3);
