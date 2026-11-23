@@ -55,7 +55,7 @@ pub(in crate::canvas) fn on_page_but(
 ) -> Vec<MarkupSnapGeometry> {
     on_page(doc, page)
         .iter()
-        .filter(|m| m.annotation() != own)
+        .filter(|m| m.annotation() != Some(own))
         .cloned()
         .collect()
 }
