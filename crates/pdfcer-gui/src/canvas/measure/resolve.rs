@@ -6,13 +6,14 @@
 use egui::Pos2;
 use pdfcer_core::vector::Point;
 use pdfcer_core::vector::snap::{SnapCandidate, SnapConfig};
-use pdfcer_core::vector::{MarkupSnapGeometry, snap_candidates_with_markups};
+use pdfcer_core::vector::snap_candidates_skipping;
 
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::target::CanvasTargetProvider;
 use crate::canvas::viewer;
 
+use super::markupsnap::PageSnap;
 use super::{MEASURE_MEMORY_KEY, MeasureKind, MeasureState, hover, snap};
 
 /// **Resolve a raw pointer position to the point the pick will actually
@@ -24,17 +25,17 @@ pub(in crate::canvas) fn snapped(
     targets: Option<&dyn CanvasTargetProvider>,
     page_index: usize,
     map: &PageMapping,
-    markups: &[MarkupSnapGeometry],
+    page: &PageSnap,
 ) -> (Point, Option<SnapCandidate>) {
     if !snap::snap_query_enabled(st.snap_master, alt_held) {
         return (raw, None);
     }
     let model = targets.and_then(|t| t.page_objects_model(page_index));
-    if model.is_none() && markups.is_empty() {
+    if model.is_none() && page.geometry.is_empty() {
         return (raw, None);
     }
     let config = SnapConfig::new(map.snap_tolerance());
-    let candidates = snap_candidates_with_markups(raw, &config, model, markups);
+    let candidates = snap_candidates_skipping(raw, &config, model, &page.geometry, &page.skip);
     match snap::active_snap_candidate(&candidates, st.snap_cycle) {
         Some(c) => (c.point, Some(c)),
         None => (raw, None),
@@ -50,12 +51,12 @@ pub(in crate::canvas) fn snap_point(
     alt_held: bool,
     targets: Option<&dyn crate::canvas::target::CanvasTargetProvider>,
     map: &PageMapping,
-    markups: &[MarkupSnapGeometry],
+    page: &PageSnap,
 ) -> (Point, Option<pdfcer_core::vector::snap::SnapCandidate>) {
     let st = super::read(ctx)
         .filter(|s| s.page_index == page_index)
         .unwrap_or_else(|| MeasureState::new(page_index));
-    snapped(&st, raw, alt_held, targets, page_index, map, markups)
+    snapped(&st, raw, alt_held, targets, page_index, map, page)
 }
 
 /// **Shift's direction snap on a measure pick**: `at` moved onto the nearest
@@ -174,8 +175,8 @@ pub(in crate::canvas) fn resolve_hover(
         .filter(|s| s.page_index == page_index)
         .unwrap_or_else(|| MeasureState::for_kind(page_index, kind));
     let alt_held = ctx.input(|i| i.modifiers.alt);
-    let markups = super::markupsnap::on_page(doc, page_index);
-    let (at, candidate) = snapped(&st, raw, alt_held, targets, page_index, map, &markups);
+    let snaps = super::markupsnap::on_page(doc, page_index, targets);
+    let (at, candidate) = snapped(&st, raw, alt_held, targets, page_index, map, &snaps);
     let at = aimed(ctx, &st, at, candidate.is_some());
     // Resolved from the RAW pointer, not from the snapped point, and the
     // difference is the case the highlight was asked for.
@@ -200,14 +201,15 @@ pub(in crate::canvas) fn resolve_hover(
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "measure-hover model={} tol={:.2} entity={} snap={} markup={}",
+            "measure-hover model={} tol={:.2} entity={} snap={} markup={} source={}",
             u8::from(model.is_some()),
             map.snap_tolerance(),
             u8::from(entity.is_some()),
             u8::from(candidate.is_some()),
             candidate
                 .and_then(|c| c.source_annotation)
-                .map_or(0, |id| id.num)
+                .map_or(0, |id| id.num),
+            candidate.map_or("none", |c| source_name(c.source)),
         )
     });
     Some(Resolved {
@@ -215,6 +217,23 @@ pub(in crate::canvas) fn resolve_hover(
         candidate,
         entity,
     })
+}
+
+/// The trace's name for what a snap landed on.
+fn source_name(source: pdfcer_core::vector::SnapSource) -> &'static str {
+    use pdfcer_core::vector::SnapSource as S;
+    match source {
+        S::Page => "page",
+        S::Path => "path",
+        S::Image => "image",
+        S::Text => "text",
+        S::Markup => "markup",
+        S::TextMarkup => "text-markup",
+        S::FormField => "form-field",
+        S::CeDimension => "ce-dimension",
+        S::Annotation => "annotation",
+        _ => "other",
+    }
 }
 
 /// The measure hover for this frame, resolved while the decomposition is
@@ -285,7 +304,15 @@ mod tests {
             (200.0, 300.0),
             1.0,
         );
-        let (at, candidate) = snapped(&st, raw, false, Some(&targets), 0, &map, &[]);
+        let (at, candidate) = snapped(
+            &st,
+            raw,
+            false,
+            Some(&targets),
+            0,
+            &map,
+            &PageSnap::default(),
+        );
         assert_eq!(at, raw, "the pick is where the pointer was");
         assert!(candidate.is_none(), "nothing to draw an indicator for");
     }
@@ -314,7 +341,15 @@ mod tests {
             (200.0, 300.0),
             1.0,
         );
-        let (at, candidate) = snapped(&st, raw, true, Some(&targets), 0, &map, &[]);
+        let (at, candidate) = snapped(
+            &st,
+            raw,
+            true,
+            Some(&targets),
+            0,
+            &map,
+            &PageSnap::default(),
+        );
         assert_eq!(at, raw);
         assert!(candidate.is_none());
     }
@@ -331,7 +366,7 @@ mod tests {
             (200.0, 300.0),
             1.0,
         );
-        let (at, candidate) = snapped(&st, raw, false, None, 0, &map, &[]);
+        let (at, candidate) = snapped(&st, raw, false, None, 0, &map, &PageSnap::default());
         assert_eq!(at, raw);
         assert!(candidate.is_none());
     }

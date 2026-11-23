@@ -5,7 +5,7 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/snap_markup.md`.
 
 use super::annot_multiselect::FIXTURE;
-use super::dimdrive::run_on;
+use super::dimdrive::{Fixture, run_on};
 use super::multiselect::{after, step};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint};
@@ -14,7 +14,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const HOVER: &str = "measure-hover"; // ui-text-exempt: a trace event name
+pub(super) const HOVER: &str = "measure-hover"; // ui-text-exempt: a trace event name
 /// Just inside the square markup's top-left corner, `/Rect [40 200 100 240]`.
 const BESIDE_CORNER: (f64, f64) = (41.0, 239.0);
 /// Paper with no markup and no page content near it.
@@ -45,16 +45,18 @@ impl Check for MeasureToolSnapsToAMarkup {
     }
 }
 
-/// Hover `at` (page points) and answer the `measure-hover` line it caused.
-fn hover(
+/// Hover `at` (page points) on `fixture`'s page and answer the
+/// `measure-hover` line it caused.
+pub(super) fn hover(
     ctx: &CheckContext,
+    fixture: &Fixture,
     session: &Session,
     pointer: &ScriptedPointer,
     at: (f64, f64),
     what: &str,
 ) -> Result<std::result::Result<crate::trace::TraceLine, String>> {
     let mapping =
-        CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, FIXTURE.page, 0)?;
+        CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, fixture.page, 0)?;
     let point = mapping.doc_to_window(DocPoint::new(0, at.0, at.1))?;
     let mark = session.trace()?.mark();
     pointer.hover(session, point)?;
@@ -70,6 +72,7 @@ fn drive(
 ) -> Result<Option<String>> {
     let blank = step!(hover(
         ctx,
+        &FIXTURE,
         session,
         pointer,
         BLANK,
@@ -85,6 +88,7 @@ fn drive(
     }
     let corner = step!(hover(
         ctx,
+        &FIXTURE,
         session,
         pointer,
         BESIDE_CORNER,

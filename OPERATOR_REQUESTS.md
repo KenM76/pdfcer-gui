@@ -8261,6 +8261,8 @@ Said on 2026-11-21, same message as O453. On a circle or arc: a centre mark with
 
 Said on 2026-11-21, same message as O453. The dimension tools snap to and measure from a centre mark, and from any object on the page, markups included, not only page paths.
 
+Built, in part: the measure tools and the endpoint and node drags snap to every kind of object on the page — paths, placed images, text runs, form fields, ce dimensions, stamps, notes, links and markups — and not to anything on a hidden layer. Driven by `measure_tool_snaps_to_a_markup` and `measure_tool_snaps_to_an_image`. Centre marks become targets with the centre-mark tool (O454), which is being built.
+
 ## O456 — **OPEN** — markups and all objects sized in the dimension group's scale
 
 *"Also if possible, markups and all objects should be able to use the dimension group scale so that their sizes can be typed in those scales."*

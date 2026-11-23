@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: e5e8b5b6e6e897150860c9b98185d6ecfd4eab22
+# baseline: 4b0e07aa905268840453a7115024a99321932c4a
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12688
+# items: 12709
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -1559,6 +1559,7 @@ pdfcer-core enum pdfcer_core::vector::restack::RestackLimitReason
 pdfcer-core enum pdfcer_core::vector::restack::StackMove
 pdfcer-core enum pdfcer_core::vector::snap::AxisConstraint
 pdfcer-core enum pdfcer_core::vector::snap::SnapKind
+pdfcer-core enum pdfcer_core::vector::snap_source::SnapSource
 pdfcer-core enum pdfcer_core::vector::stroke_style::StrokeUnits
 pdfcer-core enum pdfcer_core::vector::text_locate::TextRunRef
 pdfcer-core enum pdfcer_core::widget_draw::SynthesizedKind
@@ -5018,6 +5019,7 @@ pdfcer-core field pdfcer_core::vector::restack::RestackOutcome::limited
 pdfcer-core field pdfcer_core::vector::restack::RestackOutcome::moved
 pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::kind
 pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::point
+pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::source
 pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::source_annotation
 pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::source_object
 pdfcer-core field pdfcer_core::vector::snap::SnapConfig::axes
@@ -5443,6 +5445,7 @@ pdfcer-core fn pdfcer_core::redact_proof::verify_absence
 pdfcer-core fn pdfcer_core::richtext::flat_text
 pdfcer-core fn pdfcer_core::richtext::parse
 pdfcer-core fn pdfcer_core::richtext::parse_noting
+pdfcer-core fn pdfcer_core::richtext::write::to_xhtml
 pdfcer-core fn pdfcer_core::settings::format_byte_size
 pdfcer-core fn pdfcer_core::settings::parse_byte_size
 pdfcer-core fn pdfcer_core::settings::resolve_store
@@ -5577,7 +5580,11 @@ pdfcer-core fn pdfcer_core::vector::snap::polygon_area
 pdfcer-core fn pdfcer_core::vector::snap::polyline_length
 pdfcer-core fn pdfcer_core::vector::snap::snap_candidates
 pdfcer-core fn pdfcer_core::vector::snap_annot::markup_snap_geometry
+pdfcer-core fn pdfcer_core::vector::snap_annot::snap_candidates_skipping
 pdfcer-core fn pdfcer_core::vector::snap_annot::snap_candidates_with_markups
+pdfcer-core fn pdfcer_core::vector::snap_page::annotation_snap_geometry
+pdfcer-core fn pdfcer_core::vector::snap_page::content_snap_geometry
+pdfcer-core fn pdfcer_core::vector::snap_page::hidden_objects
 pdfcer-core fn pdfcer_core::vector::text_locate::locate_text_run
 pdfcer-core fn pdfcer_core::vector::text_locate::locate_text_runs
 pdfcer-core fn pdfcer_core::wrapper::detect
@@ -6310,6 +6317,7 @@ pdfcer-core method pdfcer_core::edit::link::LinkBorder::new
 pdfcer-core method pdfcer_core::edit::link::LinkBorder::with_dash
 pdfcer-core method pdfcer_core::edit::markup_respan::EditSession::respan_text_markup
 pdfcer-core method pdfcer_core::edit::markup_snap::EditSession::markup_snap_geometry
+pdfcer-core method pdfcer_core::edit::markup_snap::EditSession::page_snap_geometry
 pdfcer-core method pdfcer_core::edit::metadata_remove::EditSession::metadata_inventory
 pdfcer-core method pdfcer_core::edit::metadata_remove::EditSession::remove_metadata
 pdfcer-core method pdfcer_core::edit::node_shape::EditSession::can_extend_path
@@ -6351,6 +6359,7 @@ pdfcer-core method pdfcer_core::edit::redact_outside::EditSession::mark_redactio
 pdfcer-core method pdfcer_core::edit::redact_outside::Quad::outside
 pdfcer-core method pdfcer_core::edit::regroup::EditSession::move_widget_to_field
 pdfcer-core method pdfcer_core::edit::restack::EditSession::restack_objects
+pdfcer-core method pdfcer_core::edit::rich_runs::EditSession::fill_rich_text_field_runs
 pdfcer-core method pdfcer_core::edit::running_text::EditSession::stamp_running_text
 pdfcer-core method pdfcer_core::edit::stroke_style::EditSession::set_object_stroke_style
 pdfcer-core method pdfcer_core::edit::svg::EditSession::add_svg
@@ -7277,8 +7286,10 @@ pdfcer-core method pdfcer_core::vector::snap::SnapConfig::with_intersections
 pdfcer-core method pdfcer_core::vector::snap::SnapKind::all
 pdfcer-core method pdfcer_core::vector::snap::SnapKind::is_derived
 pdfcer-core method pdfcer_core::vector::snap::SnapKind::priority
-pdfcer-core method pdfcer_core::vector::snap_annot::MarkupSnapGeometry::annotation
-pdfcer-core method pdfcer_core::vector::snap_annot::MarkupSnapGeometry::bounds
+pdfcer-core method pdfcer_core::vector::snap_annot::SnapGeometry::annotation
+pdfcer-core method pdfcer_core::vector::snap_annot::SnapGeometry::bounds
+pdfcer-core method pdfcer_core::vector::snap_annot::SnapGeometry::object
+pdfcer-core method pdfcer_core::vector::snap_annot::SnapGeometry::source
 pdfcer-core method pdfcer_core::vector::stroke_style::Dash::is_solid
 pdfcer-core method pdfcer_core::vector::stroke_style::Dash::new
 pdfcer-core method pdfcer_core::vector::stroke_style::PathObject::dash_pt
@@ -8040,7 +8051,7 @@ pdfcer-core struct pdfcer_core::vector::restack::RestackLimit
 pdfcer-core struct pdfcer_core::vector::restack::RestackOutcome
 pdfcer-core struct pdfcer_core::vector::snap::SnapCandidate
 pdfcer-core struct pdfcer_core::vector::snap::SnapConfig
-pdfcer-core struct pdfcer_core::vector::snap_annot::MarkupSnapGeometry
+pdfcer-core struct pdfcer_core::vector::snap_annot::SnapGeometry
 pdfcer-core struct pdfcer_core::vector::stroke_style::Dash
 pdfcer-core struct pdfcer_core::vector::stroke_style::StrokeStyle
 pdfcer-core struct pdfcer_core::vector::text_inherited::TextInherited
@@ -8099,6 +8110,7 @@ pdfcer-core type pdfcer_core::ocr::models::EngineDirName
 pdfcer-core type pdfcer_core::ocr::vl_pre::PixelBox
 pdfcer-core type pdfcer_core::offpage::UnreadablePage
 pdfcer-core type pdfcer_core::pageops::assemble::PageRef
+pdfcer-core type pdfcer_core::vector::snap_annot::MarkupSnapGeometry
 pdfcer-core type pdfcer_core::widget_draw::geometry::PagePoint
 pdfcer-core variant pdfcer_core::annot::Appearance::None
 pdfcer-core variant pdfcer_core::annot::Appearance::Normal
@@ -10421,6 +10433,15 @@ pdfcer-core variant pdfcer_core::vector::snap::SnapKind::Intersection
 pdfcer-core variant pdfcer_core::vector::snap::SnapKind::Midpoint
 pdfcer-core variant pdfcer_core::vector::snap::SnapKind::Node
 pdfcer-core variant pdfcer_core::vector::snap::SnapKind::SegmentCenterline
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::Annotation
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::CeDimension
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::FormField
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::Image
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::Markup
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::Page
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::Path
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::Text
+pdfcer-core variant pdfcer_core::vector::snap_source::SnapSource::TextMarkup
 pdfcer-core variant pdfcer_core::vector::stroke_style::StrokeUnits::Page
 pdfcer-core variant pdfcer_core::vector::stroke_style::StrokeUnits::UserSpace
 pdfcer-core variant pdfcer_core::vector::text_locate::TextRunRef::Form

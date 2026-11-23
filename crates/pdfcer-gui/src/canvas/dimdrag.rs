@@ -485,7 +485,15 @@ fn inner(
     // The same query, the same tolerance and the same operator settings the
     // measure tools use. See `measure::snap_point` for why that is one function
     // and not two.
-    let markups = crate::canvas::measure::markupsnap::on_page(doc, doc.view.page_index);
+    // The dimension being reshaped is a snap target too; its old vertices
+    // are not.
+    let own = selection.annot().map(|a| a.target.id);
+    let snaps = match own {
+        Some(own) => {
+            crate::canvas::measure::markupsnap::on_page_but(doc, doc.view.page_index, targets, own)
+        }
+        None => crate::canvas::measure::markupsnap::on_page(doc, doc.view.page_index, targets),
+    };
     let (target, snap) = crate::canvas::measure::snap_point(
         ctx,
         doc.view.page_index,
@@ -493,7 +501,7 @@ fn inner(
         alt_held,
         targets,
         map,
-        &markups,
+        &snaps,
     );
 
     //

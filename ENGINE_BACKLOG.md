@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **23 of 622** <!-- counted by tools/walk-engine-backlog.py, 2026-11-21; do not retype -->
+## `wanted` — a real gap — **23 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -138,7 +138,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 622** <!-- counted by tools/walk-engine-backlog.py, 2026-11-21; do not retype -->
+## `blocked` — waiting on something named — **3 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -147,6 +147,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
 | PDF/A conformance and validation. | **blocked on the engine, which has no PDF/A library.** Its CLI `to-pdfa` command is marked not yet implemented, and its own row ticks neither the core nor the CLI box. Nothing here can convert to or validate PDF/A until the engine can; there is no request to file beyond the engine's own backlog row. |
+| **Write a rich-text field from styled runs** — `EditSession::fill_rich_text_field_runs` in the module `pdfcer_core::edit::rich_runs`, `richtext::to_xhtml` in the module `pdfcer_core::richtext::write` | **blocked — a trailing blank line cannot be written as runs.** `to_xhtml` drops empty runs and keeps only the blank paragraphs *between* text, so a value ending in a newline loses its last line. `panels::forms::edit::rich_value_of` writes one `<p>` per line, blank ones included, and stays until the writer can say it; requested as `request_rich_runs_trailing_blank_paragraph.md`. |
 
 ### Reading, navigation & printing
 
@@ -156,7 +157,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 622** <!-- counted by tools/walk-engine-backlog.py, 2026-11-21; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +168,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 622** <!-- counted by tools/walk-engine-backlog.py, 2026-11-21; do not retype -->
+## `declined` — deliberately no surface — **21 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -214,7 +215,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **576 of 622** <!-- counted by tools/walk-engine-backlog.py, 2026-11-21; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **577 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -494,7 +495,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **shipped — Edit ▸ Insert ▸ Link, and a selected link's Properties; G161.** `edit.insert_link` arms `PlaceKind::Link` and `dialogs::link` raises `add_link`; in Edit a click selects a link (Links pick row live), its grips resize it, and `panels::properties::link` raises `set_link_target` and `set_link_border`. Read and Review still follow it. `replaced_action` and `appearance_replaced` reach the status line; `EditError::LinkUriInvalid`, `LinkBorderWidthInvalid`, `NamedDestinationNotFound` and `EmptyGeometry` are worded, `EditError::LinkVerbOnOther` is unreachable (the verbs are raised on a selected link only). `CommandKind::SetLinkTarget`, `CommandKind::SetLinkBorder` and `AnnotKind::Link` are the engine's undo labels; nothing here reads them. A link is read back through `EditSession::link` (G178); named destinations are listed to pick from by `DestinationReader::named_destinations` (G179). Driven: `a_link_is_drawn_and_given_an_address`, `a_selected_link_is_repointed_from_properties`, `a_review_click_follows_a_link_and_does_not_select_it`. |
 | **Read a link's as-written target and border** — `EditSession::link`, `LinkReading` | **shipped — a selected link's Properties; G178.** `panels::properties::link` seeds its form from `EditSession::link`: `target` picks the destination, `border` the width, colour and dash, and a link with no `target` names its `action` or says it goes nowhere. `LinkReading::border_color` is not read: the form edits the border's colour, which `border` carries. Driven: `a_selected_link_is_repointed_from_properties`, which fails when the link is not read. |
 | **Pasted raw annotation moves all its geometry** — `paste_raw_annotation` | **shipped — the engine's paste moves every geometry key, and the shell sends the clip as copied** (request G186, at the pin since v0.82.0). A pasted link, line, polygon or ink mark has its `/L`, `/Vertices`, `/QuadPoints`, `/CL` and `/InkList` moved with `/Rect`. Driven: `a_link_is_moved_resized_copied_and_deleted`, which fails at step 5 when the shell also translates them. |
-| **Markup annotations are snap targets** — `vector::markup_snap_geometry` and `snap_candidates_with_markups` in `pdfcer_core::vector::snap_annot` (`MarkupSnapGeometry`, `MAX_MARKUP_SNAP_POINTS`), `EditSession::markup_snap_geometry` in `pdfcer_core::edit::markup_snap` | **consumed.** `canvas::measure::markupsnap` keeps the page's geometry and `canvas::measure::resolve::snapped` asks `snap_candidates_with_markups`, so the measure tools, a ce-dimension endpoint drag and a markup node drag all snap to markups; a markup being reshaped leaves itself out. Driven by `measure_tool_snaps_to_a_markup` (O427). |
+| **Markup annotations are snap targets** — `vector::markup_snap_geometry` and `snap_candidates_with_markups` in `pdfcer_core::vector::snap_annot` (`MarkupSnapGeometry`, `MAX_MARKUP_SNAP_POINTS`), `EditSession::markup_snap_geometry` in `pdfcer_core::edit::markup_snap` | **shipped, and superseded here by `page_snap_geometry`** (the row above), which returns the same markup geometry with every other object's. Nothing here calls these. Driven by `measure_tool_snaps_to_a_markup` (O427). |
+| **Every page object is a snap target** — `EditSession::page_snap_geometry`, the modules `pdfcer_core::vector::snap_page` (`hidden_objects`, `annotation_snap_geometry`, `content_snap_geometry`) and `pdfcer_core::vector::snap_source` (`SnapSource`), `snap_candidates_skipping` | **consumed (G324, O455).** `canvas::measure::markupsnap` keeps the page's `page_snap_geometry` and `hidden_objects` skip set, built over the decomposition the canvas already has and never forcing one, and `canvas::measure::resolve::snapped` asks `snap_candidates_skipping`; the measure tools, a ce-dimension endpoint drag and a markup node drag all snap to images, text, widgets, markups and ce dimensions, and a markup or ce dimension being reshaped leaves itself out. `annotation_snap_geometry` and `content_snap_geometry` are the two halves `page_snap_geometry` joins and have no caller here. The hover trace names the `SnapSource`. Driven by `measure_tool_snaps_to_an_image` and `measure_tool_snaps_to_a_markup`. |
 | **Move or delete several annotations in one command** — `move_annotations_each`, `delete_annotations`, `dimension_for_annotation` | **shipped, requests G190 and G191.** `app::actions::movemixed` moves every selected markup, link and ce dimension of an Align, Distribute or group drag by one `move_annotations_each`, which re-places a ce dimension by the drag rule, and `app::actions::annots::deletemany` deletes them by one `delete_annotations`; each is one undo entry. Both verbs are all-or-nothing, so a locked annotation is kept out of the batch: a move names it in `EditError::AnnotationLocked`'s words, a delete counts it on the status line; `dimension_for_annotation` has no caller, the selection already holding the annotation id each verb takes. Driven by `several_annotations_delete_as_one_undo_step` (trace `engine=delete_annotations`), `several_annotations_drag_as_one_undo_step` and `several_annotations_align_as_one_undo_step`. |
 | **List the document's named destinations** — `DestinationReader::named_destinations` | **shipped, request G179.** The Named choice of Add link (`dialogs::link`) and of a selected link's Properties lists every name in both namespaces with the page it reaches, through `pdfcer_gui_base::linkform::named_destinations`; a click picks the name, and a name can still be typed. Driven by `a_named_destination_is_picked_for_a_new_link` and `a_named_destination_is_picked_for_a_selected_link` on `fixtures/link-named.pdf`. |
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` | **shipped.** Placement offers the seven §12.5.6.4 icons (`dialogs::textannot`, region `text-annot.icon`); a placed note restyles in `panels::properties::markup::textannot` through `set_text_annot_style`, an unmodelled `/Name` surviving as `StickyIcon::Other` (`a_foreign_icon_name_reaches_the_panel`). Any other selected mark that neither restyle verb reads shows its `/C` as a read-only swatch and its `/Name` as text, read through `annot::Annotation::color` and `annot::Annotation::icon` in `panels::properties::markup::anyannot::facts_row`; driven by `an_annotations_colour_and_icon_are_read_for_any_subtype` on `fixtures/annot-facts.pdf`. A marker's `/C` stays the editable swatch of `set_marker_style`. |

@@ -81,11 +81,16 @@ amount nobody can see.
    [`snap::snap_query_enabled`]. Alt is the operator saying *"not this
    time"* — it is what makes the offer refusable, and it is why the catch
    radius can afford to be generous ([`PageMapping::snap_tolerance`]).
-2. **A decomposition must exist.** No model, no candidates, raw point. This
-   is a real case rather than a defensive one: the model is built only when
-   something needs it, and a measure click is one of the things that asks.
-3. **The query**, `pdfcer_core::vector::snap_candidates` — the engine's, not
-   ours. `SnapConfig::new` leaves intersections off and axes on, which is
+2. **Something must be there to snap to**: a decomposition, or the page's
+   other snap geometry. With neither, raw point. The model is built only
+   when something needs it, and a measure click is one of the things that
+   asks; until then markups, form fields and ce dimensions still snap.
+3. **The query**, `pdfcer_core::vector::snap_candidates_skipping` — the
+   engine's, not ours. Its inputs are the page's paths from the model, the
+   geometry of every other object from `EditSession::page_snap_geometry`,
+   and the paths on hidden layers to leave out from
+   `vector::hidden_objects`; `canvas::measure::markupsnap` keeps the last
+   two per page, edit and layer state. `SnapConfig::new` leaves intersections off and axes on, which is
    the shipped default; the grid is `None` because the canvas grid is a
    *view* aid drawn in page space and snapping to it would be snapping to
    something the document does not contain.

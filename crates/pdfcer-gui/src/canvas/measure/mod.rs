@@ -410,8 +410,8 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
         let at = match resolve_hover(ctx, doc, page_index, Some(canvas_point), targets, map, kind) {
             Some(r) => r.at,
             None => {
-                let markups = markupsnap::on_page(doc, page_index);
-                snapped(&st, picked, alt_held, targets, page_index, map, &markups).0
+                let snaps = markupsnap::on_page(doc, page_index, targets);
+                snapped(&st, picked, alt_held, targets, page_index, map, &snaps).0
             }
         };
         let placed = placing.at(at);
@@ -468,8 +468,8 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
         match resolve_hover(ctx, doc, page_index, Some(canvas_point), targets, map, kind) {
             Some(r) => (r.at, r.candidate),
             None => {
-                let markups = markupsnap::on_page(doc, page_index);
-                snapped(&st, picked, alt_held, targets, page_index, map, &markups)
+                let snaps = markupsnap::on_page(doc, page_index, targets);
+                snapped(&st, picked, alt_held, targets, page_index, map, &snaps)
             }
         };
 

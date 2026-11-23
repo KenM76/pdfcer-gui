@@ -436,21 +436,7 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
     let page = doc.pages.get(annot.target.page)?;
     let old = *shape.points.get(index)?;
 
-    //
-    // And the GRAB POINT is preserved (D8): the node moves by the pointer's
-    // DELTA, not to the pointer's position. Assigning the pointer straight to
-    // the node teleports it under the cursor on the first frame, so an operator
-    // who grabbed an anchor three pixels off centre sees the shape jump before
-    // they have moved anything.
-    let grab = at - from;
-    let was = crate::viewer::pdf_space_to_canvas(
-        #[allow(clippy::cast_possible_truncation)]
-        egui::Pos2::new(old.x as f32, old.y as f32),
-        page,
-    )?;
-    let free_pos = crate::viewer::canvas_to_pdf_space(was + grab, page)?;
-    #[allow(clippy::cast_lossless)]
-    let free = Point::new(f64::from(free_pos.x), f64::from(free_pos.y));
+    let free = grabbed_position(old, from, at, page)?;
 
     // THE SNAP, and it deliberately OVERRIDES the grab point. D8 and D6 pull
     // in opposite directions here and every program in the class resolves it
@@ -461,8 +447,12 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
     // The same query, the same tolerance and the same operator settings the
     // measure tools use — `measure::snap_point` exists precisely so there is
     // one answer to *"where would this land"* rather than two.
-    let markups =
-        crate::canvas::measure::markupsnap::on_page_but(doc, annot.target.page, annot.target.id);
+    let snaps = crate::canvas::measure::markupsnap::on_page_but(
+        doc,
+        annot.target.page,
+        targets,
+        annot.target.id,
+    );
     let (target, snap) = crate::canvas::measure::snap_point(
         ctx,
         annot.target.page,
@@ -470,7 +460,7 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
         alt_held,
         targets,
         map,
-        &markups,
+        &snaps,
     );
 
     if stroke::whole(ctx, &shape) {
@@ -497,6 +487,28 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
         snap,
         actions,
     }))
+}
+
+/// Where the grabbed node goes before snapping, page space.
+///
+/// The GRAB POINT is preserved (D8): the node moves by the pointer's DELTA,
+/// not to the pointer's position. Assigning the pointer straight to the node
+/// teleports it under the cursor on the first frame, so an operator who
+/// grabbed an anchor three pixels off centre sees the shape jump before they
+/// have moved anything.
+fn grabbed_position(
+    old: Point,
+    from: egui::Pos2,
+    at: egui::Pos2,
+    page: &pdfcer_core::page_tree::Page,
+) -> Option<Point> {
+    let was = crate::viewer::pdf_space_to_canvas(
+        #[allow(clippy::cast_possible_truncation)]
+        egui::Pos2::new(old.x as f32, old.y as f32),
+        page,
+    )?;
+    let free = crate::viewer::canvas_to_pdf_space(was + (at - from), page)?;
+    Some(Point::new(f64::from(free.x), f64::from(free.y)))
 }
 
 /// Everything the second half of a node drag needs, once the geometry and the
