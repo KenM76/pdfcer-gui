@@ -9,6 +9,17 @@ gesture state belongs and for its reason: it has no meaning across a
 document, and a value that survived one would be a claim about a file it was
 not measured on.
 
+### Markups at press
+
+A press on an unselected markup selects it, with its group, before page
+content is asked: a markup paints above content and the click ladder takes it
+first, so the press must agree. Without it the gesture machine finds no grip,
+and a drag begun on a markup the operator had not clicked first marquees
+instead of moving it. `canvas::selection::groupmates::select` is the same call
+the click makes, so a drag on any member moves every member as one
+`move-mixed-applied`. Gated on `caps.author_markup` and the pick filter, as
+the click is. Driven by `a_group_drags_as_one`.
+
 ### `fn take`
 
 Three outcomes, in precedence order, and the first two are what O215 ask 1

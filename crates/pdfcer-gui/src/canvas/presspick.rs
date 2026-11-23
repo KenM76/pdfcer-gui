@@ -119,6 +119,27 @@ pub(super) fn at_press(
             return;
         }
         let point = map.to_page(origin);
+        // A markup paints above page content and takes the click first, so it
+        // takes the press first; its group comes with it, so a drag begun on
+        // any member carries every member (`OPERATOR_REQUESTS.md` O457).
+        if caps.author_markup
+            && let Some(markup) =
+                crate::canvas::selection::annot::under_pointer(doc, page_index, point, map)
+                    .filter(|h| crate::canvas::selection::annot::pickable(&pick, &caps, &h.target))
+        {
+            // A markup already in a several-markup selection keeps the set:
+            // `covers` asks only the primary's box, so a press on another
+            // member reaches here and must not collapse it to one.
+            let held = selection
+                .annots()
+                .iter()
+                .any(|a| a.target.id == markup.target.id);
+            if !held {
+                crate::canvas::selection::groupmates::select(doc, selection, markup);
+            }
+            note_changed(ctx, !held);
+            return;
+        }
         let hit = doc.page_objects().and_then(|provider| {
             crate::canvas::input::topmost(
                 &*provider,

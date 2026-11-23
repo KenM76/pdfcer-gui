@@ -606,6 +606,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(restack::AnObjectCanBeBroughtForwardAndSentToBack),
         Box::new(group_objects::PageObjectsGroupIntoOneAndUngroup),
         Box::new(group_markups::GroupedMarkupsSelectTogether),
+        Box::new(group_drag::AGroupDragsAsOne),
         Box::new(group_of_groups::AGroupGroupsWithAThirdMarkup),
         Box::new(group_in_form::PartsOfAPlacedDrawingGroupInsideIt),
         Box::new(snap_markup::MeasureToolSnapsToAMarkup),

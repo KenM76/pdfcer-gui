@@ -8267,8 +8267,12 @@ Said on 2026-11-21, same message as O453. The dimension tools snap to and measur
 
 Said on 2026-11-21, same message as O453. Where a ce dimension group sets a drawing scale, an object's or markup's size is shown and typed in that scale's units (for example, metres at 1:100) rather than in paper units.
 
+Waiting on the engine: `request_page_length_from_scaled_length.md` asks for the reverse of the scaled readout, so a typed scaled size becomes a page size without the GUI restating the scale arithmetic.
+
 ## O457 — **OPEN** — a group drags as one
 
 *"Also when items are grouped together need a way to be able to drag them as their group."*
 
 Said on 2026-11-21, same message as O453. Grouped items move together when one of them is dragged.
+
+Built: a press on any markup selects it with its group before the drag begins, so a drag that starts on an unselected member moves every member, as one undo step. Before, that press started a box-select and nothing moved. Driven by `a_group_drags_as_one`. Page-object groups already moved whole.
