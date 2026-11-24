@@ -8322,12 +8322,20 @@ Until both land, the processor is the faster choice on dense drawings. The GUI d
 
 ## O460 — **OPEN** — the print preview's plates: no freeze, faster, a still arrow, a typed page, a cache
 
-*"In print preview with colour separations and show plates enabled when the preview is being rendered it freezes up the navigation controls. also it is very slow to render on some of the ghent test x4 pdf pages. Also the position of the plate right arrow button moves when clicked to other preview plates - it should be placed so that doesn't happen. also I should be able to type a page number to jump to it on the preview page. Also it should try and cache these preview images so switching back and forth between pages doesn't cause the plate previews to have to be rendered again if they already were."*
+*"In print preview with colour separations and show plates enabled when the preview is being rendered it freezes up the navigation controls. also it is very slow to render on some of the [licensed suite] test x4 pdf pages. Also the position of the plate right arrow button moves when clicked to other preview plates - it should be placed so that doesn't happen. also I should be able to type a page number to jump to it on the preview page. Also it should try and cache these preview images so switching back and forth between pages doesn't cause the plate previews to have to be rendered again if they already were."*
 
 Said on 2026-11-24, about File ▸ Print ▸ preview with colour separations and *Show plates* on.
 
 1. **No freeze.** While the plates render, the page and plate navigation keeps answering.
-2. **Speed.** Some Ghent Output Suite X4 pages render very slowly. Measure them, and fix the cause or file an engine request.
+2. **Speed.** Some licensed output suite's X4 pages render very slowly. Measure them, and fix the cause or file an engine request.
 3. **A still arrow.** The next-plate (right) arrow stays where it is as the plate name beside it changes.
 4. **A typed page.** A page number can be typed in the preview to jump to that page.
 5. **A cache.** A page's plates already rendered are kept, so going back to that page does not render them again.
+
+**Built, waiting on Ken** (driven by `print_preview_plates_keep_the_window_answering` on the licensed suite's X4 file):
+
+- 1: plates and the sheet in colour both render on threads; a sheet left is cancelled; a spinner shows until the colour sheet lands and the strip reads "Separating inks…" until the plates do. Before: frames held 9,474 ms (sheet 2 in colour) and the whole plates render. After: no frame over 50 ms during a 10.4 s sheet and a 44.2 s plates render.
+- 2: measured per page, same options and scale: page 2 is 10,411 ms in colour and 44,223 ms as 4 plates; page 1 is 848 ms and 4,485 ms. The plates are the probe plus one full render per ink in the engine. Filed: `request_render_plates_one_pass.md`.
+- 3: both ink arrows sit together before the ink name; the next arrow's rect is identical across two clicks.
+- 4: "Sheet [n] of N": type a number and Enter (or Tab, or click away); Escape keeps the sheet.
+- 5: plates held up to 384 MiB and colour sheets up to 128 MiB, most recently shown kept; going back to a sheet renders nothing again.

@@ -412,6 +412,8 @@ pub struct PrintDialog {
     preview_detail: preview::detail::Detail,
     /// The preview's separation plates (O438).
     plates: preview::plates::PlateView,
+    /// The preview's colour sheets, rendered off the UI thread.
+    preview_rasters: preview::rasters::Rasters,
     /// **What the preview found in the overhang of each sheet it has been
     /// shown** — operator request O113, 2026-09-04.
     ///
@@ -611,6 +613,7 @@ impl PrintDialog {
             preview_texture: None,
             preview_detail: preview::detail::Detail::default(),
             plates: preview::plates::PlateView::default(),
+            preview_rasters: preview::rasters::Rasters::default(),
             // Empty, and emptied again by every change of context — see
             // `verdicts::Verdicts::remember`. A dialog opens knowing nothing
             // about any sheet, which is why a job printed without ever

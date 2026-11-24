@@ -69,6 +69,9 @@ pub(super) const REGION_POP_OUT: &str = "print.preview.popout";
 /// The strip's Fit width and Fit height buttons, published for driven checks.
 pub(super) const REGION_FIT_WIDTH: &str = "print.preview.fit-width";
 pub(super) const REGION_FIT_HEIGHT: &str = "print.preview.fit-height";
+/// The strip's previous- and next-sheet arrows, published for driven checks.
+pub(super) const REGION_PREVIOUS_SHEET: &str = "print.preview.previous";
+pub(super) const REGION_NEXT_SHEET: &str = "print.preview.next";
 
 /// The placed page's own rectangle inside the preview canvas.
 pub(super) const REGION_PAGE: &str = "print.preview.page";
@@ -631,6 +634,12 @@ fn paint(
         );
     } else {
         painter.rect_filled(placed, 0.0, visuals.panel_fill);
+        if dialog.preview_rasters.rendering() {
+            let at = Rect::from_center_size(placed.center(), Vec2::splat(24.0));
+            egui::Spinner::new()
+                .color(ui.visuals().text_color())
+                .paint_at(ui, at.intersect(canvas));
+        }
     }
     if texture.is_some() && !plate {
         let frame = detail::Frame {
@@ -740,14 +749,14 @@ fn strip(
     // The cost is that the row becomes two rows on a narrow column. That is
     // paid for in `STRIP_HEIGHT_PTS`, which reserves the space for it.
     let probe = ui.horizontal_wrapped(|ui| {
-        if tool(
+        let previous = tool(
             ui,
             Icon::ChevronLeft,
             t::preview_previous(),
             t::preview_previous_tooltip(),
-        )
-        .clicked()
-        {
+        );
+        crate::diag::ui_rect_visible(REGION_PREVIOUS_SHEET, previous.rect, ui.clip_rect());
+        if previous.clicked() {
             dialog.preview_page = shown.saturating_sub(1);
             // A different sheet is a different picture, so the zoom and pan
             // the operator chose for the last one no longer mean anything —
@@ -755,16 +764,15 @@ fn strip(
             // screen. Reset rather than carry.
             reset_view(dialog);
         }
-        ui.label(t::preview_position(shown + 1, sheets));
-        if tool(
+        sheet::number(ui, dialog, shown, sheets);
+        let next = tool(
             ui,
             Icon::ChevronRight,
             t::preview_next(),
             t::preview_next_tooltip(),
-        )
-        .clicked()
-            && shown + 1 < sheets
-        {
+        );
+        crate::diag::ui_rect_visible(REGION_NEXT_SHEET, next.rect, ui.clip_rect());
+        if next.clicked() && shown + 1 < sheets {
             dialog.preview_page = shown + 1;
             reset_view(dialog);
         }
@@ -1020,30 +1028,38 @@ fn texture_for(
     // under, which is the property that stops a remembered "the overhang is
     // blank" outliving the raster it was measured from.
     let base = inputs.context.preview_key(page, placement);
+    let wanted = plates::PlateView::wanted(dialog, plain, &base);
+    if dialog.plates.frame(ctx, &base, wanted) {
+        plates::start(ctx, inputs, dialog, page, &base);
+    }
     let key = plates::PlateView::key(dialog, plain, &base);
     if let Some((cached, texture, _)) = &dialog.preview_texture
         && *cached == key
     {
         return Some(texture.id());
     }
-    // The print-only header and footer's copy when one is set.
+    // Off the UI thread, both the plate and the colour sheet: see
+    // [`rasters`] and [`plates`].
+    let pixmap = match dialog.plates.pixmap(&base, &key) {
+        Some(plate) => Some(plate),
+        None => match dialog.preview_rasters.get(ctx, &key) {
+            rasters::Found::Held(raster) => Some(pdfcer_render::tiny_skia::Pixmap::clone(&raster)),
+            rasters::Found::Failed => None,
+            rasters::Found::Rendering => return None,
+            rasters::Found::Missing => {
+                if let Some(job) = plates::job(inputs, dialog, page, &key) {
+                    dialog.preview_rasters.start(ctx, &key, job);
+                }
+                return None;
+            }
+        },
+    };
     let copy = dialog.running.copy();
     let source = super::running::Source::of(inputs.doc, copy.as_deref());
-    let page_obj = source.pages.get(page)?;
-    let size = *inputs.page_sizes.get(page)?;
-    // The SAME builder the spooler calls. See `super::render_options` for the
-    // choices it encodes and why a second copy of them here would defeat the
-    // preview's entire purpose.
     let mut options = super::commit::render_options(source.scope(dialog.scope), inputs.doc);
-    key.apply_lines(&mut options, f64::from(raster_scale(size)));
-    // `session.view()`, NOT `session.document()` — the view composes the
-    // overlay and the staging buffer, so unsaved edits are what the operator
-    // is about to print.
-    let view = source.session.view();
-    let scale = raster_scale(size);
-    let (key, pixmap) = dialog
-        .plates
-        .render(&base, key, &view, page_obj, scale, &options);
+    if let Some(&size) = inputs.page_sizes.get(page) {
+        key.apply_lines(&mut options, f64::from(raster_scale(size)));
+    }
     let plate = key.plate().is_some();
     let Some(mut pixmap) = pixmap else {
         dialog.preview_texture = None;
@@ -1133,6 +1149,12 @@ use pdfcer_gui_base::printgeometry as geometry;
 /// The zoomed-in preview, rendered sharp up to the print resolution.
 pub(super) mod detail;
 pub(super) mod plates;
+
+/// The sheet-number box.
+mod sheet;
+
+/// The colour sheets, rendered off the UI thread and held.
+pub(super) mod rasters;
 
 /// The preview of a Multiple or Booklet sheet.
 mod imposed;

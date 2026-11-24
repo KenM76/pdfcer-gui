@@ -1,10 +1,22 @@
 //! The print preview's words: its strip of controls, its readouts, and what it
 //! says about content lost off the printable area.
 
-/// "Sheet i of n" — which sheet of the **job** is showing.
+/// The word before the sheet-number box: which sheet of the **job** shows.
 #[must_use]
-pub fn preview_position(index: usize, total: usize) -> String {
-    format!("Sheet {index} of {total}")
+pub const fn preview_sheet() -> &'static str {
+    "Sheet"
+}
+
+/// After the sheet-number box: the job's sheet count.
+#[must_use]
+pub fn preview_sheet_of(total: usize) -> String {
+    format!("of {total}")
+}
+
+/// The sheet-number box's hover.
+#[must_use]
+pub const fn preview_sheet_tooltip() -> &'static str {
+    "Type a sheet number and press Enter to go to it."
 }
 
 /// Step to the previous sheet of the job.
@@ -212,4 +224,10 @@ pub const fn preview_plate_next() -> &'static str {
 #[must_use]
 pub fn preview_plate_position(ink: &str, index: usize, total: usize) -> String {
     format!("{ink} ({index} of {total})")
+}
+
+/// Plates are on and this page's plates are still rendering.
+#[must_use]
+pub const fn preview_plates_separating() -> &'static str {
+    "Separating inks\u{2026}"
 }
