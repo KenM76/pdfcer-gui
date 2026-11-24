@@ -8292,3 +8292,13 @@ Said on 2026-11-23. No. The engine has separate checks (PDF/X claim, overprint u
 Filed, one topic each: `request_preflight_engine.md` (which carries the low-resolution rule), `request_pdfx_validate_convert.md`, `request_pdfua_validate.md`, `request_flatten_transparency.md`, `request_convert_colours.md`, `request_ink_manager.md`, `request_hairline_fix.md`, and `note_pdfa_waiting.md`. Nothing is built in the shell until they land.
 
 The engine accepted the round as Passes 748.0 to 748.9 (`reply_O458_preflight_ACCEPTED.md`). It will release all of it together. A finding that targets page content is an index into `page_objects`, the same index `hit_test` returns, so a click in the panel selects the object.
+
+## O459 — **OPEN** — benchmark the page view drawn on the graphics card; it pauses and is slower than the processor
+
+*"Also need you to benchmark the GPU canvas rendering. The first version to include it caused a random pause when navigating and zooming on the canvas. The performance was actually worse than on the CPU."*
+
+Said on 2026-11-24, about Settings ▸ Display ▸ *Draw pages on the graphics card* (O451), first published in `v0.5.0-dev.20261120.2`.
+
+**What the code does, read before measuring.** Each time the view changes and a page is re-rendered, the worker packs the page for the card. The UI thread then uploads the whole packed texture, draws it tile by tile, waits for the card to finish each tile with a synchronous read-back, assembles the bytes and hands them to egui, which uploads them to the card a second time as the page's picture. All of that happens inside one frame, so the window freezes for as long as the draw takes, once per re-render. O451's own figure was 204 ms of that on the site plan for one render. A zoom gesture starts many re-renders. This is the most likely cause of the pause, and it is a measurement to make, not yet a finding.
+
+**What is asked.** A benchmark: the same navigate-and-zoom sequence on the same drawings, switch off and switch on, with the window's frame times (how long the UI thread was held), the number of frames over 50 ms, the longest frame, and the time from the last gesture to the finished page. Then the cause of the pause, and a fix or an engine request.
