@@ -8290,3 +8290,5 @@ Built: a press on any markup selects it with its group before the drag begins, s
 Said on 2026-11-23. No. The engine has separate checks (PDF/X claim, overprint use, fonts, path ends, ink coverage, image resolution) but no preflight. That means no rule profiles, no single run, no report pointing at each object, and no fixups. PDF/X and PDF/UA validation are missing too, as are flattening transparency, converting colours, an Ink Manager and fixing hairlines. PDF/A is planned by the engine (Pass 729).
 
 Filed, one topic each: `request_preflight_engine.md` (which carries the low-resolution rule), `request_pdfx_validate_convert.md`, `request_pdfua_validate.md`, `request_flatten_transparency.md`, `request_convert_colours.md`, `request_ink_manager.md`, `request_hairline_fix.md`, and `note_pdfa_waiting.md`. Nothing is built in the shell until they land.
+
+The engine accepted the round as Passes 748.0 to 748.9 (`reply_O458_preflight_ACCEPTED.md`). It will release all of it together. A finding that targets page content is an index into `page_objects`, the same index `hit_test` returns, so a click in the panel selects the object.
