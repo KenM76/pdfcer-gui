@@ -6,29 +6,66 @@
 //! with. Made once, on the first frame with a context; a shader the driver
 //! refuses retires the card for the session with the driver's words.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use eframe::glow;
-use native_mesh::scene::{SceneDrawer, SceneTexture};
+use native_mesh::scene::{SceneDrawer, SceneJob, SceneTexture, Step};
 use pdfcer_gui_base::rendercard::{self, CardDraw};
 
-/// The drawer and the context it was made on.
+fn texture(scene: &pdfcer_render::GpuScene) -> SceneTexture<'_> {
+    let data = &scene.data;
+    SceneTexture {
+        width: data.width,
+        height: data.height,
+        layers: data.layers,
+        texels: &data.texels,
+    }
+}
+
+/// The drawer, the context it was made on, and its jobs by number.
 struct GlCard {
     gl: Arc<glow::Context>,
     drawer: SceneDrawer,
+    jobs: HashMap<u64, SceneJob>,
+    next: u64,
 }
 
 impl CardDraw for GlCard {
-    fn draw(&mut self, scene: &pdfcer_render::GpuScene) -> Result<Vec<u8>, String> {
-        let data = &scene.data;
-        let texture = SceneTexture {
-            width: data.width,
-            height: data.height,
-            layers: data.layers,
-            texels: &data.texels,
+    fn begin(&mut self, scene: &pdfcer_render::GpuScene) -> Result<u64, String> {
+        let job = self
+            .drawer
+            .begin(&self.gl, texture(scene), [scene.width, scene.height])?;
+        self.next += 1;
+        self.jobs.insert(self.next, job);
+        Ok(self.next)
+    }
+
+    fn step(
+        &mut self,
+        id: u64,
+        scene: &pdfcer_render::GpuScene,
+    ) -> Result<Option<Vec<u8>>, String> {
+        let Some(job) = self.jobs.get_mut(&id) else {
+            return Err(format!("no job {id}")); // ui-text-exempt: driver-words slot
         };
-        self.drawer
-            .draw(&self.gl, texture, [scene.width, scene.height])
+        let stepped = self.drawer.step(&self.gl, job, texture(scene), false);
+        match stepped {
+            Ok(Step::Pending) => Ok(None),
+            done => {
+                self.abandon(id);
+                done.map(|step| match step {
+                    Step::Done(bytes) => Some(bytes),
+                    Step::Pending => None,
+                })
+            }
+        }
+    }
+
+    fn abandon(&mut self, id: u64) {
+        if let Some(job) = self.jobs.remove(&id) {
+            job.destroy(&self.gl);
+        }
     }
 }
 
@@ -52,6 +89,8 @@ pub fn keep(ctx: &egui::Context, gl: Option<&Arc<glow::Context>>) {
         Ok(drawer) => rendercard::install(Box::new(GlCard {
             gl: Arc::clone(gl),
             drawer,
+            jobs: HashMap::new(),
+            next: 0,
         })),
         Err(why) => rendercard::refuse(crate::text::status::card_failed(&why)),
     }

@@ -82,6 +82,7 @@ impl RenderWorker {
             key,
             generation,
             started: Instant::now(),
+            card: None,
         });
         true
     }
@@ -89,10 +90,28 @@ impl RenderWorker {
     /// Collect the background render if it has finished. Never blocks.
     pub fn poll_background(&self) -> Option<BackgroundResult> {
         let mut slot = self.background.0.borrow_mut();
-        let outcome = match slot.as_ref()?.rx.try_recv() {
-            Ok(outcome) => Some(super::land(outcome)),
-            Err(TryRecvError::Empty) => return None,
-            Err(TryRecvError::Disconnected) => None,
+        let flight = slot.as_mut()?;
+        let outcome = if let Some(job) = flight.card.as_mut() {
+            match crate::rendercard::step(job) {
+                crate::rendercard::Drawn::Pending => return None,
+                crate::rendercard::Drawn::Done(pixels) => Some(Outcome::Done(pixels)),
+                crate::rendercard::Drawn::Failed => Some(Outcome::Cancelled),
+            }
+        } else {
+            match flight.rx.try_recv() {
+                Ok(outcome) => match super::land(outcome) {
+                    super::Landed::Final(outcome) => Some(outcome),
+                    super::Landed::Drawing(job) => {
+                        if let Some(handle) = flight.handle.take() {
+                            let _ = handle.join();
+                        }
+                        flight.card = Some(job);
+                        return None;
+                    }
+                },
+                Err(TryRecvError::Empty) => return None,
+                Err(TryRecvError::Disconnected) => None,
+            }
         };
         let mut flight = slot.take()?;
         drop(slot);

@@ -8302,3 +8302,32 @@ Said on 2026-11-24, about Settings ▸ Display ▸ *Draw pages on the graphics c
 **What the code does, read before measuring.** Each time the view changes and a page is re-rendered, the worker packs the page for the card. The UI thread then uploads the whole packed texture, draws it tile by tile, waits for the card to finish each tile with a synchronous read-back, assembles the bytes and hands them to egui, which uploads them to the card a second time as the page's picture. All of that happens inside one frame, so the window freezes for as long as the draw takes, once per re-render. O451's own figure was 204 ms of that on the site plan for one render. A zoom gesture starts many re-renders. This is the most likely cause of the pause, and it is a measurement to make, not yet a finding.
 
 **What is asked.** A benchmark: the same navigate-and-zoom sequence on the same drawings, switch off and switch on, with the window's frame times (how long the UI thread was held), the number of frames over 50 ms, the longest frame, and the time from the last gesture to the finished page. Then the cause of the pause, and a fix or an engine request.
+
+**Measured** with the `ui-verify` check `navigating_on_the_graphics_card_never_holds_the_window_longer_than_the_processor`: two rounds of four Ctrl+wheel notches in, four scrolls, in, scrolls, out, out, switch off then on, off the desktop.
+
+| drawing | build | longest frame, off | longest frame, on | last picture, off | last picture, on |
+|---|---|---|---|---|---|
+| A1 title block | before | 0 ms | 450 ms | — | — |
+| A1 title block | after | 0 ms | 67 ms | 151 ms | 144 ms |
+| dense site plan | before | 130 ms | 1,081 ms | — | — |
+| dense site plan | after | 0–109 ms | 212–340 ms | 1,734 ms | 2,413 ms |
+
+**Cause of the pause, and the fix.** It was the whole card draw running in one frame: a 134 MB scene upload in one call (197 ms on its own) and a blocking read-back. The card now uploads 8 MB a frame, draws in fenced slices with two queued, and reads back through a pixel-pack buffer. The window keeps the old picture until the new one lands, and a superseded zoom is dropped. The picture is still identical to the processor's: `the_graphics_card_draws_the_page_the_processor_draws`, 0 of 399,312 pixels differ.
+
+**What is left is the engine's.**
+- The remaining site-plan holds are the UI thread waiting for a cancelled worker that is inside `DisplayList::gpu_scene`, which takes no cancel token. Traced joins of 212–310 ms on the card, against at most 82 ms on the processor. Filed `request_gpu_scene_cancel.md`.
+- On that drawing the card is also slower end to end: a first picture in 2,769 ms against 1,465 ms. Recording takes 1.1 s, packing 0.3 s and the card's draw 1.3 s. Filed `request_gpu_card_slower_than_cpu.md`.
+
+Until both land, the processor is the faster choice on dense drawings. The GUI does not switch the card off on its own.
+
+## O460 — **OPEN** — the print preview's plates: no freeze, faster, a still arrow, a typed page, a cache
+
+*"In print preview with colour separations and show plates enabled when the preview is being rendered it freezes up the navigation controls. also it is very slow to render on some of the ghent test x4 pdf pages. Also the position of the plate right arrow button moves when clicked to other preview plates - it should be placed so that doesn't happen. also I should be able to type a page number to jump to it on the preview page. Also it should try and cache these preview images so switching back and forth between pages doesn't cause the plate previews to have to be rendered again if they already were."*
+
+Said on 2026-11-24, about File ▸ Print ▸ preview with colour separations and *Show plates* on.
+
+1. **No freeze.** While the plates render, the page and plate navigation keeps answering.
+2. **Speed.** Some Ghent Output Suite X4 pages render very slowly. Measure them, and fix the cause or file an engine request.
+3. **A still arrow.** The next-plate (right) arrow stays where it is as the plate name beside it changes.
+4. **A typed page.** A page number can be typed in the preview to jump to that page.
+5. **A cache.** A page's plates already rendered are kept, so going back to that page does not render them again.

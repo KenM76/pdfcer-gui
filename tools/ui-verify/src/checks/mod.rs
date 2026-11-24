@@ -18,6 +18,7 @@ pub mod blend_space;
 /// View ▸ Display ▸ Highlight fields tints every fillable field, canvas only.
 pub mod button_looks;
 pub mod calibrated_cmyk_setting;
+pub mod card_navigation;
 pub mod card_pages;
 pub mod centre_line;
 pub mod centre_mark;

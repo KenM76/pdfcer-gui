@@ -74,14 +74,22 @@ fn notdef_of(outcome: &Outcome) -> i64 {
     }
 }
 
-/// A page packed for the card drawn here, on the UI thread, as each result is
-/// received; every other outcome as it came. A failed draw retires the card
-/// and lands as `Cancelled`, so the canvas asks again and the processor draws.
-fn land(outcome: Outcome) -> Outcome {
+/// A received outcome on the UI thread: final, or a page packed for the card
+/// that is now uploaded and is stepped once a frame by [`RenderWorker::poll`].
+/// A failed upload retires the card and lands as `Cancelled`, so the canvas
+/// asks again and the processor draws.
+enum Landed {
+    Final(Outcome),
+    Drawing(Box<crate::rendercard::CardJob>),
+}
+
+fn land(outcome: Outcome) -> Landed {
     match outcome {
-        Outcome::Scene(packed) => crate::rendercard::draw(*packed)
-            .map_or(Outcome::Cancelled, |pixels| Outcome::Done(Box::new(pixels))),
-        other => other,
+        Outcome::Scene(packed) => crate::rendercard::begin(*packed)
+            .map_or(Landed::Final(Outcome::Cancelled), |job| {
+                Landed::Drawing(Box::new(job))
+            }),
+        other => Landed::Final(other),
     }
 }
 
@@ -213,6 +221,8 @@ struct InFlight {
     key: RenderKey,
     generation: u64,
     started: Instant,
+    /// The page on the card, once the worker's scene has been uploaded.
+    card: Option<Box<crate::rendercard::CardJob>>,
 }
 
 /// Owns at most one in-flight rasterization.
@@ -438,10 +448,24 @@ impl RenderWorker {
         // The bounded in-frame wait. See IN_FRAME_BUDGET.
         match rx.recv_timeout(IN_FRAME_BUDGET) {
             Ok(outcome) => {
-                let outcome = land(outcome);
                 // Finished inside the budget: join immediately so no
                 // thread outlives the call, and return inline.
                 let _ = handle.join();
+                let outcome = match land(outcome) {
+                    Landed::Final(outcome) => outcome,
+                    Landed::Drawing(job) => {
+                        self.in_flight = Some(InFlight {
+                            rx,
+                            cancel,
+                            handle: None,
+                            key,
+                            generation,
+                            started,
+                            card: Some(job),
+                        });
+                        return None;
+                    }
+                };
                 let elapsed_ms = started.elapsed().as_millis();
                 let notdef = notdef_of(&outcome);
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -467,6 +491,7 @@ impl RenderWorker {
                     key,
                     generation,
                     started,
+                    card: None,
                 });
                 None
             }
@@ -486,38 +511,25 @@ impl RenderWorker {
     /// is still going — the shell's action is the same either way.
     pub fn poll(&mut self) -> Option<RenderOutcome> {
         let flight = self.in_flight.as_mut()?;
+        if let Some(job) = flight.card.as_mut() {
+            let outcome = match crate::rendercard::step(job) {
+                crate::rendercard::Drawn::Pending => return None,
+                crate::rendercard::Drawn::Done(pixels) => Outcome::Done(pixels),
+                crate::rendercard::Drawn::Failed => Outcome::Cancelled,
+            };
+            return self.finish_flight(outcome);
+        }
         match flight.rx.try_recv() {
-            Ok(outcome) => {
-                let outcome = land(outcome);
-                let mut flight = self.in_flight.take()?;
-                if let Some(handle) = flight.handle.take() {
-                    let _ = handle.join();
+            Ok(outcome) => match land(outcome) {
+                Landed::Final(outcome) => self.finish_flight(outcome),
+                Landed::Drawing(job) => {
+                    if let Some(handle) = flight.handle.take() {
+                        let _ = handle.join();
+                    }
+                    flight.card = Some(job);
+                    None
                 }
-                let elapsed_ms = flight.started.elapsed().as_millis();
-                let generation = flight.generation;
-                let kind = match &outcome {
-                    Outcome::Done(_) => "done",
-                    Outcome::Cancelled => "cancelled",
-                    Outcome::Failed(_) | Outcome::Scene(_) => "failed",
-                };
-                // How much ink the raster actually carries. See
-                // [`sampled_tone_count`] for why this is on the line at all;
-                // `-1` means "not applicable", i.e. there is no pixmap because
-                // the render was cancelled or failed.
-                let ink = match &outcome {
-                    Outcome::Done(pixels) => i32::from(ink::sampled_tone_count(&pixels.pixmap)),
-                    Outcome::Cancelled | Outcome::Failed(_) | Outcome::Scene(_) => -1,
-                };
-                let notdef = notdef_of(&outcome);
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                crate::diag::trace(|| {
-                    format!(
-                        "render-async-done gen={generation} ms={elapsed_ms} outcome={kind} \
-                         ink={ink} notdef={notdef}"
-                    )
-                });
-                Self::outcome_to_result(outcome)
-            }
+            },
             Err(std::sync::mpsc::TryRecvError::Empty) => None,
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 let mut flight = self.in_flight.take()?;
@@ -527,6 +539,38 @@ impl RenderWorker {
                 Some(Err(RenderRefusal::other(RefusalReason::WorkerStopped)))
             }
         }
+    }
+
+    /// End the flight with `outcome` and trace it.
+    fn finish_flight(&mut self, outcome: Outcome) -> Option<RenderOutcome> {
+        let mut flight = self.in_flight.take()?;
+        if let Some(handle) = flight.handle.take() {
+            let _ = handle.join();
+        }
+        let elapsed_ms = flight.started.elapsed().as_millis();
+        let generation = flight.generation;
+        let kind = match &outcome {
+            Outcome::Done(_) => "done",
+            Outcome::Cancelled => "cancelled",
+            Outcome::Failed(_) | Outcome::Scene(_) => "failed",
+        };
+        // How much ink the raster actually carries. See
+        // [`sampled_tone_count`] for why this is on the line at all;
+        // `-1` means "not applicable", i.e. there is no pixmap because
+        // the render was cancelled or failed.
+        let ink = match &outcome {
+            Outcome::Done(pixels) => i32::from(ink::sampled_tone_count(&pixels.pixmap)),
+            Outcome::Cancelled | Outcome::Failed(_) | Outcome::Scene(_) => -1,
+        };
+        let notdef = notdef_of(&outcome);
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        crate::diag::trace(|| {
+            format!(
+                "render-async-done gen={generation} ms={elapsed_ms} outcome={kind} \
+                 ink={ink} notdef={notdef}"
+            )
+        });
+        Self::outcome_to_result(outcome)
     }
 
     /// How long the current render has been outstanding, if any.
@@ -569,7 +613,11 @@ impl RenderWorker {
             // Join rather than detach: the whole point is that the
             // session's other reference is gone when this returns. A
             // detached thread might still be holding it.
+            let started = Instant::now();
             let _ = handle.join();
+            let ms = started.elapsed().as_millis();
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            crate::diag::trace(|| format!("render-cancel-join ms={ms}"));
         }
     }
 
