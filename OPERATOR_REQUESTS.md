@@ -8282,3 +8282,11 @@ Waiting on the engine: `request_page_length_from_scaled_length.md` asks for the 
 Said on 2026-11-21, same message as O453. Grouped items move together when one of them is dragged.
 
 Built: a press on any markup selects it with its group before the drag begins, so a drag that starts on an unselected member moves every member, as one undo step. Before, that press started a box-select and nothing moved. Driven by `a_group_drags_as_one`. Page-object groups already moved whole.
+
+## O458 — **OPEN** — preflight to match Acrobat's
+
+*"Do we have everything built that we need to make match the features of Acrobat pre-flight?"* Then: *"Send the requests for pdfcer to do the preflight work."*
+
+Said on 2026-11-23. No. The engine has separate checks (PDF/X claim, overprint use, fonts, path ends, ink coverage, image resolution) but no preflight. That means no rule profiles, no single run, no report pointing at each object, and no fixups. PDF/X and PDF/UA validation are missing too, as are flattening transparency, converting colours, an Ink Manager and fixing hairlines. PDF/A is planned by the engine (Pass 729).
+
+Filed, one topic each: `request_preflight_engine.md` (which carries the low-resolution rule), `request_pdfx_validate_convert.md`, `request_pdfua_validate.md`, `request_flatten_transparency.md`, `request_convert_colours.md`, `request_ink_manager.md`, `request_hairline_fix.md`, and `note_pdfa_waiting.md`. Nothing is built in the shell until they land.

@@ -971,6 +971,17 @@ authoring is not among them: `EditSession::add_text_annotation` with
 - **G202** — `resize_annotation` and `rotate_annotation` take one id, so a grip or rotate drag over N markups is N commands. Consumed: `app::actions::annots::many` makes one `resize_annotations` / `rotate_annotations` call. Closed.
 - **G203** — `edit_block_text` on a recognised paragraph repacks each line with single word gaps from its origin, moving OCR words off their scan words (about 34 pt on `ocr-layer.pdf` with the text unchanged), folds the layer's stream into the first, and takes in hidden text from another stream. Consumed: `promote::recognised::widen` opens the paragraph from `recognised_block_at_point`; `blocktext::commit_recognised` commits through `edit_recognised_block_text`. Enter in it stays declined (the word diff carries no line break). Closed.
 
+## Filed requests for preflight (O458) — not verdict rows
+
+- **Preflight engine** — rule profiles, `preflight::run`, findings that name the object, and `apply_fixup`. The low-resolution image rule builds on `space_audit`'s `effective_ppi`. **wanted**.
+- **PDF/X** — `validate_pdfx` and `convert_to_pdfx`. Only the claim is read today (`prepress::pdfx_claim`). **wanted**.
+- **PDF/UA** — `validate_pdfua` and its mechanical fixups. Only the claim is read today (`declared_pdfua_part`). **wanted**.
+- **Flatten transparency** — an `EditSession` verb over `pdfcer-flatten`, which only `pdfcer-emf` calls. **wanted**.
+- **Convert colours** — `EditSession::convert_colours` to an ICC profile or the output intent. Only rendered sheets are converted today. **wanted**.
+- **Ink Manager** — `inks`, `alias_ink` and `spot_to_process`. **wanted**.
+- **Hairlines** — `hairlines` measured after the CTM, and `fix_hairlines`. **wanted**.
+- **PDF/A** — already planned as Pass 729 (`validate_pdfa`, `convert_to_pdfa`); `note_pdfa_waiting.md` asks that it share the preflight `Finding` shape.
+
 ## Snapshot box
 
 The request O272's vector copy waits on.
