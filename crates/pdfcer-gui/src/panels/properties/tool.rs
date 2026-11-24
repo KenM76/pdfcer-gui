@@ -32,6 +32,10 @@ pub const REGION_SCALE_DISTORT: &str = "properties.tool.scale.distort"; // ui-te
 pub const REGION_MEASURE_POINTS: &str = "properties.tool.measure_points"; // ui-text-exempt: trace region name, never displayed
 /// The prefix of one picked point's row; its index in the set is appended.
 pub const REGION_MEASURE_POINT_PREFIX: &str = "properties.tool.measure_point."; // ui-text-exempt: trace region name, never displayed
+/// The circular tool's *Add measurement* switch.
+pub const REGION_CIRCULAR_MEASUREMENT: &str = "properties.tool.circular_measurement"; // ui-text-exempt: trace region name, never displayed
+/// The circular tool's *Add centre mark* switch.
+pub const REGION_CIRCULAR_MARK: &str = "properties.tool.circular_centre_mark"; // ui-text-exempt: trace region name, never displayed
 
 /// Which block of controls an armed tool brings with it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -157,6 +161,7 @@ fn section_in(ui: &mut Ui, slot: Slot, doc: &OpenDoc, actions: &mut Vec<Action>)
         // row above its pick list.
         (Block::MeasurePoints, _) => {
             super::tooldim::section(ui, doc, MeasureKind::Circular, actions);
+            circular_outputs(ui, &ctx);
             measure_points(ui, &ctx);
         }
         (Block::DimensionTool, CanvasTool::Measure(kind)) => {
@@ -238,6 +243,32 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
         });
         pen::store(ctx, current);
     }
+}
+
+/// The radius/diameter tool's two switches — `OPERATOR_REQUESTS.md` **O454**:
+/// the measurement, the centre mark, or both.
+fn circular_outputs(ui: &mut Ui, ctx: &egui::Context) {
+    let mut outputs = crate::canvas::measure::circular::outputs(ctx);
+    let measurement = ui
+        .checkbox(&mut outputs.measurement, t::circular_add_measurement())
+        .on_hover_text(t::circular_add_measurement_hint());
+    crate::diag::ui_rect_visible(
+        REGION_CIRCULAR_MEASUREMENT,
+        measurement.rect,
+        ui.clip_rect(),
+    );
+    let mark = ui
+        .checkbox(&mut outputs.centre_mark, t::circular_add_centre_mark())
+        .on_hover_text(t::circular_add_centre_mark_hint());
+    crate::diag::ui_rect_visible(REGION_CIRCULAR_MARK, mark.rect, ui.clip_rect());
+    if !outputs.any() {
+        ui.label(
+            egui::RichText::new(t::circular_adds_nothing())
+                .small()
+                .weak(),
+        );
+    }
+    crate::canvas::measure::circular::set_outputs(ctx, outputs);
 }
 
 /// The radius/diameter tool's pick set, listed and removable —

@@ -6,6 +6,7 @@
 use egui::Context;
 
 use crate::app::PdfcerApp;
+use crate::app::actions::Action;
 
 /// The ids this module owns.
 #[must_use]
@@ -17,7 +18,7 @@ pub(super) fn handles(id: &str) -> bool {
 }
 
 /// Dispatch one `measure.*` command.
-pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str) {
+pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &mut Vec<Action>) {
     match id {
         // **Set scale — recalibrate the group a dimension is measured in.**
         //
@@ -107,7 +108,7 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str) {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!("command-declined id={id} reason=mode-cannot-author-measure")
                 });
-            } else if !crate::canvas::measure::finish(ctx) {
+            } else if !crate::canvas::measure::finish(ctx, actions) {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //

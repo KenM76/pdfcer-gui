@@ -48,6 +48,17 @@ were written, diverge at the first change to either, and **the operator
 would have no way to see it** — a circle fitted from the same points looks
 the same whichever code drew it.
 
+**The centre mark alone is the exception, and it commits at the ending.**
+The tool's two switches (`outputs` / `set_outputs`, stored on the state so
+they outlive the pick set) choose what `CircularPick::author` returns: a
+`Circular` with or without a `CentreMarkSpec`, or a bare `CentreMark`. A
+`CentreMark` has no label, so there is nothing for a placing click to place;
+`commit_unlabelled` pushes its `DimensionAction::Commit` from both endings
+straight after `complete`, which is why `finish` and `double_click` take the
+action queue. The trace line `measure-circular-outputs measurement=… centre_mark=…`
+records each change of the switches, and `dimension-added … shape=` names
+what was committed (`circular`, `circular+mark`, `centre-mark`).
+
 Neither ending is an accept box floating over the canvas, which is what
 decision 024 retired at the operator's instruction and what kept this tool
 unarmed through Phase 7.

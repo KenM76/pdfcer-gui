@@ -28,7 +28,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/measure/circpick.md`.
 
-use pdfcer_core::dimension::{DimensionKind, FitCircle, fit_circle_taubin};
+use pdfcer_core::dimension::{CentreMarkSpec, DimensionKind, FitCircle, fit_circle_taubin};
 use pdfcer_core::vector::Point;
 use pdfcer_core::vector::snap::SnapKind;
 
@@ -53,6 +53,34 @@ pub struct CircPoint {
     pub origin: PickOrigin,
 }
 
+/// What the radius/diameter tool authors from a fit: the operator's two
+/// switches, *Add measurement* and *Add centre mark*.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CircularOutputs {
+    /// Author the radius or diameter ce dimension.
+    pub measurement: bool,
+    /// Draw a centre mark at the fitted centre.
+    pub centre_mark: bool,
+}
+
+impl Default for CircularOutputs {
+    /// The measurement alone: what the tool did before it had a mark.
+    fn default() -> Self {
+        Self {
+            measurement: true,
+            centre_mark: false,
+        }
+    }
+}
+
+impl CircularOutputs {
+    /// Whether at least one switch is on, so a fit has something to author.
+    #[must_use]
+    pub const fn any(self) -> bool {
+        self.measurement || self.centre_mark
+    }
+}
+
 /// **The radius/diameter tool's own pick set — a list of POINTS.**
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct CircularPick {
@@ -61,6 +89,8 @@ pub struct CircularPick {
     /// Display toggle: `true` ⇒ show the diameter, `false` ⇒ the radius
     /// (ui-spec §3.4). Purely a display choice on the same [`FitCircle`].
     pub show_diameter: bool,
+    /// What a fit authors. Kept by [`Self::clear`]: it is a tool setting.
+    pub outputs: CircularOutputs,
 }
 
 impl CircularPick {
@@ -120,19 +150,28 @@ impl CircularPick {
         fit_circle_taubin(&self.samples())
     }
 
-    /// The [`DimensionKind::Circular`] this set authors on Finish, or `None`
-    /// when the fit is degenerate — Finish is then not offered, because an
-    /// inference pdfcer cannot make is not made on the operator's behalf.
-    /// `show_diameter` is the display toggle only.
+    /// The ce dimension this set authors on Finish, or `None` when the fit is
+    /// degenerate or both [`CircularOutputs`] switches are off — Finish is
+    /// then not offered, because an inference pdfcer cannot make is not made
+    /// on the operator's behalf.
+    ///
+    /// The measurement is a [`DimensionKind::Circular`], carrying the mark
+    /// when it is asked for; the mark alone is a [`DimensionKind::CentreMark`],
+    /// which has no label to place. `show_diameter` is the display toggle only.
     #[must_use]
     pub fn author(&self) -> Option<DimensionKind> {
-        self.fit().map(|fit| DimensionKind::Circular {
-            fit,
-            show_diameter: self.show_diameter,
-            leader_angle: 0.0,
-            text_distance: None,
-            centre_mark: None,
-        })
+        let fit = self.fit()?;
+        let mark = self.outputs.centre_mark.then(CentreMarkSpec::default);
+        if self.outputs.measurement {
+            return Some(DimensionKind::Circular {
+                fit,
+                show_diameter: self.show_diameter,
+                leader_angle: 0.0,
+                text_distance: None,
+                centre_mark: mark,
+            });
+        }
+        mark.map(|mark| DimensionKind::CentreMark { fit, mark })
     }
 
     /// Discard the whole set (Escape stage 1, ui-spec §1.3): stay in the tool,
@@ -252,6 +291,39 @@ mod tests {
             }
         ));
         assert_eq!(dia.measured_points(), 2.0);
+    }
+
+    #[test]
+    fn the_two_switches_choose_what_a_fit_authors() {
+        let mut pick = CircularPick::new();
+        for (x, y) in [(10.0, 0.0), (0.0, 10.0), (-10.0, 0.0)] {
+            pick.toggle_point(p(x, y), PickOrigin::Free, 0.5);
+        }
+        let both = CircularOutputs {
+            measurement: true,
+            centre_mark: true,
+        };
+        pick.outputs = both;
+        assert!(matches!(
+            pick.author(),
+            Some(DimensionKind::Circular {
+                centre_mark: Some(_),
+                ..
+            })
+        ));
+        pick.outputs.measurement = false;
+        assert!(matches!(
+            pick.author(),
+            Some(DimensionKind::CentreMark { .. })
+        ));
+        pick.outputs.centre_mark = false;
+        assert!(
+            pick.author().is_none(),
+            "nothing asked for is nothing authored"
+        );
+        pick.outputs = both;
+        pick.clear();
+        assert_eq!(pick.outputs, both, "clearing the picks keeps the switches");
     }
 
     #[test]

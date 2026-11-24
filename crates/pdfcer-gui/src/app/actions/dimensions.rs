@@ -121,6 +121,22 @@ fn fraction_key(fraction: pdfcer_core::dimension::FractionMode) -> String {
     }
 }
 
+/// The trace's word for what a commit draws: `circular+mark` and
+/// `centre-mark` tell the circular tool's two switches apart.
+fn shape_token(kind: &pdfcer_core::dimension::DimensionKind) -> &'static str {
+    use pdfcer_core::dimension::DimensionKind as K;
+    match kind {
+        K::Circular {
+            centre_mark: Some(_),
+            ..
+        } => "circular+mark",
+        K::Circular { .. } => "circular",
+        K::CentreMark { .. } => "centre-mark",
+        K::CentreLine { .. } => "centre-line",
+        _ => "-",
+    }
+}
+
 /// Apply one ce-dimension verb to the open document.
 pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
     if action.regenerates_the_whole_group() {
@@ -142,6 +158,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                 }
                 _ => "-",
             };
+            let shape = shape_token(&kind);
             super::apply::vector_edit(doc, "add-dimension", page, 1, |session| {
                 // The gesture's disclosures are returned as the edit's, which
                 // is what puts them on the status bar stamped with the epoch
@@ -150,7 +167,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed
                         format!(
-                            "dimension-added dim={} annot={}_{} group={} constraint={constraint}",
+                            "dimension-added dim={} annot={}_{} group={} constraint={constraint} shape={shape}",
                             dim.0, annot.num, annot.generation, group.0
                         )
                     });

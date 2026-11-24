@@ -20,6 +20,7 @@ pub mod button_looks;
 pub mod calibrated_cmyk_setting;
 pub mod card_pages;
 pub mod centre_line;
+pub mod centre_mark;
 pub mod export_keep_text;
 /// The in-place field editor sets text in the field's own layout.
 pub mod field_carets;

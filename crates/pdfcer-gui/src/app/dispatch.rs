@@ -886,7 +886,7 @@ impl PdfcerApp {
             id if textformat::handles(id) => textformat::dispatch(self, ctx, id, actions),
             id if format::handles(id) => format::dispatch(self, ctx, id, actions),
             id if measure::handles(id) => {
-                measure::dispatch(self, ctx, id);
+                measure::dispatch(self, ctx, id, actions);
             }
             // **The three text-markup commands — one arm for all three.**
             //

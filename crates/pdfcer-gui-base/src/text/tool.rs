@@ -252,6 +252,36 @@ pub const fn measure_points_heading() -> &'static str {
     "Points in this measurement"
 }
 
+/// The circular tool's switch for the radius or diameter ce dimension.
+#[must_use]
+pub const fn circular_add_measurement() -> &'static str {
+    "Add measurement"
+}
+
+/// Its hover: what the switch does.
+#[must_use]
+pub const fn circular_add_measurement_hint() -> &'static str {
+    "Label the circle with its radius or diameter."
+}
+
+/// The circular tool's switch for a centre mark at the fitted centre.
+#[must_use]
+pub const fn circular_add_centre_mark() -> &'static str {
+    "Add centre mark"
+}
+
+/// Its hover: what the switch does, and that the mark alone needs no placing.
+#[must_use]
+pub const fn circular_add_centre_mark_hint() -> &'static str {
+    "Draw a cross at the circle's centre. With the measurement off, Finish draws the mark at once."
+}
+
+/// Shown when both switches are off, so nothing can be finished.
+#[must_use]
+pub const fn circular_adds_nothing() -> &'static str {
+    "Tick at least one to finish."
+}
+
 /// One row in that list: its position in the set, where it came from, and where
 /// it is.
 #[must_use]

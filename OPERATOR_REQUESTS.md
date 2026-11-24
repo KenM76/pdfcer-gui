@@ -8257,13 +8257,15 @@ Built: Measure ▸ Centre line. Click two lines and the centre line is drawn at 
 
 Said on 2026-11-21, same message as O453. On a circle or arc: a centre mark with the diameter ce dimension, the ce dimension alone, or the centre mark alone. He suggests one tool with two checkboxes, *Add measurement* and *Add centre mark*.
 
+Built: Measure ▸ Radius/diameter carries both switches in its Properties panel, on by default for the measurement only. Both ticked draws the radius or diameter with a centre mark; *Add centre mark* alone draws the mark the moment the circle is finished, with no placing click; with neither ticked nothing can be finished and the panel says so. The switches stay set between uses. Driven by `a_circle_gets_a_centre_mark_with_or_without_its_measurement`.
+
 ## O455 — **OPEN** — ce dimensions taken from centre marks and from any object, markups included
 
 *"Also need to be able to take dimensions off center marks and any object including markups."*
 
 Said on 2026-11-21, same message as O453. The dimension tools snap to and measure from a centre mark, and from any object on the page, markups included, not only page paths.
 
-Built, in part: the measure tools and the endpoint and node drags snap to every kind of object on the page — paths, placed images, text runs, form fields, ce dimensions, stamps, notes, links and markups — and not to anything on a hidden layer. Driven by `measure_tool_snaps_to_a_markup` and `measure_tool_snaps_to_an_image`. Centre marks become targets with the centre-mark tool (O454), which is being built.
+Built, in part: the measure tools and the endpoint and node drags snap to every kind of object on the page — paths, placed images, text runs, form fields, ce dimensions, stamps, notes, links and markups — and not to anything on a hidden layer. Driven by `measure_tool_snaps_to_a_markup` and `measure_tool_snaps_to_an_image`. Centre marks are snap targets too: the marks the radius/diameter tool draws (O454).
 
 ## O456 — **OPEN** — markups and all objects sized in the dimension group's scale
 

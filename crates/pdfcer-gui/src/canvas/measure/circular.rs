@@ -5,8 +5,11 @@
 
 use pdfcer_core::vector::snap::SnapKind;
 
+use super::circpick::CircularOutputs;
 use super::pick::PickOrigin;
 use super::{MeasureKind, MeasureState, read, store};
+use crate::app::actions::Action;
+use crate::app::actions::dimensions::DimensionAction;
 use pdfcer_gui_base::measure::place::Placing;
 
 /// **The circular pick set that is ready to become a dimension**, or `None`.
@@ -23,6 +26,47 @@ fn pending(ctx: &egui::Context) -> Option<MeasureState> {
 #[must_use]
 pub fn finishable(ctx: &egui::Context) -> bool {
     pending(ctx).is_some()
+}
+
+/// What the tool's two switches are set to, or their defaults before the
+/// tool has been used.
+#[must_use]
+pub fn outputs(ctx: &egui::Context) -> CircularOutputs {
+    read(ctx).map(|st| st.circular.outputs).unwrap_or_default()
+}
+
+/// Set the tool's two switches. They outlive the pick set and a tool switch.
+pub fn set_outputs(ctx: &egui::Context, outputs: CircularOutputs) {
+    let mut st = read(ctx).unwrap_or_else(|| MeasureState::new(0));
+    if st.circular.outputs == outputs {
+        return;
+    }
+    st.circular.outputs = outputs;
+    store(ctx, st);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "measure-circular-outputs measurement={} centre_mark={}",
+            u8::from(outputs.measurement),
+            u8::from(outputs.centre_mark)
+        )
+    });
+}
+
+/// A completed set whose ce dimension has no label — the centre mark alone —
+/// is committed now, since there is nothing for a placing click to place.
+/// Returns whether it committed.
+fn commit_unlabelled(st: &mut MeasureState, actions: &mut Vec<Action>) -> bool {
+    let Some(placing) = st.placing.take_if(|p| p.kind.is_centre_geometry()) else {
+        return false;
+    };
+    actions.push(Action::Dimension(DimensionAction::Commit {
+        page: st.page_index,
+        group: st.group,
+        kind: placing.kind,
+        disclosures: placing.disclosures,
+    }));
+    true
 }
 
 /// **End the gesture: hand the fitted circle to the placing click and empty
@@ -42,7 +86,7 @@ pub(super) fn complete(st: &mut MeasureState) -> bool {
 
 /// **The `measure.finish` command's whole effect**, reporting whether it did
 /// anything.
-pub fn finish(ctx: &egui::Context) -> bool {
+pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
     let Some(mut st) = pending(ctx) else {
         return false;
     };
@@ -50,6 +94,7 @@ pub fn finish(ctx: &egui::Context) -> bool {
     if !complete(&mut st) {
         return false;
     }
+    commit_unlabelled(&mut st, actions);
     store(ctx, st);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
@@ -63,7 +108,7 @@ pub fn finish(ctx: &egui::Context) -> bool {
 }
 
 /// **End the gesture on a double-click.**
-pub(super) fn double_click(st: &mut MeasureState, page_index: usize) {
+pub(super) fn double_click(st: &mut MeasureState, page_index: usize, actions: &mut Vec<Action>) {
     if !complete(st) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -71,6 +116,7 @@ pub(super) fn double_click(st: &mut MeasureState, page_index: usize) {
         });
         return;
     }
+    commit_unlabelled(st, actions);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!("measure-finish via=double-click page={page_index}")
@@ -308,7 +354,7 @@ mod tests {
         for at in samples_on_a_circle() {
             by_click.circular.toggle_point(at, NODE, 0.0);
         }
-        double_click(&mut by_click, 2);
+        double_click(&mut by_click, 2, &mut Vec::new());
 
         // Ending 2: the ribbon command, through `egui::Memory`.
         let ctx = egui::Context::default();
@@ -318,7 +364,7 @@ mod tests {
             by_command.circular.toggle_point(at, NODE, 0.0);
         }
         store(&ctx, by_command);
-        assert!(finish(&ctx), "the command finishes");
+        assert!(finish(&ctx, &mut Vec::new()), "the command finishes");
         let by_command = read(&ctx).unwrap_or_else(|| panic!("the state is kept"));
 
         assert_eq!(
@@ -372,7 +418,7 @@ mod tests {
         );
 
         // …and the double-click reaches the same refusal rather than its own.
-        double_click(&mut st, 0);
+        double_click(&mut st, 0, &mut Vec::new());
         assert!(st.placing.is_none());
         assert!(st.circular.in_progress());
     }
@@ -402,7 +448,7 @@ mod tests {
             "a set nothing is marking must not keep offering Finish"
         );
         assert!(
-            !finish(&ctx),
+            !finish(&ctx, &mut Vec::new()),
             "…and the command refuses it too, by the same predicate"
         );
 

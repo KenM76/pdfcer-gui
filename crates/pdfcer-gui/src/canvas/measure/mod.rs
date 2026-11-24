@@ -205,9 +205,9 @@ pub fn finishable(ctx: &egui::Context) -> bool {
 
 /// **The `measure.finish` command's whole effect**, reporting whether it did
 /// anything.
-pub fn finish(ctx: &egui::Context) -> bool {
+pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
     match crate::canvas::tool::selected(ctx).measure_kind() {
-        Some(MeasureKind::Circular) => finish_circular(ctx),
+        Some(MeasureKind::Circular) => finish_circular(ctx, actions),
         Some(MeasureKind::Perimeter | MeasureKind::PathLength | MeasureKind::Area) => {
             let Some(mut st) = read(ctx) else {
                 return false;
@@ -450,7 +450,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
     // asking where a click landed in order to throw the answer away.
     if kind == MeasureKind::Circular && double {
         let before = actions.len();
-        circular::double_click(&mut st, page_index);
+        circular::double_click(&mut st, page_index, actions);
         trace_pick(kind, &st, actions.len() > before);
         store(ctx, st);
         return;
