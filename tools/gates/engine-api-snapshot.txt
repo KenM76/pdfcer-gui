@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 4b0e07aa905268840453a7115024a99321932c4a
+# baseline: 532056807ca84786031e7933e004aca9065d7c00
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12709
+# items: 12711
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -8276,6 +8276,8 @@ pdfcer-core variant pdfcer_core::dimension::group::DimStandard::Iso
 pdfcer-core variant pdfcer_core::dimension::group::DimensionEnd::A
 pdfcer-core variant pdfcer_core::dimension::group::DimensionEnd::B
 pdfcer-core variant pdfcer_core::dimension::group::DimensionKind::Angular
+pdfcer-core variant pdfcer_core::dimension::group::DimensionKind::CentreLine
+pdfcer-core variant pdfcer_core::dimension::group::DimensionKind::CentreMark
 pdfcer-core variant pdfcer_core::dimension::group::DimensionKind::Circular
 pdfcer-core variant pdfcer_core::dimension::group::DimensionKind::Linear
 pdfcer-core variant pdfcer_core::dimension::group::DimensionKind::Perimeter

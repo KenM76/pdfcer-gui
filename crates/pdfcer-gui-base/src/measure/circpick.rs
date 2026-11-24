@@ -131,6 +131,7 @@ impl CircularPick {
             show_diameter: self.show_diameter,
             leader_angle: 0.0,
             text_distance: None,
+            centre_mark: None,
         })
     }
 
@@ -236,6 +237,7 @@ mod tests {
                 show_diameter: false,
                 leader_angle: 0.0,
                 text_distance: None,
+                centre_mark: None,
             }
         );
         assert_eq!(kind.measured_points(), 1.0);
@@ -284,6 +286,7 @@ mod tests {
             show_diameter: true,
             leader_angle: 0.0,
             text_distance: None,
+            centre_mark: None,
         };
 
         assert_eq!(gui_kind, cli_kind);

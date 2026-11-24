@@ -1,12 +1,12 @@
-//! # `dimensionoverrides` — thirteen properties, thirteen
+//! # `dimensionoverrides` — fourteen properties, fourteen
 //! checkboxes, and the tier each value came from
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/dimensionoverrides.md`.
 
 use egui::Ui;
 use pdfcer_core::dimension::{
-    ArrowForm, DecimalMarker, DimDash, DimStandard, FractionMode, Group, StyleOverrides,
-    StyleProvenance, StyleSource, Unit, resolve_style,
+    ArrowForm, CentreMarkSize, DecimalMarker, DimDash, DimStandard, FractionMode, Group,
+    StyleOverrides, StyleProvenance, StyleSource, Unit, resolve_style,
 };
 
 use crate::text::panels::dimension as t;
@@ -33,10 +33,14 @@ const LINE_WIDTH_RANGE: std::ops::RangeInclusive<f64> = 0.05..=6.0;
 const ARROW_LENGTH_RANGE: std::ops::RangeInclusive<f64> = 1.0..=30.0;
 /// The decimal-places range, matching the engine's own `/D = 10^places`.
 const PLACES_RANGE: std::ops::RangeInclusive<u32> = 0..=6;
+/// A centre mark's arm as a multiple of the text height, and as points.
+const MARK_MULTIPLE_RANGE: std::ops::RangeInclusive<f64> = 0.1..=4.0;
+/// See [`MARK_MULTIPLE_RANGE`].
+const MARK_POINTS_RANGE: std::ops::RangeInclusive<f64> = 1.0..=72.0;
 /// The fraction denominators a drawing actually uses.
 const DENOMINATORS: [u32; 6] = [2, 4, 8, 16, 32, 64];
 
-/// Draw all thirteen rows against `overrides`, mutating it in place.
+/// Draw all fourteen rows against `overrides`, mutating it in place.
 pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool {
     crate::diag::ui_rect(REGION, ui.max_rect());
     let provenance = pdfcer_core::dimension::style_provenance(group, overrides);
@@ -180,6 +184,17 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
     });
 
     stroke_rows(ui, &provenance, overrides, resolved.dash, resolved.opacity);
+    let text_height = resolved.text_height;
+    row(
+        ui,
+        t::prop_centre_mark_size(),
+        provenance.centre_mark_size,
+        &mut overrides.centre_mark_size,
+        || resolved.centre_mark_size,
+    )
+    .edit(ui, |ui, value| {
+        centre_mark_size_editor(ui, "dimension-override-centre-mark", value, text_height);
+    });
 
     // --- tolerance ------------------------------------------------------
     let unit = resolved.format.unit;
@@ -291,6 +306,57 @@ pub fn opacity_editor(ui: &mut Ui, value: &mut f64) -> egui::Response {
         *value = f64::from(percent) / 100.0;
     }
     response
+}
+
+/// A centre mark's arm length: a multiple of the text height, or fixed points.
+///
+/// Switching the mode keeps the arm the same length at `text_height`, so the
+/// drawing does not jump when the operator changes how the size is expressed.
+pub fn centre_mark_size_editor(
+    ui: &mut Ui,
+    id_salt: &str,
+    value: &mut CentreMarkSize,
+    text_height: f64,
+) {
+    let relative = matches!(value, CentreMarkSize::TextHeight(_));
+    let mut want = relative;
+    egui::ComboBox::from_id_salt(id_salt)
+        .selected_text(if relative {
+            t::centre_mark_relative()
+        } else {
+            t::centre_mark_fixed()
+        })
+        .show_ui(ui, |ui| {
+            ui.selectable_value(&mut want, true, t::centre_mark_relative());
+            ui.selectable_value(&mut want, false, t::centre_mark_fixed());
+        });
+    if want != relative && text_height > 0.0 {
+        let arm = value.arm(text_height);
+        *value = if want {
+            CentreMarkSize::TextHeight(
+                (arm / text_height).clamp(*MARK_MULTIPLE_RANGE.start(), *MARK_MULTIPLE_RANGE.end()),
+            )
+        } else {
+            CentreMarkSize::Fixed(arm.clamp(*MARK_POINTS_RANGE.start(), *MARK_POINTS_RANGE.end()))
+        };
+    }
+    match value {
+        CentreMarkSize::TextHeight(k) => {
+            let (widget, refusal) =
+                crate::entry::drag_value(ui, k, crate::entry::Kind::Number(&[]));
+            refusal.show(
+                ui.add(
+                    widget
+                        .speed(0.01)
+                        .range(MARK_MULTIPLE_RANGE)
+                        .suffix(t::centre_mark_relative_suffix()),
+                ),
+            );
+        }
+        CentreMarkSize::Fixed(pt) => {
+            point_box(ui, pt, MARK_POINTS_RANGE);
+        }
+    }
 }
 
 /// One row's checkbox and disclosure, with the editor still to be drawn.
@@ -443,7 +509,7 @@ fn places_box(ui: &mut Ui, value: &mut u32) {
 /// Every property this panel draws, paired with the provenance field that
 /// discloses it.
 #[cfg(test)]
-const DRAWN: [&str; 13] = [
+const DRAWN: [&str; 14] = [
     "unit",
     "fraction",
     "decimal-marker",
@@ -457,6 +523,7 @@ const DRAWN: [&str; 13] = [
     "tolerance-places",
     "dash",
     "opacity",
+    "centre-mark-size",
 ];
 
 #[cfg(test)]

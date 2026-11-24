@@ -360,6 +360,10 @@ pub fn dimension_preview_segments(kind: &DimensionKind) -> Vec<(Point, Point)> {
         // Handled above, before the match, because it is the one kind whose
         // preview is its own geometry rather than a derivation from it.
         DimensionKind::Perimeter { .. } => Vec::new(),
+        DimensionKind::CentreLine { a, b } => vec![(a, b)],
+        // A mark's arms are sized by its group's style, which this function
+        // has not got; a caller previewing one uses `centre_snap_segments`.
+        DimensionKind::CentreMark { .. } => Vec::new(),
         DimensionKind::Angular {
             apex,
             dir_a,
@@ -929,6 +933,7 @@ mod tests {
             show_diameter: false,
             leader_angle: 0.0,
             text_distance: None,
+            centre_mark: None,
         });
         assert_eq!(
             segs.len(),
@@ -962,6 +967,7 @@ mod tests {
             show_diameter: true,
             leader_angle: 0.0,
             text_distance: None,
+            centre_mark: None,
         });
         assert_eq!(
             dia[..ARC_PREVIEW_STEPS],

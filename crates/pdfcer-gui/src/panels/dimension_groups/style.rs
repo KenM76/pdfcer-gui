@@ -154,7 +154,7 @@ fn shape_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
     );
 }
 
-/// Line style and opacity, through the same editors as a single ce
+/// Line style, opacity and centre-mark size, through the same editors as a single ce
 /// dimension's overrides.
 fn stroke_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
     property_row(
@@ -190,6 +190,25 @@ fn stroke_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
             crate::diag::ui_rect(REGION_OPACITY, r.rect);
         },
         t::percent_value,
+    );
+    let text_height = next
+        .text_height
+        .unwrap_or(StyleDefaults::FACTORY.text_height);
+    property_row(
+        ui,
+        t::prop_centre_mark_size(),
+        &mut next.centre_mark_size,
+        (StyleDefaults::FACTORY.centre_mark_size, None),
+        rows.reach(|p| p.centre_mark_size),
+        |ui, value| {
+            pdfcer_gui_base::dimensionoverrides::centre_mark_size_editor(
+                ui,
+                "dimension-group-centre-mark",
+                value,
+                text_height,
+            );
+        },
+        |_| t::centre_mark_factory_value().to_owned(),
     );
 }
 

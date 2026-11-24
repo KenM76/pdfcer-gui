@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **23 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
+## `wanted` — a real gap — **25 of 626** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -98,6 +98,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Centre line between two lines** — `dimension::author_centre_line` in the module `pdfcer_core::dimension::centre`: `CentreLineAuthoring`, `CentreLineRefusal`, `DimensionKind::CentreLine`, `EditError::CentreGeometryDegenerate`, `EditError::CentreGeometryHasNoLabel` (G322) | **wanted — O453, being built** as Measure ▸ Centre line on the two-line pick. <!--namesake:CentreLine--> The shell names `DimensionKind::CentreLine` only to preview and exhaust a match; no tool authors one yet. |
+| **Centre mark on a circle or arc (standalone or with a radius/diameter)** — `DimensionKind::CentreMark`, `CentreMarkSpec`, the `centre_mark` field on `DimensionKind::Circular`, `CentreMarkSize` and the style field `centre_mark_size` on `GroupStyle`, `StyleOverrides`, `StyleDefaults`, `StyleProvenance` and `DimensionStyle` (G323) | **wanted — O454, being built** as Mark centre and Show measurement switches on the radius/diameter tool, and the mark size in the group style. <!--namesake:CentreMark--><!--namesake:GroupStyle--><!--namesake:StyleOverrides--><!--namesake:StyleDefaults--><!--namesake:StyleProvenance--><!--namesake:DimensionStyle--><!--namesake:CentreMarkSize--><!--namesake:centre_mark_size--> The mark size is edited in the group style panel and a ce dimension's overrides (`dimensionoverrides::centre_mark_size_editor`); what is missing is a tool that authors a mark. |
 | **Copy and paste several form fields as one** — `copy_fields`, `paste_fields`, `FieldSetPastePolicy`, `FieldClipSet` | **wanted, at the pin since v0.82.0; request G193, blocked on G315.** `paste_fields` names a copy `Text1_2` where the single paste names it `Text2`, so adopting it would give one gesture two naming rules. `app::actions::forms::paste::many` (`FieldAction::PasteMany`) calls `copy_fields` and `paste_fields` (`pdfcer_core::edit::field_set`, over the clip format in `pdfcer_core::formclip::set`) once instead of one `paste_field` per field; the layout, batch-unique names and radio export values become the engine's, reported in `FieldSetPasteOutcome`. Policies: `FieldSetPastePolicy::NewFields`, `FieldSetPastePolicy::AdditionalWidgets`; a set holds at most `MAX_CLIP_SET_FIELDS`. |
 | **Name pasted form fields yourself, or continue their numbers** — `FieldSetPastePolicy::NewFields { names, naming }` … | **wanted, with G193.** A single paste names its field by `FieldCopyNaming::default().free_name` (`canvas::fieldclip`, G315 consumed); naming several pasted fields needs the multi-field paste the row above wants. The naming choices `FieldCopyNaming::ContinueNumber` and `FieldCopyNaming::Underscore`, and the refusal `EditError::PasteNamesCount`, wait on the same gesture. |
 | **EMF export: image soft masks counted apart from gradient masks** — `EmfNotFlat::soft_mask_image` | **wanted, at the pin since v0.147.0.** The EMF export receipt does not read the not-flat census, so it cannot yet say that a soft mask stayed raster because it holds an image. Small: one sentence in `text::export_image` from `EmfCounts`. Not yet built because no driven check can see it: Export image writes EMF with `EmfOptions::default()`, whose vector-transparency switch is off, and `EmfNotFlat` is all zero with the switch off. The only route that turns it on is the print route, reached only by a print commit, which spools to a real printer. |
@@ -138,7 +140,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **3 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
+## `blocked` — waiting on something named — **3 of 626** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -157,7 +159,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 626** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -168,7 +170,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
+## `declined` — deliberately no surface — **21 of 626** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -215,7 +217,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **577 of 624** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **577 of 626** <!-- counted by tools/walk-engine-backlog.py, 2026-11-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

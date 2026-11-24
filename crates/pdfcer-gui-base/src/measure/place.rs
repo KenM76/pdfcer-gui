@@ -70,6 +70,8 @@ pub fn placed_at(kind: &DimensionKind, p: Point) -> DimensionKind {
                 *text_distance = clamped.or(*text_distance);
             }
         }
+        // Centre geometry carries no label; the engine refuses to place it.
+        DimensionKind::CentreLine { .. } | DimensionKind::CentreMark { .. } => {}
         DimensionKind::Angular {
             radius, text_along, ..
         } => {
@@ -144,6 +146,7 @@ mod tests {
             show_diameter: false,
             leader_angle: 0.0,
             text_distance: None,
+            centre_mark: None,
         };
         let placed = placed_at(&kind, p(50.0, 80.0));
         assert!(close(placed.label_anchor().unwrap(), p(50.0, 80.0)));
@@ -160,6 +163,7 @@ mod tests {
             show_diameter: false,
             leader_angle: 0.0,
             text_distance: None,
+            centre_mark: None,
         };
         let DimensionKind::Circular { text_distance, .. } = placed_at(&kind, p(0.0, 0.0)) else {
             panic!("still circular");

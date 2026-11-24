@@ -405,6 +405,18 @@ pub const fn prop_opacity() -> &'static str {
     "Opacity"
 }
 
+/// See [`prop_text_height`].
+#[must_use]
+pub const fn prop_centre_mark_size() -> &'static str {
+    "Centre mark size"
+}
+
+/// The factory centre-mark size, for the caption that stands in for the editor.
+#[must_use]
+pub const fn centre_mark_factory_value() -> &'static str {
+    "half the text height"
+}
+
 /// The factory line style, for the caption that stands in for the chooser.
 #[must_use]
 pub const fn dash_factory_value() -> &'static str {

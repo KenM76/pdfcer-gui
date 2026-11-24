@@ -1,4 +1,4 @@
-# `dimensionoverrides` — thirteen properties, thirteen
+# `dimensionoverrides` — fourteen properties, fourteen
 checkboxes, and the tier each value came from
 
 ## What this is
@@ -73,7 +73,7 @@ Because the editor's type differs per row and its closure has to borrow the
 **unwrapped** value, which only exists after the checkbox has decided
 whether there is one. A single function taking both would need the seed
 closure and the editor closure in the same call, which is where clippy's
-argument budget and the reader's patience both run out long before row thirteen.
+argument budget and the reader's patience both run out long before row fourteen.
 
 The two-step shape also puts the invariant in the type: `edit` is the only
 way to reach the value, so a row cannot be drawn with a checkbox and no
@@ -101,7 +101,7 @@ Exists **only** for the test below, and that is worth the lines. The
 engine's `StyleProvenance::each()` returns a fixed-size `[_; 13]` precisely
 so a consumer gets a compile error rather than a short list when a
 fourteenth property lands — but this module does not call `each()`, it reads the fields
-by name, so it would silently keep drawing thirteen rows for ever.
+by name, so it would silently keep drawing fourteen rows for ever.
 
 This closes that: the test compares this list against `each()`'s names.
 
@@ -111,7 +111,7 @@ The gap this closes is specific and would otherwise be silent. The
 engine's `StyleProvenance::each()` is a fixed-size array so that a
 consumer iterating it fails to compile when a property is added — and
 this module reads the provenance **fields by name** rather than
-iterating, which is the right shape for a panel that draws thirteen
+iterating, which is the right shape for a panel that draws fourteen
 different editors and the wrong shape for noticing a fourteenth.
 
 So the array is compared against `each()`'s names here, and adding a
@@ -158,3 +158,11 @@ Dash and opacity share one function because both describe the stroke and
 four entries a markup's line style offers; `DimDash::SOLID` is a real value
 here, not "unset", so a group that dashes everything can keep one ce
 dimension solid. Opacity is edited in whole percent, as on a markup.
+
+### `fn centre_mark_size_editor`
+
+A centre mark's arm is either a multiple of the text height (the engine's
+default, half) or a fixed number of points. One chooser picks the form and one
+box edits the number. Changing the form keeps the arm the same length at the
+current text height, so the mark on the page does not jump. The group style
+panel uses the same editor.

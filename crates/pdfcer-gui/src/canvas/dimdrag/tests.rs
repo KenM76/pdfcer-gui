@@ -529,6 +529,7 @@ fn a_circular_label_drag_lands_where_it_is_dropped() {
         show_diameter: false,
         leader_angle: 0.0,
         text_distance: None,
+        centre_mark: None,
     };
     let from = kind.label_anchor().expect("an anchor");
     let (dx, dy) = (0.0 - (from.x - 100.0), 40.0 - (from.y - 100.0));

@@ -202,6 +202,30 @@ pub const fn prop_opacity() -> &'static str {
     "Opacity"
 }
 
+/// The centre-mark size row's label.
+#[must_use]
+pub const fn prop_centre_mark_size() -> &'static str {
+    "Centre mark size"
+}
+
+/// A centre mark sized against the text height.
+#[must_use]
+pub const fn centre_mark_relative() -> &'static str {
+    "Times text height"
+}
+
+/// A centre mark sized in points.
+#[must_use]
+pub const fn centre_mark_fixed() -> &'static str {
+    "Fixed size"
+}
+
+/// The multiple's suffix.
+#[must_use]
+pub const fn centre_mark_relative_suffix() -> &'static str {
+    " × text height"
+}
+
 /// The two precision modes.
 #[must_use]
 pub const fn precision_decimal() -> &'static str {
