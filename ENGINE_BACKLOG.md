@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **23 of 627** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `wanted` — a real gap — **40 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -76,6 +76,28 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Fallback face for an unencodable character** — a character the run's font can't encode is set in a fallback face: `TextEdit::with_fallback`, `FallbackFace`, the module `pdfcer_core::text_edit::fallback` (our `G078`, Pass 431.0) | **wanted: wired at the keystroke, preview and commit, a change across show operators included; the `[x]` is owed to the engine.** <!--namesake:with_fallback--> <!--namesake:FallbackFace--> `canvas::textedit::reface::engine_takes` confirms the face with `EditSession::run_repertoire_with` (every key `via_fallback`, trace `route=engine`); `canvas::textedit::shaped::refresh` previews in it; `app::actions::reface::try_commit` commits with `with_fallback(fallbackface::named(face))`, one undo entry, for a match in one text object across any number of `Tj`/`TJ` (G318). Driven: `a_key_the_font_lacks_is_set_in_the_nearest_face`, `a_change_across_show_operators_is_set_in_the_nearest_face` (`operators=3`). The engine refuses a match across `ET` for any edit, and one anchored on `'`/`"`; the shell shows those refusals. |
 | **`add_text` writes line-break marks** — `add_text` <!--namesake:add_text--> <!--namesake:place_text--> (the shell calls the pinned versions; the row is the marks they now write) | **wanted, at the pin since v0.82.0; request G182.** `add_text` and `place_text` write `pdfc_TextBlock` and `pdfc_Break` marks with no change here, so a paragraph typed with Add text re-opens with its breaks exact (`LineEndSource::Marked`). Owed: a driven check that an added multi-line paragraph re-opens as `source=marked`. |
+
+### Preflight & prepress (O458)
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Preflight a document against a profile (first cut)** | **wanted — O458, the Preflight panel.** It is the panel's run. A profile is chosen from `Profile::BUILTIN_NAMES`, `preflight::run_with_meter` runs on a worker that never holds the session, and findings are grouped by rule. Needs-a-person and incomplete findings are labelled and never shown as a pass, and a click selects the finding's object. |
+| **Preflight fixups: apply a profile's fixups as one undo step** | **wanted — O458, the Preflight panel's Fix and Fix all.** `EditSession::apply_fixup` per rule and `apply_profile_fixups` for the profile, each one undo step. `FixupReport::to_text` is shown in the panel, and an unavailable fixup says so. |
+| **Preflight text report** — `report_text` and `pdfcer preflight --report` … | **wanted — O458, the Preflight panel's Copy report** (`report_text`). |
+| **Preflight: image above ppi check and downsample fixup** | **wanted — O458.** Reached through the Preflight panel once a profile carries the rule; it has no surface of its own. |
+| **Preflight: total area coverage (max TAC, over-limit area, regions)** | **wanted — O458.** The panel runs with `pdfcer_render::TacMeter`, so the `total-area-coverage` check measures instead of reporting incomplete. |
+| **Find hairlines, and raise them to a minimum width** | **wanted — O458.** The preflight fixup first; a Print production command with a minimum-width field after. |
+| **Ink Manager: list inks** — `prepress::inks` … | **wanted — O458: an Ink Manager window** listing `prepress::inks`. |
+| **Alias one ink to another** — `alias-ink --from --to` … | **wanted — O458, in the Ink Manager.** It changes the file, unlike Acrobat's output-time alias, and the window must say so. |
+| **Convert spot inks to process** — `spot-to-process` … | **wanted — O458, in the Ink Manager.** A refusal names the colour engine verbatim. |
+| **Detect transparency, and flatten it with a report** — `has_transparency` … | **wanted — O458.** A preflight fixup, with `pdfcer_emf::RecordingFlattener` as the flattener, then a Print production command. |
+| **Convert colours to one ICC profile** — `EditSession::convert_colours` … | **wanted — O458.** A Print production command with an ICC picker. Without a profile the preflight fixup reports `Unavailable`, and the panel shows that. |
+| **Validate PDF/X-1a, X-3 and X-4, requirement by requirement** | **wanted — O458.** Profiles in the Preflight panel. |
+| **PDF/X conversion (X-1a/X-3/X-4)** | **wanted — O458.** Needs an ICC picker for the output intent. |
+| **Validate PDF/UA-1 and PDF/UA-2, clause by clause** | **wanted — O458.** Profiles in the Preflight panel. Needs-a-person findings are the bulk of PDF/UA and must read as such. |
+| **Fix what PDF/UA validation finds** | **wanted — O458.** The `pdfua` profile's fixup in the Preflight panel. |
+| **Validate PDF/A-1b, -2b and -3b, clause by clause** | **wanted — O458.** Profiles in the Preflight panel. An unconfirmed verdict is not a pass. |
+| **Import pages keeping their separation sets** | **wanted.** <!--namesake:SeparationInfo--> The shell's page insert already goes through `EditSession::insert_pages_with_options`, so the remap happens. Owed: whether the outcome it discloses reaches the status line, plus a driven check. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -138,7 +160,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 627** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `blocked` — waiting on something named — **2 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +178,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 627** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +189,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 627** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `declined` — deliberately no surface — **21 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -214,7 +236,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **581 of 627** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **581 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -1013,6 +1035,21 @@ The request O280 is built on, answered and consumed.
 - **G270** — CONSUMED at v0.130.0: `ShadowLight::AimedSun(SunLight)`, *A sun you aim* under *Shadows cast by* (O392).
 - **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).
 - **G272** — CONSUMED at v0.130.0: `FrameLampShadows::for_model_after` with the previous choice and `FrameLights::use_lamp_shadows`; the cap `MAX_LAMP_SHADOWS` said when reached (O393).
+
+## Engine arrivals at v0.172.0 — not verdict rows
+
+The O458 preflight round. All of it is **wanted**, and wiring it is this shell's next work under O458.
+
+- **Preflight engine and its checks** — `pdfcer_core::preflight` (`run`, `run_with`, `Profile`, `Finding`, `FindingTarget`, `FindingKind`, `Check`, `ColourFamily`, `MeasureUnit`, `validate_pdfx`, `validate_pdfua`, `validate_pdfa`, `report_text`, `preflight::hairlines`). **wanted**: a Preflight panel that runs a profile on a worker and selects a finding's object through its `page_objects` index.
+- **Fixups** — `pdfcer_core::edit::apply_fixup` (`EditSession::apply_fixup`, `apply_profile_fixups`), `CommandKind::ApplyFixup`. **wanted**: the panel's Fix button, one undo step.
+- **Hairlines** — `pdfcer_core::edit::hairlines` (`HairlineFixReport`), `CommandKind::FixHairlines`. **wanted**.
+- **Ink Manager** — `pdfcer_core::prepress::inks`, `pdfcer_core::edit::ink_manager` (`EditSession::inks`, `alias_ink`, `spot_to_process`), `CommandKind::AliasInk`, `CommandKind::SpotToProcess`, `EditError::InkNameRefused`. **wanted**.
+- **Flatten transparency** — `pdfcer_core::transparency`, `pdfcer_core::edit::flatten_transparency`, `pdfcer_emf::pdf_flatten` (`RecordingFlattener`), `CommandKind::FlattenTransparency`, `EditError::TransparencyFlattenFailed`, `EditError::FlattenPpiOutOfRange`. **wanted**.
+- **Convert colours** — `pdfcer_core::prepress::convert_colours`, `pdfcer_core::edit::convert_colours`, `pdfcer_render::convert_colours` (`IcccerConverter`), `CommandKind::ConvertColours`, `EditError::ColourConversionRefused`. **wanted**.
+- **PDF/X conversion** — `pdfcer_core::prepress::pdfx_conversion` (`PdfxConversion`), `pdfcer_core::edit::pdfx_convert` (`EditSession::convert_to_pdfx`), `CommandKind::ConvertToPdfx`. **wanted**.
+- **PDF/UA fixups** — `pdfcer_core::edit::pdfua_fix`, `pdfcer_core::edit::pdfua_title`, `pdfcer_core::edit::pdfua_artifacts`, `CommandKind::FixPdfua`, `CommandKind::SetDocumentLanguage`, `CommandKind::SetDisplayDocTitle`, `CommandKind::SetPdfuaTabOrder`, `CommandKind::MarkUntaggedAsArtifacts`, `CommandKind::WritePdfuaIdentification`, `EditError::DocumentNotTagged`, `EditError::DocumentTitleMissing`, `EditError::LanguageTagMalformed`, `EditError::PdfuaIdentificationWithheld`, `EditError::XmpPacketUnwritable`. **wanted**.
+- **Total area coverage** — `pdfcer_render::tac` (`total_area_coverage`, `TacRaster`). **wanted**: the preflight run's render-side check.
+- **Compositor conversion** — `pdfcer_render::compositor::blend_from_tiny_skia`. **declined**: a renderer helper; this shell paints no blend modes itself.
 
 ## Engine arrivals at v0.152.0 — not verdict rows
 
