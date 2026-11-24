@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 532056807ca84786031e7933e004aca9065d7c00
+# baseline: 117bcb59704d851af9f137076a715fc8a75b7838
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12711
+# items: 12754
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -925,6 +925,7 @@ pdfcer-core const pdfcer_core::deskew::MAX_SKEW_DEGREES
 pdfcer-core const pdfcer_core::dimension::author::AUTHORED_ANNOT_KEYS
 pdfcer-core const pdfcer_core::dimension::author::AUTHORED_MEASURE_KEY
 pdfcer-core const pdfcer_core::dimension::author::DIM_PLACEHOLDER
+pdfcer-core const pdfcer_core::dimension::centre::DEFAULT_CENTRE_LINE_OVERSHOOT
 pdfcer-core const pdfcer_core::dimension::dash::MAX_DASH_RUNS
 pdfcer-core const pdfcer_core::dimension::group::DEFAULT_GROUP_ID
 pdfcer-core const pdfcer_core::dimension::sidecar::MAX_PAGE_VALUE
@@ -1164,6 +1165,9 @@ pdfcer-core enum pdfcer_core::compare::CompareError
 pdfcer-core enum pdfcer_core::compare::Side
 pdfcer-core enum pdfcer_core::compare::region_marks::RegionKind
 pdfcer-core enum pdfcer_core::compare::result::ResultError
+pdfcer-core enum pdfcer_core::dimension::centre::CentreLineRefusal
+pdfcer-core enum pdfcer_core::dimension::centre::CentreMarkSize
+pdfcer-core enum pdfcer_core::dimension::centre::CentreSnapRole
 pdfcer-core enum pdfcer_core::dimension::group::DimStandard
 pdfcer-core enum pdfcer_core::dimension::group::DimensionEnd
 pdfcer-core enum pdfcer_core::dimension::group::DimensionKind
@@ -1406,7 +1410,6 @@ pdfcer-core enum pdfcer_core::redact::ResidualScope
 pdfcer-core enum pdfcer_core::redact_proof::AbsenceVerdict
 pdfcer-core enum pdfcer_core::redact_proof::ResidualSite
 pdfcer-core enum pdfcer_core::richtext::Align
-pdfcer-core enum pdfcer_core::richtext::FlatText
 pdfcer-core enum pdfcer_core::richtext::RichTextError
 pdfcer-core enum pdfcer_core::richtext::Stretch
 pdfcer-core enum pdfcer_core::richtext::draw::RichStylePrecedence
@@ -1856,6 +1859,7 @@ pdfcer-core field pdfcer_core::dimension::author::AuthoredDimension::rect
 pdfcer-core field pdfcer_core::dimension::author::DimensionPreview::appearance
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::arrow_form
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::arrow_length
+pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::centre_mark_size
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::color
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::dash
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::format
@@ -1867,6 +1871,15 @@ pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::text_height
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::tolerance
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::tolerance_places
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::user_unit
+pdfcer-core field pdfcer_core::dimension::centre::CentreLineAuthoring::forced_parallel
+pdfcer-core field pdfcer_core::dimension::centre::CentreLineAuthoring::kind
+pdfcer-core field pdfcer_core::dimension::centre::CentreLineAuthoring::measured_angle_degrees
+pdfcer-core field pdfcer_core::dimension::centre::CentreLineAuthoring::overlap
+pdfcer-core field pdfcer_core::dimension::centre::CentreLineAuthoring::relation
+pdfcer-core field pdfcer_core::dimension::centre::CentreMarkSpec::angle
+pdfcer-core field pdfcer_core::dimension::centre::CentreMarkSpec::extension_lines
+pdfcer-core field pdfcer_core::dimension::centre::CentreSnapPoint::point
+pdfcer-core field pdfcer_core::dimension::centre::CentreSnapPoint::role
 pdfcer-core field pdfcer_core::dimension::fit::FitCircle::center
 pdfcer-core field pdfcer_core::dimension::fit::FitCircle::radius
 pdfcer-core field pdfcer_core::dimension::fit::FitCircle::residual
@@ -1890,6 +1903,7 @@ pdfcer-core field pdfcer_core::dimension::length_parse::ParsedLength::unit_from_
 pdfcer-core field pdfcer_core::dimension::length_parse::ParsedLength::value
 pdfcer-core field pdfcer_core::dimension::style::GroupStyle::arrow_form
 pdfcer-core field pdfcer_core::dimension::style::GroupStyle::arrow_length
+pdfcer-core field pdfcer_core::dimension::style::GroupStyle::centre_mark_size
 pdfcer-core field pdfcer_core::dimension::style::GroupStyle::color
 pdfcer-core field pdfcer_core::dimension::style::GroupStyle::dash
 pdfcer-core field pdfcer_core::dimension::style::GroupStyle::line_width
@@ -1899,6 +1913,7 @@ pdfcer-core field pdfcer_core::dimension::style::GroupStyle::tolerance
 pdfcer-core field pdfcer_core::dimension::style::GroupStyle::tolerance_places
 pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::arrow_form
 pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::arrow_length
+pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::centre_mark_size
 pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::color
 pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::dash
 pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::line_width
@@ -1908,6 +1923,7 @@ pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::tolerance
 pdfcer-core field pdfcer_core::dimension::style::StyleDefaults::tolerance_places
 pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::arrow_form
 pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::arrow_length
+pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::centre_mark_size
 pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::color
 pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::dash
 pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::decimal_marker
@@ -1921,6 +1937,7 @@ pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::tolerance_place
 pdfcer-core field pdfcer_core::dimension::style::StyleOverrides::unit
 pdfcer-core field pdfcer_core::dimension::style::StyleProvenance::arrow_form
 pdfcer-core field pdfcer_core::dimension::style::StyleProvenance::arrow_length
+pdfcer-core field pdfcer_core::dimension::style::StyleProvenance::centre_mark_size
 pdfcer-core field pdfcer_core::dimension::style::StyleProvenance::color
 pdfcer-core field pdfcer_core::dimension::style::StyleProvenance::dash
 pdfcer-core field pdfcer_core::dimension::style::StyleProvenance::decimal_marker
@@ -5250,6 +5267,7 @@ pdfcer-core fn pdfcer_core::dimension::area::area_unit_label
 pdfcer-core fn pdfcer_core::dimension::area::format_area_measurement
 pdfcer-core fn pdfcer_core::dimension::author::author_dimension
 pdfcer-core fn pdfcer_core::dimension::author::author_dimension_with_label
+pdfcer-core fn pdfcer_core::dimension::centre::author_centre_line
 pdfcer-core fn pdfcer_core::dimension::dash::opacity_in_range
 pdfcer-core fn pdfcer_core::dimension::fit::fit_circle_taubin
 pdfcer-core fn pdfcer_core::dimension::fit::fit_circle_taubin_refined
@@ -5442,7 +5460,6 @@ pdfcer-core fn pdfcer_core::redact::apply_redactions_with
 pdfcer-core fn pdfcer_core::redact::count_redaction_marks
 pdfcer-core fn pdfcer_core::redact::redaction_marks
 pdfcer-core fn pdfcer_core::redact_proof::verify_absence
-pdfcer-core fn pdfcer_core::richtext::flat_text
 pdfcer-core fn pdfcer_core::richtext::parse
 pdfcer-core fn pdfcer_core::richtext::parse_noting
 pdfcer-core fn pdfcer_core::richtext::write::to_xhtml
@@ -5699,6 +5716,18 @@ pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::breaks_line_f
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::extension_metrics
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::new
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::on_user_unit
+pdfcer-core method pdfcer_core::dimension::centre::CentreMarkSize::arm
+pdfcer-core method pdfcer_core::dimension::centre::CentreMarkSize::is_valid
+pdfcer-core method pdfcer_core::dimension::centre::CentreMarkSize::parse
+pdfcer-core method pdfcer_core::dimension::centre::CentreMarkSize::token
+pdfcer-core method pdfcer_core::dimension::centre::CentreMarkSpec::turned
+pdfcer-core method pdfcer_core::dimension::centre::DimensionKind::centre_mark_centre
+pdfcer-core method pdfcer_core::dimension::centre::DimensionKind::centre_snap_points
+pdfcer-core method pdfcer_core::dimension::centre::DimensionKind::centre_snap_segments
+pdfcer-core method pdfcer_core::dimension::centre::DimensionKind::is_centre_geometry
+pdfcer-core method pdfcer_core::dimension::centre::DimensionRecord::centre_snap_points
+pdfcer-core method pdfcer_core::dimension::centre::DimensionStyle::centre_line_dash
+pdfcer-core method pdfcer_core::dimension::centre::DimensionStyle::centre_mark_arm
 pdfcer-core method pdfcer_core::dimension::dash::DimDash::is_solid
 pdfcer-core method pdfcer_core::dimension::dash::DimDash::new
 pdfcer-core method pdfcer_core::dimension::dash::DimDash::pattern
@@ -7467,6 +7496,9 @@ pdfcer-core struct pdfcer_core::deskew::SkewEstimate
 pdfcer-core struct pdfcer_core::dimension::author::AuthoredDimension
 pdfcer-core struct pdfcer_core::dimension::author::DimensionPreview
 pdfcer-core struct pdfcer_core::dimension::author::DimensionStyle
+pdfcer-core struct pdfcer_core::dimension::centre::CentreLineAuthoring
+pdfcer-core struct pdfcer_core::dimension::centre::CentreMarkSpec
+pdfcer-core struct pdfcer_core::dimension::centre::CentreSnapPoint
 pdfcer-core struct pdfcer_core::dimension::dash::DimDash
 pdfcer-core struct pdfcer_core::dimension::fit::FitCircle
 pdfcer-core struct pdfcer_core::dimension::group::DimensionId
@@ -8271,6 +8303,17 @@ pdfcer-core variant pdfcer_core::compare::region_marks::RegionKind::Changed
 pdfcer-core variant pdfcer_core::compare::region_marks::RegionKind::InsertedPage
 pdfcer-core variant pdfcer_core::compare::result::ResultError::Pages
 pdfcer-core variant pdfcer_core::compare::result::ResultError::Summary
+pdfcer-core variant pdfcer_core::dimension::centre::CentreLineRefusal::BadOvershoot
+pdfcer-core variant pdfcer_core::dimension::centre::CentreLineRefusal::Collinear
+pdfcer-core variant pdfcer_core::dimension::centre::CentreLineRefusal::Degenerate
+pdfcer-core variant pdfcer_core::dimension::centre::CentreLineRefusal::NoOverlap
+pdfcer-core variant pdfcer_core::dimension::centre::CentreMarkSize::Fixed
+pdfcer-core variant pdfcer_core::dimension::centre::CentreMarkSize::TextHeight
+pdfcer-core variant pdfcer_core::dimension::centre::CentreSnapRole::ArmEnd
+pdfcer-core variant pdfcer_core::dimension::centre::CentreSnapRole::ExtensionEnd
+pdfcer-core variant pdfcer_core::dimension::centre::CentreSnapRole::LineEnd
+pdfcer-core variant pdfcer_core::dimension::centre::CentreSnapRole::LineMidpoint
+pdfcer-core variant pdfcer_core::dimension::centre::CentreSnapRole::MarkCentre
 pdfcer-core variant pdfcer_core::dimension::group::DimStandard::Ansi
 pdfcer-core variant pdfcer_core::dimension::group::DimStandard::Iso
 pdfcer-core variant pdfcer_core::dimension::group::DimensionEnd::A
@@ -8598,6 +8641,8 @@ pdfcer-core variant pdfcer_core::edit::EditError::ButtonActionHideTargetNotTermi
 pdfcer-core variant pdfcer_core::edit::EditError::ButtonActionSubmitFlags
 pdfcer-core variant pdfcer_core::edit::EditError::ButtonActionWrongFieldType
 pdfcer-core variant pdfcer_core::edit::EditError::CarrierIsNotAStream
+pdfcer-core variant pdfcer_core::edit::EditError::CentreGeometryDegenerate
+pdfcer-core variant pdfcer_core::edit::EditError::CentreGeometryHasNoLabel
 pdfcer-core variant pdfcer_core::edit::EditError::CertificationForbidsChange
 pdfcer-core variant pdfcer_core::edit::EditError::CheckBoxOnStateInvalid
 pdfcer-core variant pdfcer_core::edit::EditError::ChoiceEditRequiresCombo
@@ -9676,8 +9721,6 @@ pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::RawBytes
 pdfcer-core variant pdfcer_core::richtext::Align::Center
 pdfcer-core variant pdfcer_core::richtext::Align::Left
 pdfcer-core variant pdfcer_core::richtext::Align::Right
-pdfcer-core variant pdfcer_core::richtext::FlatText::Concatenated
-pdfcer-core variant pdfcer_core::richtext::FlatText::ParagraphLines
 pdfcer-core variant pdfcer_core::richtext::RichTextError::MalformedXml
 pdfcer-core variant pdfcer_core::richtext::RichTextError::RootNotBody
 pdfcer-core variant pdfcer_core::richtext::RichTextError::TooDeep

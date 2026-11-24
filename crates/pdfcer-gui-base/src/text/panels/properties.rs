@@ -306,6 +306,24 @@ pub const fn geometry_turn() -> &'static str {
     "Rotate by"
 }
 
+/// The heading over the width and height in a ce dimension group's scale.
+#[must_use]
+pub fn geometry_scaled_heading(group: &str) -> String {
+    format!("Size at the scale of {group}")
+}
+
+/// What the scaled fields take.
+#[must_use]
+pub const fn geometry_scaled_note() -> &'static str {
+    "Type a length in the drawing's units, such as 2.4 m. Apply sets the size."
+}
+
+/// The hover over a scaled length that could not be read.
+#[must_use]
+pub fn geometry_scaled_refused(why: &str) -> String {
+    format!("Not a length at this scale: {why}")
+}
+
 /// What the Rotate by field counts.
 #[must_use]
 pub const fn geometry_turn_note() -> &'static str {

@@ -20,6 +20,7 @@ use pdfcer_gui_base::entry;
 /// engine verbs behind them. Split out under R2 on 2026-09-07; its header says
 /// where the seam was drawn and why the arithmetic did not move with it.
 mod annot;
+mod scaled;
 mod several;
 
 pub const REGION: &str = "properties.geometry"; // ui-text-exempt: diagnostic region name
@@ -434,6 +435,7 @@ pub fn section(
         POINTS,
     );
     field(ui, t::geometry_h(), &mut draft.h, None, None, POINTS);
+    scaled::rows(ui, doc, page, draft, None);
     field(
         ui,
         t::geometry_turn(),

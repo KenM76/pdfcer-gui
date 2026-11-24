@@ -8273,7 +8273,7 @@ Built, in part: the measure tools and the endpoint and node drags snap to every 
 
 Said on 2026-11-21, same message as O453. Where a ce dimension group sets a drawing scale, an object's or markup's size is shown and typed in that scale's units (for example, metres at 1:100) rather than in paper units.
 
-Waiting on the engine: `request_page_length_from_scaled_length.md` asks for the reverse of the scaled readout, so a typed scaled size becomes a page size without the GUI restating the scale arithmetic.
+Built: when the group the measure tools draw into (else the default group) has a scale, Properties shows *Size at the scale of* that group under W and H, for a page object and for a markup alike. Each row reads as a ce dimension of that length would; typing a length such as `2.4 m` sets the size, and Apply commits it with the point fields as one undo step. A length the scale cannot read shows the engine's reason under the row. The engine supplied the conversion (G325). Driven by `a_scaled_width_sets_the_drawn_size`.
 
 ## O457 — **OPEN** — a group drags as one
 

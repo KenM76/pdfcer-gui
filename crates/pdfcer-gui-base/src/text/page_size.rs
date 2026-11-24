@@ -492,6 +492,16 @@ pub fn disclosure_geo_unchanged(n: usize) -> String {
     )
 }
 
+/// `n` fill patterns could not be rescaled and keep their old size and offset.
+#[must_use]
+pub fn disclosure_patterns_unchanged(n: usize) -> String {
+    format!(
+        "{n} fill {} could not be rescaled, so {} at the old size and position.",
+        if n == 1 { "pattern" } else { "patterns" },
+        if n == 1 { "it repeats" } else { "they repeat" },
+    )
+}
+
 /// The engine refused to scale a sheet that carries ce dimensions.
 /// `page` is 1-based.
 #[must_use]

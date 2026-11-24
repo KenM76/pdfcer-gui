@@ -340,25 +340,17 @@ fn disclosure_of(field: &str, value: &str, out: &FillOutcome) -> FillDisclosure 
     }
 }
 
-/// `text` as the XHTML rich value `fill_rich_text_field` takes: one `<p>`
-/// per line, unstyled, so each line takes the field's `/DS`.
-fn rich_value_of(text: &str) -> String {
-    let mut rv = String::from("<body>");
-    for line in text.split('\n') {
-        rv.push_str("<p>");
-        for c in line.chars() {
-            match c {
-                '&' => rv.push_str("&amp;"),
-                '<' => rv.push_str("&lt;"),
-                '>' => rv.push_str("&gt;"),
-                '\r' => {}
-                _ => rv.push(c),
-            }
-        }
-        rv.push_str("</p>");
-    }
-    rv.push_str("</body>");
-    rv
+/// `text` as the runs `fill_rich_text_field_runs` takes: one unstyled run per
+/// line, so each line takes the field's `/DS` and an empty line stays a line.
+fn rich_runs_from(text: &str) -> Vec<pdfcer_core::richtext::Run> {
+    text.split('\n')
+        .enumerate()
+        .map(|(paragraph, line)| pdfcer_core::richtext::Run {
+            text: line.replace('\r', ""),
+            style: pdfcer_core::richtext::Style::default(),
+            paragraph,
+        })
+        .collect()
 }
 
 /// The runs `field`'s stored `/RV` holds, parsed without `/DS`, so only the
@@ -391,9 +383,9 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
         }
         FormEdit::FillRichText { field, value } => {
             let before = rich_runs_of(session, field);
-            let out = session.fill_rich_text_field(
+            let out = session.fill_rich_text_field_runs(
                 field,
-                &rich_value_of(value),
+                &rich_runs_from(value),
                 pdfcer_core::richtext::FlatText::ParagraphLines,
             )?;
             Ok(Applied {
@@ -833,5 +825,32 @@ mod tests {
                 .all(|r| r.style == pdfcer_core::richtext::Style::default()),
             "no run is styled now: {runs:?}"
         );
+    }
+
+    /// **Blank lines typed into a rich-text field are in its value as typed**:
+    /// leading, inner and trailing.
+    #[test]
+    fn a_rich_fill_keeps_its_blank_lines() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/rich-field.pdf");
+        for typed in ["a\n", "\na", "a\n\nb", "a\nb\n\n"] {
+            let doc = pdfcer_core::document::Document::load(std::path::Path::new(path))
+                .expect("the fixture loads");
+            let mut session = EditSession::new(doc);
+            run(
+                &mut session,
+                &FormEdit::FillRichText {
+                    field: "Note".to_owned(),
+                    value: typed.to_owned(),
+                },
+            )
+            .expect("a rich fill succeeds");
+            let view = session.view();
+            let form = pdfcer_core::forms::parse_acroform(&view).expect("a form");
+            assert_eq!(
+                form.fields[0].value.display_text(),
+                typed,
+                "typed {typed:?}"
+            );
+        }
     }
 }

@@ -261,6 +261,7 @@ pub mod restack;
 /// The annotations a saved file finally lists on its pages.
 mod savedannots;
 pub mod scale_user_unit;
+pub mod scaled_size;
 pub mod snap_image;
 pub mod snap_markup;
 pub mod stroke_style;

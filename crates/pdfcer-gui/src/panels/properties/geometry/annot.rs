@@ -105,6 +105,7 @@ pub(super) fn section(
         POINTS,
     );
     field(ui, t::geometry_h(), &mut draft.h, None, locked, POINTS);
+    super::scaled::rows(ui, doc, page, draft, locked);
 
     // **THE ANGLE** — `OPERATOR_REQUESTS.md` O146, 2026-09-07: *"the angle
     // should be editable from the properties."*

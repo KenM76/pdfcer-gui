@@ -486,7 +486,7 @@ pub fn scale(
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "page-scale-applied n={} mode={:?} scale_min={lo:.4} scale_max={hi:.4} flipped={} annotations={} measures={} destinations={} geo_unchanged={} overflow={hidden}",
+            "page-scale-applied n={} mode={:?} scale_min={lo:.4} scale_max={hi:.4} flipped={} annotations={} measures={} destinations={} geo_unchanged={} patterns={} patterns_unchanged={} overflow={hidden}",
             report.pages.len(),
             request.mode,
             report
@@ -498,6 +498,8 @@ pub fn scale(
             report.pages.iter().map(|p| p.measures).sum::<usize>(),
             report.destinations,
             report.geo_measures_unchanged,
+            report.pages.iter().map(|p| p.patterns).sum::<usize>(),
+            report.patterns_unchanged,
         )
     });
     let mut notes = Vec::new();
@@ -506,6 +508,9 @@ pub fn scale(
     }
     if report.geo_measures_unchanged > 0 {
         notes.push(t::disclosure_geo_unchanged(report.geo_measures_unchanged));
+    }
+    if report.patterns_unchanged > 0 {
+        notes.push(t::disclosure_patterns_unchanged(report.patterns_unchanged));
     }
     Ok(notes)
 }
