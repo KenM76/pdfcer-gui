@@ -186,9 +186,13 @@ fn pack_page(
     })?;
     let recorded = started.elapsed().as_millis();
     let region = request.region.unwrap_or(request.page.crop_box);
-    let scene = list
-        .gpu_scene(list.key(), region)
-        .map_err(|e| refusal(&e))?;
+    // A sheet left mid-pack stops here rather than packing to the end; the
+    // worker reads the token and reports the stop as a cancellation.
+    let packed = match &options.cancel {
+        Some(token) => list.gpu_scene_cancellable(list.key(), region, token),
+        None => list.gpu_scene(list.key(), region),
+    };
+    let scene = packed.map_err(|e| refusal(&e))?;
     let total = started.elapsed().as_millis();
     let cancelled = options.cancel.as_ref().is_some_and(|c| c.is_cancelled());
     // ui-text-exempt: diagnostic trace, never displayed in the UI

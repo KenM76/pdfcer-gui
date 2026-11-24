@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: a99d1e1302b7fa64d53350ede195736406d9a205
+# baseline: e4dd17e8793dd1103745c89a99891f5b33c885df
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 13338
+# items: 13340
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -13065,6 +13065,7 @@ pdfcer-render method pdfcer_render::gouraud::Gouraud::len
 pdfcer-render method pdfcer_render::gouraud::ShadingSource::bbox_device
 pdfcer-render method pdfcer_render::gpu::reference::GpuScene::evaluate
 pdfcer-render method pdfcer_render::gpu::scene::DisplayList::gpu_scene
+pdfcer-render method pdfcer_render::gpu::scene::DisplayList::gpu_scene_cancellable
 pdfcer-render method pdfcer_render::gstate::GStateStack::new
 pdfcer-render method pdfcer_render::gstate::GStateStack::pop
 pdfcer-render method pdfcer_render::gstate::GStateStack::push
@@ -13436,6 +13437,7 @@ pdfcer-render variant pdfcer_render::gouraud::Decline::IncompleteRamp
 pdfcer-render variant pdfcer_render::gouraud::Decline::TooManyTriangles
 pdfcer-render variant pdfcer_render::gouraud::Decline::Translucent
 pdfcer-render variant pdfcer_render::gouraud::Decline::Unpaintable
+pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Cancelled
 pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Curves
 pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Image
 pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Render

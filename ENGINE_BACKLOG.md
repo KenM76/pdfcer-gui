@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `wanted` — a real gap — **40 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -160,7 +160,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `blocked` — waiting on something named — **2 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -178,7 +178,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -189,7 +189,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `declined` — deliberately no surface — **21 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -236,7 +236,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **581 of 644** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **583 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -244,6 +244,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Cancel a GPU page build part-way** — `DisplayList::gpu_scene_cancellable`, `GpuRefusal::Cancelled` | **shipped — consumed, O459.** `rendercard::pack_page` passes the render's `options.cancel`; a page left mid-pack stops there, and the worker reports the cancelled `Err` as a cancellation, never a processor fallback. Driven: `navigating_on_the_graphics_card_never_holds_the_window_longer_than_the_processor`. |
+| **Text extraction recovers hex glyph names (/G41, Windows PostScript driver fonts), counted as inferred** | **shipped — no change here.** Copy, Find and the text panels read through the engine's extraction, so these fonts now give real text at the pin. The `via_hex_glyph_name` count is not shown, as no extraction provenance count is yet. |
 | **Straightened or enlarged scans keep their source codec; the replaced original is deleted** — the module `pdfcer_core::edit::resample_encode` (`DeskewEncoding`), `EditSession::deskew_image_with`, `ImageDeskew::replaced_dropped`, `ImageUpscale::replaced_dropped` | **shipped — File ▸ Recognise ▸ Straighten scans.** *Store the straightened scan* offers As the original (`DeskewEncoding::SameFamily`, the default), Without loss (`Flate`) or JPEG with a quality (`Dct`), passed by `app::actions::deskew::page_turn` to `deskew_image_with`; the replaced picture is dropped in the same undo entry. Driven: `straighten_scans_stores_the_scan_as_chosen`. Enlarge scans' `ImageUpscale::replaced_dropped` is reached through `upscale_image`, which keeps the source family. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **shipped — consumed, G184.** A document moved to another window carries its undo: the sender writes `export_history` beside the carried copy and the receiver, on its pristine session from the same base bytes, calls `import_history` (`app::actions::historymove`); a refused import keeps the edits and says the steps did not come. Driven by `a_moved_document_keeps_its_undo`. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **shipped — consumed, G185.** `pages::insert_from_view` makes one `insert_pages` call with the operator's list as written, repeats included, and the engine gives each repeat its own page object; Insert blank… inserts `[0; count]` that way (`app::actions::insertblank`). Driven by `blank_pages_are_inserted_as_one_step`: three copies of one blank page land as three pages the reader accepts and one Ctrl+Z removes them. |
@@ -1035,6 +1037,14 @@ The request O280 is built on, answered and consumed.
 - **G270** — CONSUMED at v0.130.0: `ShadowLight::AimedSun(SunLight)`, *A sun you aim* under *Shadows cast by* (O392).
 - **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).
 - **G272** — CONSUMED at v0.130.0: `FrameLampShadows::for_model_after` with the previous choice and `FrameLights::use_lamp_shadows`; the cap `MAX_LAMP_SHADOWS` said when reached (O393).
+
+## Engine arrivals at v0.173.0 — not verdict rows
+
+Answers to O459 and O460, plus version-floor fixes for another consumer.
+
+- **Cancellable card packing** — `DisplayList::gpu_scene_cancellable`, `GpuRefusal::Cancelled`. **shipped**: `rendercard::pack_page` passes the render's `options.cancel` token; the worker reads an `Err` with that token cancelled as a cancellation, so `Cancelled` never reaches the processor fallback or the status line. Driven by `navigating_on_the_graphics_card_never_holds_the_window_longer_than_the_processor`.
+- **Plates from one composite per four inks** and **the card's split mask at pack time** — no API change; `render_plates` and the card's shaders are faster under the same calls. Driven: `print_preview_plates_keep_the_window_answering` (4 plates 11.5 s, against 44.2 s) and `the_graphics_card_draws_the_page_the_processor_draws`.
+- **Version floor** (X110, X111) — the optimiser's minimum-version scan, internal to Save optimised; nothing here to call.
 
 ## Engine arrivals at v0.172.0 — not verdict rows
 

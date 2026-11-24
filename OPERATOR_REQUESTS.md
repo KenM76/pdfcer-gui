@@ -8339,3 +8339,4 @@ Said on 2026-11-24, about File ▸ Print ▸ preview with colour separations and
 - 3: both ink arrows sit together before the ink name; the next arrow's rect is identical across two clicks.
 - 4: "Sheet [n] of N": type a number and Enter (or Tab, or click away); Escape keeps the sheet.
 - 5: plates held up to 384 MiB and colour sheets up to 128 MiB, most recently shown kept; going back to a sheet renders nothing again.
+- Engine v0.173.0 (one composite per four inks): page 2's 4 plates land in 11,515 ms, against 44,223 ms.
