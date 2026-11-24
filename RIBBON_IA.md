@@ -546,7 +546,7 @@ names them, and renaming an id to follow a move would break both for no gain.
 
 | Group | Commands |
 |---|---|
-| **ce dimension** | Linear · Aligned · Angular · Radius / Diameter · Two-line · Perimeter · Area · Length · Finish |
+| **ce dimension** | Linear · Aligned · Angular · Radius / Diameter · Two-line · Centre line · Perimeter · Area · Length · Finish |
 | **Quantity** | Distance · Count |
 | **Scale** | Set scale · Calibrate from a known length · Manage ce-dimension groups… |
 | **Takeoff** | Schedule panel · Export CSV |

@@ -76,6 +76,7 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
         CanvasTool::Measure(
             MeasureKind::Linear
             | MeasureKind::TwoLine
+            | MeasureKind::CentreLine
             | MeasureKind::Perimeter
             | MeasureKind::PathLength
             | MeasureKind::Area,

@@ -601,6 +601,11 @@ pub(super) const LOCK: &str = include_str!("assets/lock.svg");
 /// Two-line measurement — `measure.two_line`.
 pub(super) const MEASURE_ANGLE: &str = include_str!("assets/measure-angle.svg");
 
+/// `measure-centre-line.svg` — the art for [`super::Icon::MeasureCentreLine`].
+///
+/// Centre line between two picked lines — `measure.centre_line`.
+pub(super) const MEASURE_CENTRE_LINE: &str = include_str!("assets/measure-centre-line.svg");
+
 /// `measure-area.svg` — the art for [`super::Icon::MeasureArea`].
 ///
 /// Area measurement — `measure.area`.

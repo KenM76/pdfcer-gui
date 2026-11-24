@@ -447,7 +447,7 @@ fn registration_succeeds_and_registers_every_command() {
     // 270 → 271: `view.highlight_fields`, View ▸ Display.
     assert_eq!(
         registry().len(),
-        271 + 2 * usize::from(cfg!(feature = "signing"))
+        272 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -904,7 +904,7 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 233 → 234: `view.highlight_fields` shares `form-field`.
     assert_eq!(
         named,
-        234 + 2 * usize::from(cfg!(feature = "signing"))
+        235 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

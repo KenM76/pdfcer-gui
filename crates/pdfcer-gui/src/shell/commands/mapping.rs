@@ -173,6 +173,8 @@ pub fn measure_command(kind: crate::canvas::measure::MeasureKind) -> &'static st
         K::Area => "measure.area",
         // ui-text-exempt: command ids, never displayed
         K::TwoLine => "measure.two_line",
+        // ui-text-exempt: command ids, never displayed
+        K::CentreLine => "measure.centre_line",
         // Armed from the Set-scale DIALOG, not from the ribbon, so it maps
         // to no command id at all.
         //

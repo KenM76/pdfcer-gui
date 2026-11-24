@@ -75,9 +75,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 215 → 216: `camera`, the 3D viewer's save-a-picture.
     // 216 → 217: `actual-size`, the print preview's and status bar's actual size.
     // 217 → 218: `separations`, the print preview's plates switch.
+    // 218 → 219: `measure-centre-line`, two lines with the dashed line between, for `measure.centre_line`.
     assert_eq!(
         Icon::ALL.len(),
-        218,
+        219,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

@@ -8249,6 +8249,8 @@ Said on 2026-11-20 while the v0.166.0 release sweep ran.
 
 Said on 2026-11-21, asking for the next release to go out first and this to be built when work resumes. Click two lines; a centre line is drawn midway between them, as the CAD centre-line tool does.
 
+Built: Measure ▸ Centre line. Click two lines and the centre line is drawn at once; for two angled lines it bisects the angle. Driven by `a_centre_line_is_drawn_between_two_lines`.
+
 ## O454 — **OPEN** — one centre-mark tool, with a measurement and a mark each on its own checkbox
 
 *"add an option to add a center mark when making a diameter measurement, and also a way to add a center mark without the diameter measurement - maybe this is just one tool with a check box to add the measurement and a check box to add the center mark"*

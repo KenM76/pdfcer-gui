@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- `measure.centre_line`: two parallel lines with a long-short-long centre line
+       midway between them, running past both ends as drafting draws one. The
+       dash pattern is the cue that separates it from `ruler.svg` and from the
+       Align glyphs, which draw solid strokes only. -->
+  <path d="M12 12h24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M12 36h24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M5 24h12M22 24h4M31 24h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

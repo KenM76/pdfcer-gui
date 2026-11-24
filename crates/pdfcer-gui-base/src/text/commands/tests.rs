@@ -132,6 +132,7 @@ fn all() -> Vec<CommandText> {
         measure_area(),
         measure_radius_diameter(),
         measure_two_line(),
+        measure_centre_line(),
         measure_finish(),
         measure_set_scale(),
         measure_manage_groups(),

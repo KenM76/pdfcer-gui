@@ -149,6 +149,9 @@ pub(super) fn band() -> Vec<Command> {
         command("measure.two_line", t::measure_two_line(), 602)
             .with_icon("measure-angle")
             .enabled_when("doc.pages"),
+        command("measure.centre_line", t::measure_centre_line(), 606)
+            .with_icon("measure-centre-line")
+            .enabled_when("doc.pages"),
         // **Finish** — the ribbon half of the radius/diameter tool's ending.
         //
         // The radius/diameter gesture is the only one on this tab with no

@@ -424,6 +424,15 @@ pub const fn measure_two_line() -> CommandText {
     )
 }
 
+/// `measure.centre_line`
+#[must_use]
+pub const fn measure_centre_line() -> CommandText {
+    CommandText::new(
+        "Centre line",
+        "Pick two lines already on the drawing and draw the centre line between them: midway between two parallel lines, or along the bisector of two that meet. It runs a little past both lines and measures nothing.",
+    )
+}
+
 /// `measure.finish`
 #[must_use]
 pub const fn measure_finish() -> CommandText {

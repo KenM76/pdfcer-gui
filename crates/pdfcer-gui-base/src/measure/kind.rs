@@ -102,6 +102,11 @@ pub enum MeasureKind {
     /// them — [`pdfcer_core::dimension::TwoLinePlacement`] decides where it
     /// lands, so this side chooses the pair and nothing else.
     TwoLine,
+    /// **Pick two lines; pdfcer draws the centre line between them** — the
+    /// midline of two parallel lines, the bisector of two that meet
+    /// ([`pdfcer_core::dimension::author_centre_line`]). It measures nothing,
+    /// so there is no placing click: the second line commits it.
+    CentreLine,
     /// **Pick two points on the drawing to say what its scale is.**
     ///
     /// The calibration gesture: pick two lines or points and say what that
@@ -142,6 +147,7 @@ impl MeasureKind {
         Self::PathLength,
         Self::Area,
         Self::TwoLine,
+        Self::CentreLine,
     ];
 
     /// The kinds that are deliberately **not** on the ribbon, with the surface
@@ -174,7 +180,8 @@ mod tests {
                 | MeasureKind::Perimeter
                 | MeasureKind::PathLength
                 | MeasureKind::Area
-                | MeasureKind::TwoLine => "ribbon",
+                | MeasureKind::TwoLine
+                | MeasureKind::CentreLine => "ribbon",
                 MeasureKind::Scale => "elsewhere",
             }
         }
@@ -203,7 +210,7 @@ mod tests {
         }
         assert_eq!(
             MeasureKind::ALL.len() + MeasureKind::ARMED_ELSEWHERE.len(),
-            7,
+            8,
             "a variant was added to the enum and to neither list, or counted twice"
         );
     }

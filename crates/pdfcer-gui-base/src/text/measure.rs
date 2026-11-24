@@ -9,7 +9,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/measure.md`.
 
-use pdfcer_core::dimension::TwoLineRefusal;
+use pdfcer_core::dimension::{CentreLineRefusal, TwoLineRefusal};
 
 /// Why a two-line pick could not author anything.
 #[must_use]
@@ -32,6 +32,48 @@ pub const fn two_line_refused(refusal: TwoLineRefusal) -> &'static str {
         // ui-text-exempt: lint justification, never displayed
         _ => "Those two lines cannot be dimensioned together.",
     }
+}
+
+/// Why a centre-line pick drew nothing.
+#[must_use]
+pub const fn centre_line_refused(refusal: CentreLineRefusal) -> &'static str {
+    match refusal {
+        CentreLineRefusal::Collinear => {
+            "Those two lines lie along the same line, so there is nothing between them to draw a centre line through."
+        }
+        CentreLineRefusal::Degenerate => {
+            "One of those lines has no length, so it has no direction. Pick a line with two distinct ends."
+        }
+        CentreLineRefusal::NoOverlap => {
+            "Those two lines do not run alongside each other anywhere, so there is no stretch to draw a centre line over."
+        }
+        CentreLineRefusal::BadOvershoot => {
+            "The centre line could not be drawn: its overshoot past the lines is not a valid length."
+        }
+    }
+}
+
+/// What the centre-line tool read the pair as, when that is not the plain
+/// midline of two parallel lines.
+#[must_use]
+pub fn centre_line_reading(
+    forced_parallel: bool,
+    measured_angle_degrees: Option<f64>,
+    angled: bool,
+) -> Option<String> {
+    if forced_parallel {
+        return two_line_reading(true, measured_angle_degrees, false);
+    }
+    if !angled {
+        return None;
+    }
+    Some(match measured_angle_degrees {
+        Some(degrees) => format!(
+            "Those lines are {degrees:.2}° apart, so the centre line bisects the angle between them."
+        ),
+        None => "Those lines are not parallel, so the centre line bisects the angle between them."
+            .to_owned(),
+    })
 }
 
 /// **What the two-line tool read the pair as** — the disclosure obligation

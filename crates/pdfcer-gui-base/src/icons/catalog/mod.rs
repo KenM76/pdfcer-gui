@@ -762,6 +762,10 @@ pub enum Icon {
     ///
     MeasureAngle,
 
+    /// Centre line between two picked lines — `measure.centre_line`.
+    ///
+    MeasureCentreLine,
+
     /// Path-length measurement — `measure.length`.
     ///
     /// A meandering **open** run with a short upright tick standing off each end:

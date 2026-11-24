@@ -8,7 +8,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/measure/pick.md`.
 
 use pdfcer_core::dimension::{
-    DimensionKind, TwoLineAuthoring, TwoLinePlacement, TwoLineRefusal, author_from_two_lines,
+    CentreLineAuthoring, CentreLineRefusal, DEFAULT_CENTRE_LINE_OVERSHOOT, DimensionKind,
+    TwoLineAuthoring, TwoLinePlacement, TwoLineRefusal, author_centre_line, author_from_two_lines,
 };
 use pdfcer_core::vector::linepick::{ParallelPolicy, PickedLine};
 use pdfcer_core::vector::{AxisConstraint, Point, constrained_second_point, measured_length};
@@ -287,11 +288,38 @@ impl TwoLinePick {
         placement: TwoLinePlacement,
     ) -> Option<Result<TwoLineAuthoring, TwoLineRefusal>> {
         let (a, b) = (self.first?, self.second?);
-        let mut policy = ParallelPolicy::from_setting(epsilon_degrees);
+        Some(author_from_two_lines(
+            &a,
+            &b,
+            self.policy(epsilon_degrees),
+            placement,
+        ))
+    }
+
+    /// The centre line the current pair calls for: the midline of two
+    /// parallel lines, the bisector of two that meet. Same parallel reading,
+    /// override included, as [`Self::authoring`].
+    #[must_use]
+    pub fn centre_line(
+        &self,
+        epsilon_degrees: f64,
+    ) -> Option<Result<CentreLineAuthoring, CentreLineRefusal>> {
+        let (a, b) = (self.first?, self.second?);
+        Some(author_centre_line(
+            &a,
+            &b,
+            self.policy(epsilon_degrees),
+            DEFAULT_CENTRE_LINE_OVERSHOOT,
+        ))
+    }
+
+    fn policy(&self, epsilon_degrees: f64) -> ParallelPolicy {
+        let policy = ParallelPolicy::from_setting(epsilon_degrees);
         if self.force_parallel {
-            policy = policy.forcing_parallel();
+            policy.forcing_parallel()
+        } else {
+            policy
         }
-        Some(author_from_two_lines(&a, &b, policy, placement))
     }
 
     /// Discard the in-progress pair (Escape stage 1 / Reject), staying in the
@@ -710,6 +738,48 @@ mod tests {
             .authoring(EPS, TwoLinePlacement::default())
             .expect("the pair is complete");
         assert_eq!(result, Err(TwoLineRefusal::Collinear));
+    }
+
+    /// Two parallel edges give the midline between them; two that meet give
+    /// the bisector. Both are a centre line, never a measurement.
+    #[test]
+    fn a_pair_of_lines_authors_a_centre_line() {
+        let mut pick = TwoLinePick::new();
+        assert!(
+            pick.centre_line(EPS).is_none(),
+            "an empty pick authors nothing"
+        );
+        pick.offer_line(picked(100.0, 100.0, 300.0, 100.0), EPS);
+        pick.offer_line(picked(100.0, 140.0, 300.0, 140.0), EPS);
+        let midline = pick.centre_line(EPS).expect("complete").expect("drawable");
+        let DimensionKind::CentreLine { a, b } = midline.kind else {
+            panic!("a centre line, got {:?}", midline.kind);
+        };
+        assert!(
+            (a.y - 120.0).abs() < 1e-9 && (b.y - 120.0).abs() < 1e-9,
+            "halfway between"
+        );
+        assert!(!midline.forced_parallel);
+
+        let mut pick = TwoLinePick::new();
+        pick.offer_line(picked(100.0, 100.0, 300.0, 100.0), EPS);
+        pick.offer_line(picked(100.0, 100.0, 100.0, 300.0), EPS);
+        let bisector = pick.centre_line(EPS).expect("complete").expect("drawable");
+        assert!(matches!(bisector.kind, DimensionKind::CentreLine { .. }));
+    }
+
+    /// The Treat as parallel override reaches the centre line too.
+    #[test]
+    fn the_parallel_override_reaches_the_centre_line() {
+        let t = 5f64.to_radians().tan();
+        let mut pick = TwoLinePick::new();
+        pick.offer_line(picked(0.0, 0.0, 100.0, 0.0), EPS);
+        pick.offer_line(picked(0.0, 40.0, 100.0, 100.0f64.mul_add(t, 40.0)), EPS);
+        let before = pick.centre_line(EPS).expect("complete").expect("drawable");
+        assert!(!before.forced_parallel);
+        pick.force_parallel = true;
+        let after = pick.centre_line(EPS).expect("complete").expect("drawable");
+        assert!(after.forced_parallel);
     }
 
     /// The whole reason the verdict is derived rather than cached: ticking

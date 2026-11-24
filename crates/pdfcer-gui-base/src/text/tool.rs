@@ -317,6 +317,9 @@ pub const fn measure_instruction(kind: MeasureKind) -> &'static str {
             "Click the corners of the region. Click the first point again, or double-click the last one, to close it."
         }
         MeasureKind::TwoLine => "Click one line, then the other.",
+        MeasureKind::CentreLine => {
+            "Click one line, then the other. The centre line is drawn between them."
+        }
         // The calibration pick, which is armed from inside the Set-scale
         // window rather than from the Measure tab — it is deliberately absent
         // from `MeasureKind::ALL` for that reason.

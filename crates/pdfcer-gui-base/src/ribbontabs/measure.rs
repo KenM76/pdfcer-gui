@@ -25,6 +25,7 @@ pub fn tab() -> Tab {
                     command("measure.area"),
                     command("measure.length"),
                     command("measure.two_line"),
+                    command("measure.centre_line"),
                     // **Finish** sits with the tools, not in its own group.
                     //
                     // It is not a fourth tool — it arms nothing — and a reader

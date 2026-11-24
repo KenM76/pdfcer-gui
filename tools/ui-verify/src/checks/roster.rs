@@ -611,6 +611,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(group_in_form::PartsOfAPlacedDrawingGroupInsideIt),
         Box::new(snap_markup::MeasureToolSnapsToAMarkup),
         Box::new(snap_image::MeasureToolSnapsToAnImage),
+        Box::new(centre_line::ACentreLineIsDrawnBetweenTwoLines),
         Box::new(text_box_live::ATextBoxIsTypedOnThePage),
         Box::new(nudgecontent::ArrowKeysMoveASelectedObjectOnThePage),
         Box::new(nudgecontent::AnArrowKeyMovesAPartOfAPlacedDrawing),

@@ -352,7 +352,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         // drawing. Highlighting the picked line is the affordance it wants, and
         // that needs the hover query this call site does not yet run — see the
         // module header's note on what remains.
-        MeasureKind::TwoLine => Vec::new(),
+        MeasureKind::TwoLine | MeasureKind::CentreLine => Vec::new(),
     };
     if segments.is_empty() {
         return;
