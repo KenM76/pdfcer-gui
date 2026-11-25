@@ -5,7 +5,7 @@
 
 use super::{
     DialogsState, about, compact, diagnostics, embed, export_image, formfield, insert_image,
-    netprint, ocr, offpage, print, protect, redact, scale, textannot, unembed, xfa_preview,
+    netprint, ocr, offpage, protect, redact, scale, textannot, unembed, xfa_preview,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -22,7 +22,7 @@ impl DialogsState {
         }
         let presets = pdfcer_gui_base::prefs::printpresets::default_folder();
         self.print = Some(
-            print::PrintDialog::open(doc, &prefs.print)
+            super::print::PrintDialog::open(doc, &prefs.print)
                 .with_presets(presets, prefs.print_presets.search_list()),
         );
     }
@@ -115,6 +115,39 @@ impl DialogsState {
         }
         self.remove_ocr = super::remove_ocr::open_for(status, picked);
         self.remove_ocr.is_some()
+    }
+
+    /// Open the prepress window `id` names, or keep the one already open.
+    /// `picked` is the thumbnail rail's selection.
+    pub fn open_prepress(
+        &mut self,
+        status: &Status,
+        id: &str,
+        picked: &std::collections::BTreeSet<usize>,
+    ) {
+        let Some(kind) = super::prepress::Kind::of_command(id) else {
+            return;
+        };
+        self.open_prepress_kind(status, kind, picked.iter().copied().collect());
+    }
+
+    /// Open a prepress window of `kind`, unless one is open.
+    pub fn open_prepress_kind(
+        &mut self,
+        status: &Status,
+        kind: super::prepress::Kind,
+        picked: Vec<usize>,
+    ) {
+        let Status::Open(doc) = status else {
+            return;
+        };
+        if self.prepress.iter().any(|d| d.kind() == kind) {
+            return;
+        }
+        let of = doc.pages.len();
+        let picked = picked.into_iter().filter(|p| *p < of).collect();
+        self.prepress
+            .push(super::prepress::PrepressDialog::new(kind, doc, picked));
     }
 
     /// Open the Apply-redactions dialog for the document in `status`.

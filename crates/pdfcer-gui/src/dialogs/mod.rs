@@ -135,6 +135,9 @@ mod open_pages;
 mod open_region;
 /// The "which pages" group Recognise text and Remove OCR text share.
 mod page_scope;
+/// File ▸ Print's Fix hairlines, Flatten transparency, Convert colours, and
+/// Convert to PDF/X.
+pub mod prepress;
 /// Security ▸ Remove metadata: the description entries, ticked to remove.
 pub mod remove_metadata;
 /// File ▸ Remove OCR text: which pages, and which recogniser's text.
@@ -253,6 +256,8 @@ pub struct DialogsState {
     /// The Remove-OCR-text window. Document-scoped: it lists the layers the
     /// open document held when it opened.
     remove_ocr: Option<remove_ocr::RemoveOcrDialog>,
+    /// The prepress windows, at most one per kind. Document-scoped.
+    prepress: Vec<prepress::PrepressDialog>,
     /// The Make-pictures-smaller window. Document-scoped: it names the
     /// open document's pictures by object id.
     shrink_images: Option<shrink_images::ShrinkImagesDialog>,
@@ -785,13 +790,6 @@ impl DialogsState {
 
     /// Draw every open dialog, and close the ones that asked to close.
     pub fn show(&mut self, cx: Frame<'_>) {
-        // Destructured immediately, and deliberately: [`Frame`] exists to
-        // stop this function's parameter list growing without a thought (see
-        // its own header), NOT to make every use site downstream read
-        // `cx.ctx`. Below this line the body is written against the same seven
-        // names it has always used, which is why bundling them was a
-        // signature change rather than a rewrite of a two-hundred-line
-        // function.
         let Frame {
             ctx,
             status,
@@ -1017,6 +1015,7 @@ impl DialogsState {
         if self.remove_ocr.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.remove_ocr = None;
         }
+        self.prepress.retain_mut(|d| d.show(ctx, status, actions));
         if self
             .shrink_images
             .as_mut()
@@ -1441,6 +1440,7 @@ impl DialogsState {
         self.redact_outside = None;
         self.compact = None;
         self.remove_ocr = None;
+        self.prepress.clear();
         self.shrink_images = None;
         self.deskew = None;
         self.remove_metadata = None;

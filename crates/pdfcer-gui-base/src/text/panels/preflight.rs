@@ -232,3 +232,58 @@ pub fn fixed_heading() -> &'static str {
 pub fn more_rows(n: usize) -> String {
     format!("…and {n} more. Copy report lists every one.")
 }
+
+/// A standard's verdict, at the top of the results.
+#[must_use]
+pub fn standard_verdict(claim: &str, verdict: Option<&str>) -> String {
+    let word = match verdict {
+        Some("conforms") => "conforms",
+        Some("fails") => "does not conform",
+        Some(_) => "cannot tell",
+        None => "no overall verdict",
+    };
+    format!("{claim}: {word}")
+}
+
+/// Why the verdict is what it is.
+#[must_use]
+pub fn standard_reasons(
+    failed: usize,
+    warned: usize,
+    person: usize,
+    not_checked: Option<usize>,
+) -> String {
+    let mut parts = vec![
+        format!("{failed} requirement(s) failed"),
+        format!("{warned} warned"),
+        format!("{person} need a person to decide"),
+    ];
+    if let Some(n) = not_checked {
+        parts.push(format!("{n} not checked"));
+    }
+    format!("{}.", parts.join(", "))
+}
+
+/// Why PDF/UA has no verdict.
+#[must_use]
+pub const fn standard_ua_no_verdict() -> &'static str {
+    "The checker does not decide PDF/UA conformance as a whole: it reports what failed, and some requirements need a person to judge. A file with nothing failed may still not conform."
+}
+
+/// Why a verdict of "cannot tell".
+#[must_use]
+pub const fn standard_unconfirmed() -> &'static str {
+    "Nothing failed, but something warned, needs a person, or was not checked, so conformance is not confirmed."
+}
+
+/// The Convert to PDF/X button.
+#[must_use]
+pub const fn convert_pdfx() -> &'static str {
+    "Convert to PDF/X…"
+}
+
+/// What Convert to PDF/X does.
+#[must_use]
+pub const fn convert_pdfx_hover() -> &'static str {
+    "Open Convert to PDF/X: flatten, convert colours and set the output profile so the file meets the standard."
+}

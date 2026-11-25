@@ -531,6 +531,8 @@ pub struct OpenDoc {
     pub tag_pick: Option<crate::tagtree::TagPick>,
     /// The last Preflight fix's report, shown in the Preflight panel.
     pub preflight_fixed: Option<crate::preflightfix::FixNote>,
+    /// The last prepress run's report, shown by the window that raised it.
+    pub prepress_note: Option<crate::prepress::PrepressNote>,
     /// **The horizontal scroll offset the view had when a destination was
     /// raised**, before anything navigated.
     ///
@@ -1149,6 +1151,7 @@ impl OpenDoc {
             tags: crate::tagtree::TagCache::default(),
             tag_pick: None,
             preflight_fixed: None,
+            prepress_note: None,
             dest_origin_x: None,
             view_viewport: None,
             // Nothing to reveal on a document nobody has searched yet — and,

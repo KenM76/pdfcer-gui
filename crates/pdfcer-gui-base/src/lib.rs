@@ -517,6 +517,8 @@ pub mod testsupport;
 
 /// A Preflight panel fix, carried from the panel to the edit funnel.
 pub mod preflightfix;
+/// A print-production verb, carried from its window to the edit funnel.
+pub mod prepress;
 /// The form tab-order working list and its reorder arithmetic.
 pub mod tabordermodel;
 pub mod tagtree;

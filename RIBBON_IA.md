@@ -262,7 +262,7 @@ which is organising the document (P1: one command, one tab).
 | **Save** | Save · Save as… · Save a copy… · Save compacted · Reduce file size… · Fit to a size… · Revert |
 | **Recognise** | OCR… · Remove OCR text · Straighten scans… · Enlarge scans… · Manage OCR models… (Download inside it only in a build with model download) |
 | **Export** | Export DXF… · Export image… (PNG/JPEG/TIFF, DPI picker) · Export text… · Import text · Stamp collection · Export form data ⌄ (FDF / XFDF / CSV) · Import form data · Export for hand editing… · Compile hand edits… · Copy this page's text · Copy the whole document's text |
-| **Print** | Print… · Printer's marks… · Send to network printer… · Imposition… (n-up / booklet / poster) |
+| **Print** | Print… · Printer's marks… · Fix hairlines… · Flatten transparency… · Convert colours… · Convert to PDF/X… · Send to network printer… · Imposition… (n-up / booklet / poster) |
 | **Document** | Properties · Fonts |
 | **pdfcer** | Settings… · Keyboard shortcuts · About |
 
@@ -932,6 +932,7 @@ decided and each decision holds.
 | `view.panel_forms` | View ▸ Panels | Forms ▸ Manage | filling is not authoring, and it is a panel toggle rather than a verb, so it sits with the other panel toggles |
 | `file.ocr` | File ▸ Recognise | Tools ▸ Recognise | OCR must be reachable in Read and Tools is not in Read's tab list. File over View because OCR's product is a new file. Giving Read the whole Tools tab was the alternative and was refused: it would hand a reading stance batch merge, batch split and font embedding |
 | `view.preflight` | View ▸ Panels, after Output preview | Tools, or a Print Production tab | Acrobat groups Preflight with Output Preview under Print Production, and pdfcer has no such tab; the Panels group is where Output preview already lives. It opens a panel read beside the page, so it is a panel toggle, not a Tools verb, which produces files |
+| `file.fix_hairlines`, `file.flatten_transparency`, `file.convert_colours`, `file.convert_to_pdfx` | File ▸ Print, after Printer's marks | View ▸ Panels beside Preflight, or Tools | the reference suite files these fixups under Print Production with Preflight and Output Preview; pdfcer has no such tab, and the panel toggles group holds panels, not verbs. They prepare the file for the press, which is File ▸ Print's job, and each is also reached from where the problem is reported: Preflight's verdict offers Convert to PDF/X. Each edits the document, so each is greyed outside Edit mode with the reason on hover |
 | `view.reset_layout` | View ▸ Window | File | it resets panel geometry, which is a view concern (§3) |
 | `file.fonts` | File ▸ Document | View ▸ Panels | the Fonts panel answers *what is inside this file*, not *what is on my screen*, so it sits with Properties (§5.1). The left rail carries it too, and a rail is a panel strip rather than a tab |
 | `markup.comments` | Markup ▸ Comments | View ▸ Panels | comments are markup someone else reads, so the panel toggle stays with the marks it lists. It is on the left rail as well |

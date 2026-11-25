@@ -831,6 +831,24 @@ pub(super) fn band() -> Vec<Command> {
         command("file.network_print", t::file_network_print(), 138)
             .with_icon("print")
             .enabled_when("doc.open"),
+        // The three print-production fixes, beside Printer's marks. Each edits
+        // page content, so each takes the content mode. O458.
+        command("file.fix_hairlines", t::file_fix_hairlines(), 139)
+            .with_icon("preflight")
+            .with_enable(prepress_enable()),
+        command(
+            "file.flatten_transparency",
+            t::file_flatten_transparency(),
+            143,
+        )
+        .with_icon("preflight")
+        .with_enable(prepress_enable()),
+        command("file.convert_colours", t::file_convert_colours(), 144)
+            .with_icon("preflight")
+            .with_enable(prepress_enable()),
+        command("file.convert_to_pdfx", t::file_convert_to_pdfx(), 145)
+            .with_icon("preflight")
+            .with_enable(prepress_enable()),
         command("file.properties", t::file_properties(), 140)
             .with_icon("properties")
             .enabled_when("doc.open"),
@@ -1055,4 +1073,11 @@ pub(super) fn band() -> Vec<Command> {
             163,
         ),
     ]
+}
+
+/// A page-content edit's predicate: a document with pages, in Edit mode.
+fn prepress_enable() -> egui_shell::commands::Enable {
+    egui_shell::commands::Enable::Custom(std::sync::Arc::new(|c| {
+        c.is_set("mode.edit_content") && c.is_set("doc.pages")
+    }))
 }

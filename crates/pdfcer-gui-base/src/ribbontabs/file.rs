@@ -216,6 +216,10 @@ pub fn tab() -> Tab {
                 [
                     large("file.print"),
                     command("file.printer_marks"),
+                    command("file.fix_hairlines"),
+                    command("file.flatten_transparency"),
+                    command("file.convert_colours"),
+                    command("file.convert_to_pdfx"),
                     command("file.network_print"),
                 ],
             ),

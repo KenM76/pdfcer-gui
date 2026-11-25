@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **36 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `wanted` — a real gap — **29 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -82,17 +82,10 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Preflight: image above ppi check and downsample fixup** | **wanted — O458.** Reached through the Preflight panel once a profile carries the rule; it has no surface of its own. |
-| **Find hairlines, and raise them to a minimum width** | **wanted — O458.** The preflight fixup first; a Print production command with a minimum-width field after. |
 | **Ink Manager: list inks** — `prepress::inks` … | **wanted — O458: an Ink Manager window** listing `prepress::inks`. |
 | **Alias one ink to another** — `alias-ink --from --to` … | **wanted — O458, in the Ink Manager.** It changes the file, unlike Acrobat's output-time alias, and the window must say so. |
 | **Convert spot inks to process** — `spot-to-process` … | **wanted — O458, in the Ink Manager.** A refusal names the colour engine verbatim. |
-| **Detect transparency, and flatten it with a report** — `has_transparency` … | **wanted — O458.** A preflight fixup, with `pdfcer_emf::RecordingFlattener` as the flattener, then a Print production command. |
-| **Convert colours to one ICC profile** — `EditSession::convert_colours` … | **wanted — O458.** <!--namesake:convert_colours--> The shell names the module `pdfcer_render::convert_colours` (its `IcccerConverter`, handed to Preflight's fixups), never the verb. A Print production command with an ICC picker. Without a profile the preflight fixup reports `Unavailable`, and the panel shows that. |
-| **Validate PDF/X-1a, X-3 and X-4, requirement by requirement** | **wanted — O458.** Profiles in the Preflight panel. |
-| **PDF/X conversion (X-1a/X-3/X-4)** | **wanted — O458.** Needs an ICC picker for the output intent. |
-| **Validate PDF/UA-1 and PDF/UA-2, clause by clause** | **wanted — O458.** Profiles in the Preflight panel. Needs-a-person findings are the bulk of PDF/UA and must read as such. |
 | **Fix what PDF/UA validation finds** | **wanted — O458.** The `pdfua` profile's fixup in the Preflight panel. |
-| **Validate PDF/A-1b, -2b and -3b, clause by clause** | **wanted — O458.** Profiles in the Preflight panel. An unconfirmed verdict is not a pass. |
 | **Import pages keeping their separation sets** | **wanted.** <!--namesake:SeparationInfo--> The shell's page insert already goes through `EditSession::insert_pages_with_options`, so the remap happens. Owed: whether the outcome it discloses reaches the status line, plus a driven check. |
 
 ### Vector objects (Inkscape-style editing)
@@ -232,7 +225,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **587 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **594 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -703,7 +696,14 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Preflight a document against a profile (first cut)** | **shipped — View ▸ Panels ▸ Preflight** (O458). A profile is picked from `Profile::BUILTIN_NAMES` by its plain name and Run calls `preflight::run_with_meter` on a worker thread over `EditSession::fork_for_print`, so neither the session nor the UI thread is held; progress shows and Cancel stops it. Findings are grouped by rule with counts; violation, needs a person and incomplete are labelled apart and never shown as a pass, and `dropped` and `cancelled` are disclosed. A page-object finding selects that object (`SelectionAction::SelectObject`); others go to the page and its rect. An edit marks the result stale and offers Run again. Driven: `the_preflight_panel_runs_jumps_and_fixes`. |
 | **Preflight fixups: apply a profile's fixups as one undo step** | **shipped — Preflight ▸ Fix (per rule, `EditSession::apply_fixup` with `FixupScope::Rule`) and Fix all (`apply_profile_fixups`, `suggest=true`)**, each one undo step through the edit funnel with `FixupTools` carrying the ICC converter and `pdfcer_emf::RecordingFlattener`. `FixupReport::to_text` is shown in the panel and the result is marked stale. Greyed with the reason on hover in Read mode or with no document. Driven: `the_preflight_panel_runs_jumps_and_fixes`. |
 | **Preflight text report** — `report_text` and `pdfcer preflight --report` … | **shipped — Preflight ▸ Copy report** puts `report_text` on the clipboard. Driven: `the_preflight_panel_runs_jumps_and_fixes`. (the press; the clipboard contents are not read back) |
-| **Preflight: total area coverage (max TAC, over-limit area, regions)** | **shipped — consumed by the Preflight panel**, which always runs with `pdfcer_render::TacMeter`, so a profile carrying `total-area-coverage` measures instead of reporting incomplete. The driven run is digital-printing, which carries no TAC rule; no check drives a TAC finding. |
+| **Preflight: total area coverage (max TAC, over-limit area, regions)** | **shipped — consumed by the Preflight panel**, which runs every profile but the PDF/X, PDF/A and PDF/UA ones with `pdfcer_render::TacMeter` (those carry no coverage rule), so a profile carrying `total-area-coverage` measures instead of reporting incomplete. The driven run is digital-printing, which carries no TAC rule; no check drives a TAC finding. |
+| **Find hairlines, and raise them to a minimum width** | **shipped — File ▸ Print ▸ Fix hairlines…** (O458): a minimum width (default 0.25 pt) and a page scope; Apply calls `EditSession::fix_hairlines` through the edit funnel, one undo step, and the window shows `HairlineFixReport` — lines widened, how many had width 0, each shared drawing changed in place with its invocation count, pages skipped, and every disclosure. Greyed outside Edit mode with the reason on hover. Driven: `the_prepress_commands_change_the_page_and_say_what_they_did` (`prepress-mix.pdf`: widened=1, then 0 on a second run). |
+| **Detect transparency, and flatten it with a report** — `has_transparency` … | **shipped — File ▸ Print ▸ Flatten transparency…** (O458): keep text, keep strokes, the picture resolution (`FlattenOptions::MIN_PPI`..`MAX_PPI`) and a page scope; `EditSession::flatten_transparency` with `pdfcer_emf::RecordingFlattener`, one undo step. The window lists each page as clean, left, covered or redrawn, with areas as vectors and as pictures, outlined text and lines, spot inks turned to process, transparent annotations left, and the flattener's notes. Driven: `the_prepress_commands_change_the_page_and_say_what_they_did` (flattened=1, then 0). |
+| **Convert colours to one ICC profile** — `EditSession::convert_colours` … | **shipped — File ▸ Print ▸ Convert colours…** (O458). <!--namesake:convert_colours--> Destination is the document's output intent or an installed output-class profile (`pdfcer_print::icc_profiles`); source families, keep pure black, black point compensation, rendering intent, and optionally making the profile the output intent. `EditSession::convert_colours` with `pdfcer_render::convert_colours::IcccerConverter`, one undo step; the window shows counts per source family, out of gamut, each unconverted object with its reason, the output intent change and disclosures. Driven: `the_prepress_commands_change_the_page_and_say_what_they_did` (converted=1 to the output intent, then 0). |
+| **Validate PDF/X-1a, X-3 and X-4, requirement by requirement** | **shipped — the Preflight panel's verdict** (O458): a `pdfx-*` profile runs through `validate_pdfx_with`, and the panel heads the results with *conforms / does not conform / cannot tell* (`PdfxReport::verdict`) and its counts. Traced `preflight-verdict`. Driven: `the_preflight_panel_gives_a_standards_verdict` (`prepress-mix.pdf` under `pdfx-4`: verdict=fails, failed=2; Convert to PDF/X opens its window). |
+| **PDF/X conversion (X-1a/X-3/X-4)** | **shipped — File ▸ Print ▸ Convert to PDF/X…, also offered under a PDF/X verdict that is not *conforms*** (O458): the standard, an installed output-class profile (the document's own intent cannot be offered: `request_output_intent_profile_bytes.md`), a printing condition and a rendering intent; `EditSession::convert_to_pdfx`, one undo step, reverted by the engine when the result does not conform. The window shows before and after, the claim, the steps and every finding still open. Not driven: it needs an installed output profile, which a build machine may lack. |
+| **Validate PDF/UA-1 and PDF/UA-2, clause by clause** | **shipped — the Preflight panel's PDF/UA account** (O458): a `pdfua-N` profile also calls `validate_pdfua` and the panel shows failed, warned, needs a person and not checked, with a sentence that the engine gives no PDF/UA verdict; it never shows *conforms*. Asked: `request_pdfua_verdict.md`. Driven: `the_preflight_panel_gives_a_standards_verdict` (`pdfua-1`: verdict=none, 34 not checked). |
+| **Validate PDF/A-1b, -2b and -3b, clause by clause** | **shipped — the Preflight panel's verdict** (O458): a `pdfa-*` profile runs through `validate_pdfa_with` and the panel shows its verdict; *cannot tell* says conformance is not confirmed, never a pass. Not driven by a check. |
 
 ### Reading, navigation & printing
 
@@ -1057,11 +1057,11 @@ The O458 preflight round. All of it is **wanted**, and wiring it is this shell's
 
 - **Preflight engine and its checks** — `pdfcer_core::preflight` (`run`, `run_with`, `Profile`, `Finding`, `FindingTarget`, `FindingKind`, `Check`, `ColourFamily`, `MeasureUnit`, `validate_pdfx`, `validate_pdfua`, `validate_pdfa`, `report_text`, `preflight::hairlines`). **wanted**: a Preflight panel that runs a profile on a worker and selects a finding's object through its `page_objects` index.
 - **Fixups** — `pdfcer_core::edit::apply_fixup` (`EditSession::apply_fixup`, `apply_profile_fixups`), `CommandKind::ApplyFixup`. **wanted**: the panel's Fix button, one undo step.
-- **Hairlines** — `pdfcer_core::edit::hairlines` (`HairlineFixReport`), `CommandKind::FixHairlines`. **wanted**.
+- **Hairlines** — `pdfcer_core::edit::hairlines` (`HairlineFixReport`), `CommandKind::FixHairlines`. **shipped**: File ▸ Print ▸ Fix hairlines.
 - **Ink Manager** — `pdfcer_core::prepress::inks`, `pdfcer_core::edit::ink_manager` (`EditSession::inks`, `alias_ink`, `spot_to_process`), `CommandKind::AliasInk`, `CommandKind::SpotToProcess`, `EditError::InkNameRefused`. **wanted**.
-- **Flatten transparency** — `pdfcer_core::transparency`, `pdfcer_core::edit::flatten_transparency`, `pdfcer_emf::pdf_flatten` (`RecordingFlattener`), `CommandKind::FlattenTransparency`, `EditError::TransparencyFlattenFailed`, `EditError::FlattenPpiOutOfRange`. **wanted**.
-- **Convert colours** — `pdfcer_core::prepress::convert_colours`, `pdfcer_core::edit::convert_colours`, `pdfcer_render::convert_colours` (`IcccerConverter`), `CommandKind::ConvertColours`, `EditError::ColourConversionRefused`. **wanted**.
-- **PDF/X conversion** — `pdfcer_core::prepress::pdfx_conversion` (`PdfxConversion`), `pdfcer_core::edit::pdfx_convert` (`EditSession::convert_to_pdfx`), `CommandKind::ConvertToPdfx`. **wanted**.
+- **Flatten transparency** — `pdfcer_core::transparency`, `pdfcer_core::edit::flatten_transparency`, `pdfcer_emf::pdf_flatten` (`RecordingFlattener`), `CommandKind::FlattenTransparency`, `EditError::TransparencyFlattenFailed`, `EditError::FlattenPpiOutOfRange`. **shipped**: File ▸ Print ▸ Flatten transparency.
+- **Convert colours** — `pdfcer_core::prepress::convert_colours`, `pdfcer_core::edit::convert_colours`, `pdfcer_render::convert_colours` (`IcccerConverter`), `CommandKind::ConvertColours`, `EditError::ColourConversionRefused`. **shipped**: File ▸ Print ▸ Convert colours.
+- **PDF/X conversion** — `pdfcer_core::prepress::pdfx_conversion` (`PdfxConversion`), `pdfcer_core::edit::pdfx_convert` (`EditSession::convert_to_pdfx`), `CommandKind::ConvertToPdfx`. **shipped**: File ▸ Print ▸ Convert to PDF/X.
 - **PDF/UA fixups** — `pdfcer_core::edit::pdfua_fix`, `pdfcer_core::edit::pdfua_title`, `pdfcer_core::edit::pdfua_artifacts`, `CommandKind::FixPdfua`, `CommandKind::SetDocumentLanguage`, `CommandKind::SetDisplayDocTitle`, `CommandKind::SetPdfuaTabOrder`, `CommandKind::MarkUntaggedAsArtifacts`, `CommandKind::WritePdfuaIdentification`, `EditError::DocumentNotTagged`, `EditError::DocumentTitleMissing`, `EditError::LanguageTagMalformed`, `EditError::PdfuaIdentificationWithheld`, `EditError::XmpPacketUnwritable`. **wanted**.
 - **Total area coverage** — `pdfcer_render::tac` (`total_area_coverage`, `TacRaster`). **wanted**: the preflight run's render-side check.
 - **Compositor conversion** — `pdfcer_render::compositor::blend_from_tiny_skia`. **declined**: a renderer helper; this shell paints no blend modes itself.

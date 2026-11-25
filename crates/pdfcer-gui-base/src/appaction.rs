@@ -502,6 +502,8 @@ pub enum Action {
     PickTag(Option<crate::tagtree::TagPick>),
     /// A Fix or Fix all click in the Preflight panel: one undo step.
     PreflightFix(Box<crate::preflightfix::PreflightFix>),
+    /// A prepress window's Run: one undo step.
+    Prepress(Box<crate::prepress::PrepressRun>),
     /// **Bring a rectangle on `page` into view with the least movement.**
     ///
     /// `OPERATOR_REQUESTS.md` O204's reveal, and the only way the canvas can

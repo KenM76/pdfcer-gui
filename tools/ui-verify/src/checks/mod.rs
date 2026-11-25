@@ -567,6 +567,8 @@ pub mod pdfx_claim;
 pub mod placed_drawings;
 /// The Preflight panel: run, jump to a finding, fix.
 pub mod preflight_panel;
+/// File ▸ Print's Fix hairlines, Flatten transparency and Convert colours.
+pub mod prepress;
 /// Batch print sends each picked file as its own job.
 pub mod print_batch;
 /// Print in grey or black only.

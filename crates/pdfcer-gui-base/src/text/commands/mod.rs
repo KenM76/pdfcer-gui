@@ -298,6 +298,42 @@ pub const fn file_network_print() -> CommandText {
     )
 }
 
+/// `file.fix_hairlines`
+#[must_use]
+pub const fn file_fix_hairlines() -> CommandText {
+    CommandText::new(
+        "Fix hairlines…",
+        "Widen every line too thin to print to a minimum width. Needs an open document in Edit mode.",
+    )
+}
+
+/// `file.flatten_transparency`
+#[must_use]
+pub const fn file_flatten_transparency() -> CommandText {
+    CommandText::new(
+        "Flatten transparency…",
+        "Redraw transparent areas as opaque artwork that prints the same. Needs an open document in Edit mode.",
+    )
+}
+
+/// `file.convert_colours`
+#[must_use]
+pub const fn file_convert_colours() -> CommandText {
+    CommandText::new(
+        "Convert colours…",
+        "Convert RGB, Lab and other colours to a press profile or the document's output intent. Needs an open document in Edit mode.",
+    )
+}
+
+/// `file.convert_to_pdfx`
+#[must_use]
+pub const fn file_convert_to_pdfx() -> CommandText {
+    CommandText::new(
+        "Convert to PDF/X…",
+        "Make the document a PDF/X file for a printing press: flatten, convert colours, set the output profile, then check. Needs an open document in Edit mode.",
+    )
+}
+
 /// `file.properties`
 #[must_use]
 pub const fn file_properties() -> CommandText {

@@ -260,6 +260,8 @@ pub mod pathedit;
 pub mod phone;
 /// Every word the Markup ▸ Style group shows — three tooltips and a unit.
 pub mod placing;
+/// File ▸ Print's prepress windows and Convert to PDF/X.
+pub mod prepress;
 /// Every word the print dialog shows. Consumed by `pdfcer_gui::dialogs::print`.
 pub mod print;
 /// File ▸ Print ▸ Printer's marks…: its window and its receipt.

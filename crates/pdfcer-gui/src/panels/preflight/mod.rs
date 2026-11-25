@@ -8,6 +8,7 @@
 
 mod job;
 mod results;
+mod standard;
 
 use std::time::Instant;
 
@@ -29,6 +30,8 @@ const REGION_RUN: &str = "preflight.run"; // ui-text-exempt: diagnostic region n
 const REGION_CANCEL: &str = "preflight.cancel"; // ui-text-exempt: diagnostic region name
 const REGION_FIX_ALL: &str = "preflight.fix_all"; // ui-text-exempt: diagnostic region name
 const REGION_COPY: &str = "preflight.copy"; // ui-text-exempt: diagnostic region name
+/// The profile picker; each entry is `preflight.profile:<engine name>`.
+const REGION_PROFILE: &str = "preflight.profile"; // ui-text-exempt: diagnostic region name
 
 /// The panel's state between frames. Reset with the document.
 pub struct PreflightUi {
@@ -73,6 +76,7 @@ struct Results {
     profile: Profile,
     report: PreflightReport,
     groups: Vec<Group>,
+    standard: Option<job::Standard>,
 }
 
 impl PreflightUi {
@@ -111,7 +115,7 @@ impl PreflightUi {
         let fork = doc.session.fork_for_print();
         self.lost = false;
         self.pending = Some(Pending {
-            job: Job::spawn(fork, profile.clone(), ctx.clone()),
+            job: Job::spawn(fork, profile.clone(), self.profile, ctx.clone()),
             serial: doc.serial,
             epoch: doc.edit_epoch,
             profile,
@@ -132,22 +136,26 @@ impl PreflightUi {
                 return;
             }
             Poll::Lost => None,
-            Poll::Done(report) => Some(report),
+            Poll::Done(answer) => Some(answer),
         };
         let pending = self.pending.take().expect("checked above"); // ui-text-exempt: panic message, never displayed
-        let Some(report) = report else {
+        let Some(job::Answer { report, standard }) = report else {
             self.lost = true;
             return;
         };
         trace_finished(&pending, &report);
         let groups = results::groups(&pending.profile, &report);
         results::trace_rows(&report, &groups);
+        if let Some(s) = &standard {
+            standard::trace(s);
+        }
         self.results = Some(Results {
             serial: pending.serial,
             epoch: pending.epoch,
             profile: pending.profile,
             report,
             groups,
+            standard,
         });
     }
 }
@@ -193,17 +201,23 @@ fn run_row(ui: &mut egui::Ui, doc: &OpenDoc, pf: &mut PreflightUi) {
     ui.horizontal(|ui| {
         ui.label(t::profile_label());
         ui.add_enabled_ui(!running, |ui| {
-            egui::ComboBox::from_id_salt("preflight.profile") // ui-text-exempt: widget id, never displayed
+            let picker = egui::ComboBox::from_id_salt(REGION_PROFILE)
                 .selected_text(t::profile_name(pf.profile))
+                // Every built-in profile at once: the default height hides the PDF/X ones.
+                .height(f32::INFINITY)
                 .show_ui(ui, |ui| {
                     for name in Profile::BUILTIN_NAMES {
                         let hover = Profile::builtin(name)
                             .map(|p| p.description)
                             .unwrap_or_default();
-                        ui.selectable_value(&mut pf.profile, name, t::profile_name(name))
+                        let entry = ui
+                            .selectable_value(&mut pf.profile, name, t::profile_name(name))
                             .on_hover_text(hover);
+                        crate::diag::ui_rect(&format!("{REGION_PROFILE}:{name}"), entry.rect);
                     }
-                });
+                })
+                .response;
+            crate::diag::ui_rect(REGION_PROFILE, picker.rect);
         });
     });
     if let Some(pending) = &pf.pending {
@@ -248,7 +262,6 @@ fn results_view(
     if stale {
         ui.label(egui::RichText::new(t::stale()));
     }
-    headline(ui, report);
     let fix_reason = if !fixing {
         Some(t::fix_needs_edit())
     } else if stale {
@@ -256,6 +269,11 @@ fn results_view(
     } else {
         None
     };
+    if let Some(s) = &results.standard {
+        let convert_off = (!fixing).then(t::fix_needs_edit);
+        standard::view(ui, s, convert_off, actions);
+    }
+    headline(ui, report);
     ui.horizontal(|ui| {
         let copy = ui
             .button(t::copy_report())

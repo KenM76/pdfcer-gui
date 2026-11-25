@@ -116,6 +116,10 @@
                     items: [
                         Command(id: "file.print", size: Large),
                         Command(id: "file.printer_marks"),
+                        Command(id: "file.fix_hairlines"),
+                        Command(id: "file.flatten_transparency"),
+                        Command(id: "file.convert_colours"),
+                        Command(id: "file.convert_to_pdfx"),
                         Command(id: "file.network_print"),
                     ],
                 ),

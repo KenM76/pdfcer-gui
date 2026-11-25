@@ -429,6 +429,13 @@ impl PdfcerApp {
             #[cfg(target_os = "android")]
             "file.print" => phoneprint::print(&self.status),
             "file.network_print" => self.dialogs.open_netprint(&self.status),
+            "file.fix_hairlines"
+            | "file.flatten_transparency"
+            | "file.convert_colours"
+            | "file.convert_to_pdfx" => {
+                let picked = self.panels.selected_pages();
+                self.dialogs.open_prepress(&self.status, id, picked);
+            }
             // Printer's marks: the Bates scope rule; the page-information
             // label starts as the file's name.
             "file.printer_marks" => {

@@ -3,7 +3,6 @@
 - [Not at the keyboard unless he says so](user_keyboard_unless_says.md) — assume the PC is free; he texts and will TELL you.
 - [ui-verify competes for the machine](feedback_ui_verify_competes.md) — ask in one line with the cost.
 - [A driven check reached the real printer](feedback_driven_check_reached_printer.md) — 42 sheets; pause the queue around print-dialog drives.
-- [Update the engine before every build](feedback_update_engine_before.md) — superseded: `--no-update`.
 - [No pdfcer specialist agents on this roster](project_pdfcer_agent_roster.md) — dispatching them fails; go general-purpose.
 - [Scope a request to the whole behaviour](feedback_scope_request_whole.md) — he expects what surrounds it too.
 - [The engine session runs in parallel](project_engine_session_runs.md) — answers in minutes; dirties the read-only tree.
@@ -34,7 +33,7 @@
 - [Never `git checkout` to undo](feedback_never_git_checkout.md) — it discards uncommitted work; restore from a copy.
 - [Delete the workaround with its cause](feedback_delete_workaround.md) — a mechanism with no caller rots.
 - [An absence claim covers every route](feedback_absence_claim_claim.md) — grep before saving.
-- [Unit tests cannot see the chain](feedback_unit_tests_call_verb.md) — 8 green while it did 1 of 14.
+- [Unit tests cannot see the chain](feedback_unit_tests_call_verb.md) — 8 green while it did 1 of 14; [dispatch on the key](feedback_lookup_key_not_name.md).
 - [Grep the sibling crate first](feedback_grep_sibling_crate.md) — a mirrored enum means the half exists.
 - [A request for a shipped thing](feedback_request_something.md) — fix the route, ship the literal ask.
 - [The canvas is primary, never a panel](feedback_canvas_primary.md) — clicking the object must reach it.
@@ -153,7 +152,7 @@
 - [Gates run no unit tests](feedback_filtered_test_run.md) - new commands and pin moves need `cargo test --workspace` unfiltered.
 - [An engine count is not the operator's](feedback_engine_count_not_operators.md) — purge verb said 0 while the rewrite removed the password.
 - [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
-- [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates; [wire a SHIPPED reply before the tag](feedback_build_on_untagged_engine.md).
+- [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates; [wire a SHIPPED reply before the tag](feedback_build_on_untagged_engine.md); [build with `--no-update`](feedback_update_engine_before.md).
 - [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
 - [Window capture grabs HIS desktop](feedback_window_capture_grabs_desktop.md) — raises + screen-grabs; [so did Maximise](feedback_maximize_leaves_off_desktop.md): grow in place.
 - [A release build skips the tests](feedback_release_build_skips_tests.md) — clippy --all-targets before gates; a test literal cost a run.

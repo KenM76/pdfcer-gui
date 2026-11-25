@@ -68,6 +68,8 @@ mod pagecontent;
 mod picture;
 /// Preflight's Fix and Fix all, each one undo step.
 mod preflightfix;
+/// File ▸ Print's prepress windows and Convert to PDF/X, each one undo step.
+mod prepress;
 mod screenannot;
 mod soundannot;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.
