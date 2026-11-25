@@ -8355,11 +8355,13 @@ Said on 2026-11-24, about File ▸ Print ▸ preview with colour separations and
 
 Said on 2026-11-25. The ce dimension tools attach to a centre line (O453), a centre mark (O454) and the circle the radius/diameter tool draws, as their measured geometry. The circle's line style (colour, weight, line type such as centre, phantom, dashed, and its gap and dash lengths) is set on its own, apart from the ce dimension's. The CAD drawing package he uses is the reference for which line-style options centre lines, centre marks and these circles carry: centre-mark size, extended lines, the centre-line font, gap and overshoot past the outline.
 
-## O462 — **OPEN** — scrolling one document's tab moves the page position on the other tabs
+## O462 — **BUILT, awaiting Ken** — scrolling one document's tab moves the page position on the other tabs
 
 *"When I switch between pdf tabs, my page position changes on the other tabs with my page position movements on the active tab."*
 
 Said on 2026-11-25. A defect report. Each open document keeps its own page, scroll position and zoom; moving through the active tab never changes where another tab sits, and switching back to a tab shows it exactly where it was left.
+
+Built: each document keeps its own scroll position, so scrolling one tab no longer moves another. `each_tab_keeps_its_own_position` scrolls the first document, opens and scrolls a second, then switches back. The first returns to the same point; the unfixed build put it 454 pt away.
 
 ## O463 — **OPEN** — a setting to remember each tab's mode (Read, Review, Edit)
 

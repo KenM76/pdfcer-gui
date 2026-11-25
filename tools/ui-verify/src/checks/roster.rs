@@ -566,6 +566,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(tab_glyphs::EveryTabDrawsItsGlyph),
         Box::new(system_theme::SystemThemeFollowsTheHost),
         Box::new(small_first_page::ASmallFirstPageIsTheCurrentPage),
+        Box::new(tab_keeps_position::EachTabKeepsItsOwnPosition),
         Box::new(export_image_emf::ExportImageWritesAMetafile),
         Box::new(export_image_plates::ExportImageWritesOneMetafilePerInk),
         Box::new(copy_as_vector::CopyAsVectorPlacesTheMeasuredOrder),

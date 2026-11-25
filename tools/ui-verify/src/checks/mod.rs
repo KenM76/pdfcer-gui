@@ -159,6 +159,7 @@ pub mod small_first_page;
 pub mod small_text;
 pub mod system_theme;
 pub mod tab_glyphs;
+pub mod tab_keeps_position;
 pub mod tabs_look;
 
 pub mod export_form_data;

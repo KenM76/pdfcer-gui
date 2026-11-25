@@ -204,7 +204,7 @@ than the number it produced last.
 
 | | |
 |---|---|
-| ✅ | **A document tab strip under the ribbon** — labels, an unsaved `*` marker, a close cross, middle-click to close, `Ctrl+Tab` and `Ctrl+Shift+Tab` to cycle, `Ctrl+W` to close, and an overflow menu past the width |
+| ✅ | **A document tab strip under the ribbon** — labels, an unsaved `*` marker, a close cross, middle-click to close, `Ctrl+Tab` and `Ctrl+Shift+Tab` to cycle, `Ctrl+W` to close, and an overflow menu past the width. Each document keeps its own scroll position across a switch; driven off-screen: `each_tab_keeps_its_own_position` |
 | ✅ | **Drag a page between documents** — press a thumbnail, rest on the other document's **tab** until it springs open, drop at a caret between two sheets. The drag survives the document switch because it lives in `egui::Memory` rather than on the panel that started it |
 | ✅ | **Drop onto the page view** — the same gesture released on the canvas, with a horizontal caret in the gap between two sheets, in every display mode including single page |
 | ✅ | **It is a copy, and it says so** before the button is released. A cross-document move would be two commands on two undo stacks with no single `Ctrl+Z` able to reverse it |

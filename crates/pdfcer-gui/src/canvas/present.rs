@@ -253,7 +253,9 @@ fn show_in(
     }
 
     let mut scroll_area = egui::ScrollArea::both()
-        .id_salt("page-canvas") // ui-text-exempt: internal widget id, never displayed
+        // Per document: egui keeps a scroll area's offset under its id, so
+        // one id for every tab made scrolling one document move the others.
+        .id_salt(("page-canvas", doc.serial)) // ui-text-exempt: internal widget id, never displayed
         .scroll_source(scroll_source)
         // Always, not when needed. The content is the strip plus O23's
         // pasteboard — a whole viewport each side — so it exceeds the viewport
