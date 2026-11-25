@@ -19,7 +19,8 @@ const MODE: &str = "edit";
 const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
 /// The control that arms the caret on existing text.
 const TOOL: (&str, &str) = ("ribbon.item.edit.text", "edit.text");
-/// `text-edit-caret kind=… page=… run=… len=…`.
+/// `text-edit-caret kind=… page=… run=…|block=… len=…`: a caret in existing text
+/// names the run or, once widened to a paragraph, the block.
 const CARET_EVENT: &str = "text-edit-caret";
 /// `text-select from=… to=… n=…`, or `text-select none caret=…`.
 const SELECT_EVENT: &str = "text-select";
@@ -145,7 +146,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let trace = session.trace()?;
     let Some(caret) = trace
         .events(CARET_EVENT)
-        .filter(|l| l.get("run").is_some())
+        .filter(|l| l.get("run").is_some() || l.get("block").is_some())
         .last()
     else {
         return Err(Error::new(format!(
