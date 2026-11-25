@@ -312,16 +312,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!("★★ the switch is on: `{}`", modifiers.raw));
 
     // --- C2: now select the shape, so its grips are drawn --------------------
-    let centre = corner((
-        f64::midpoint(SHAPE.0.0, SHAPE.1.0),
-        f64::midpoint(SHAPE.0.1, SHAPE.1.1),
-    ));
-    driver.click_at(aim(ctx, &session, page, centre)?)?;
+    // On its left edge: an unfilled box claims only its stroke, so a click at
+    // its centre reaches whatever lies under it.
+    let edge = corner((SHAPE.0.0, f64::midpoint(SHAPE.0.1, SHAPE.1.1)));
+    driver.click_at(aim(ctx, &session, page, edge)?)?;
     session.settle(24);
 
     if session.trace()?.events(SELECT_EVENT).count() == 0 {
         return Ok(Some(format!(
-            "THE SHAPE COULD NOT BE SELECTED: no `{SELECT_EVENT}` line after a click at its centre, so no grips are drawn and there is nothing to drag. Trace: {}.",
+            "THE SHAPE COULD NOT BE SELECTED: no `{SELECT_EVENT}` line after a click on its edge, so no grips are drawn and there is nothing to drag. Trace: {}.",
             session.trace_path().display()
         )));
     }

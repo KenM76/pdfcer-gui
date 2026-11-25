@@ -205,11 +205,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         driver.press(crate::sys::vk::V)?;
         session.settle(12);
     }
-    driver.click_at(at(centre)?)?;
+    // On the measured edge: an unfilled box claims only its stroke, so a
+    // click at its centre reaches whatever lies under it.
+    driver.click_at(at((centre.0, SHAPE.1.1))?)?;
     session.settle(24);
     if session.trace()?.last(SELECT_EVENT).is_none() {
         return Err(Error::new(format!(
-            "a click at the square's centre produced no `{SELECT_EVENT}`; selecting is the step \
+            "a click on the square's edge produced no `{SELECT_EVENT}`; selecting is the step \
              before this one. SKIPPED."
         )));
     }

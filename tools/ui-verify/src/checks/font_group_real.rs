@@ -18,6 +18,8 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// The Properties pane's tab header in the dock.
+/// Where and how large the window is placed, as the profile's viewport override takes it.
+const VIEWPORT: &str = "0,0,1700,1000";
 const PROPERTIES_TAB: &str = "dock.tab.file.properties";
 
 /// See the module documentation.
@@ -128,6 +130,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    // Wide enough that the Format tab, appended last, is not in the strip's
+    // overflow menu: a contextual tab overflows like any other by design.
+    if let Some(name) = ctx.profile.viewport_env {
+        spec.env.push((name.to_owned(), VIEWPORT.to_owned()));
+    }
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
