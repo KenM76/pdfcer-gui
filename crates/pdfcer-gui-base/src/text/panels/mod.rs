@@ -52,6 +52,8 @@ pub mod objects;
 pub mod output_preview;
 /// The Objects panel's placed-drawing lines: where each drawing on the page is drawn.
 pub mod placed;
+/// The Preflight panel.
+pub mod preflight;
 
 /// **Every sentence pdfcer says about which layer a selection is on** — the
 /// panel's long form and the status bar's short clause, generated from one

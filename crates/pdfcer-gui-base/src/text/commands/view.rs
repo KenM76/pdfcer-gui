@@ -556,6 +556,16 @@ pub const fn view_output_preview() -> CommandText {
     )
 }
 
+/// `view.preflight`
+#[must_use]
+pub const fn view_preflight() -> CommandText {
+    CommandText::new(
+        "Preflight",
+        "Check the document against a printing or archiving standard, list what fails, and \
+         fix what can be fixed. Click a finding to go to it.",
+    )
+}
+
 /// `view.form_preview`
 #[must_use]
 pub const fn view_form_preview() -> CommandText {

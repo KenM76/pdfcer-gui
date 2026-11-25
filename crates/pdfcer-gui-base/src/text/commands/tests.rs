@@ -69,6 +69,7 @@ fn all() -> Vec<CommandText> {
         view_panel_signatures(),
         view_panel_tags(),
         view_output_preview(),
+        view_preflight(),
         view_panel_objects(),
         view_panel_forms(),
         view_read_mode(),

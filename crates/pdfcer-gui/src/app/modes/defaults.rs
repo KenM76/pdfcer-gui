@@ -358,6 +358,8 @@ fn spec(mode_id: &str) -> ModeSpec {
                     Panel::Compare.command_id(),
                     // Tags, last: an accessibility check, asked for.
                     Panel::Tags.command_id(),
+                    // Preflight, last: a print check, asked for.
+                    Panel::Preflight.command_id(),
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,

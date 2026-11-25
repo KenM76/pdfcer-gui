@@ -515,6 +515,8 @@ pub mod commentnote;
 #[cfg(test)]
 pub mod testsupport;
 
+/// A Preflight panel fix, carried from the panel to the edit funnel.
+pub mod preflightfix;
 /// The form tab-order working list and its reorder arithmetic.
 pub mod tabordermodel;
 pub mod tagtree;

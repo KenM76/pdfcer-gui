@@ -39,3 +39,11 @@ check became 0 bytes, recoverable only because a draft sat in D:\scratch.
 **How to apply:** always pass `encoding='utf-8', newline=''`; compute the full
 text into a variable BEFORE opening the target; keep a copy of any file a
 script rewrites in D:\scratch first. See [[python-write-crlf]], [[feedback_write_python_file]].
+
+**Read side, 2026-11-24:** `io.open(p, newline='')` with no encoding READS
+UTF-8 as cp1252, so an anchor holding `—`, `▸` or `…` never matches. Twice in
+one session, `assert s.count(old)==1` was the only thing that noticed. The
+first failure sat in a backgrounded `python …; cargo build` chain, so the
+edit silently never landed while the build reported success. Pass
+`encoding='utf-8'` on reads too, and never chain an edit script with `;`
+into a long command whose output hides its traceback.

@@ -565,6 +565,8 @@ pub mod password_fill;
 pub mod pdfx_claim;
 /// The Objects panel says where each placed drawing on the page is drawn.
 pub mod placed_drawings;
+/// The Preflight panel: run, jump to a finding, fix.
+pub mod preflight_panel;
 /// Batch print sends each picked file as its own job.
 pub mod print_batch;
 /// Print in grey or black only.

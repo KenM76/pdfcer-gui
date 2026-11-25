@@ -66,6 +66,8 @@ mod newcomment;
 /// Placing a picture or drawing, and selecting what was placed.
 mod pagecontent;
 mod picture;
+/// Preflight's Fix and Fix all, each one undo step.
+mod preflightfix;
 mod screenannot;
 mod soundannot;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.

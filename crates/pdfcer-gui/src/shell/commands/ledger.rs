@@ -445,9 +445,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 267 → 269: Continue path and Open path here, Format ▸ Nodes.
     // 269 → 270: `edit.cut_as_vector`, Edit ▸ Clipboard (O435).
     // 270 → 271: `view.highlight_fields`, View ▸ Display.
+    // 272 → 273: `view.preflight`, View ▸ Panels.
     assert_eq!(
         registry().len(),
-        272 + 2 * usize::from(cfg!(feature = "signing"))
+        273 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -902,9 +903,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // and `paragraphs`.
     // 232 → 233: `edit.cut_as_vector` shares `cut`.
     // 233 → 234: `view.highlight_fields` shares `form-field`.
+    // 235 → 236: `view.preflight`, with its own icon.
     assert_eq!(
         named,
-        235 + 2 * usize::from(cfg!(feature = "signing"))
+        236 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

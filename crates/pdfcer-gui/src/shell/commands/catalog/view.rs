@@ -533,6 +533,9 @@ pub(super) fn band() -> Vec<Command> {
         command("view.output_preview", t::view_output_preview(), 239)
             .with_icon("overprint")
             .enabled_when("doc.pages"),
+        command("view.preflight", t::view_preflight(), 272)
+            .with_icon("preflight")
+            .enabled_when("doc.pages"),
         command("view.panel_objects", t::view_panel_objects(), 244)
             .with_icon("edit-objects")
             .enabled_when("doc.pages"),

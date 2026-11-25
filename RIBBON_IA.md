@@ -301,7 +301,7 @@ Panels, where nobody will find it.
 | **Rotate view** | Rotate view left / right |
 | **Zoom** | Zoom to selection · Zoom to region (marquee) · Actual size · Fit page · Fit width · Fit height |
 | **Display** | Line weights · Skip tiny details · Show annotations · Show points · Page boxes · Off-page · Rulers · Grid · Guides |
-| **Panels** | Sidebar ⌄ · Pages · Bookmarks · Layers · Objects · Signatures · Forms · Form preview (dynamic XFA forms only) |
+| **Panels** | Sidebar ⌄ · Pages · Bookmarks · Layers · Objects · Signatures · Tags · Output preview · Preflight · Forms · Form preview (dynamic XFA forms only) |
 | **Window** | Previous / Next document · Close other documents · Move to new window · Move to other window · Read mode · Full screen · Dock all panels · Auto-hide ribbon · Auto-hide left strip · Floating panels: Off · Allowed · App initiative: Never · Ask · Allowed · Save workspace… · Load workspace ⌄ · Reset layout… |
 
 **Single page is the default** and stays so: paging one drawing sheet at a time
@@ -332,6 +332,14 @@ for zoom finds zoom.
 
 **Panels order puts Forms last**, so the operator meets the read-only surfaces
 first, and Objects before Signatures.
+
+**Preflight sits immediately after Output preview** (amendment, O458). Acrobat
+files both under Print Production: Output Preview shows what the press will
+make of the page, Preflight checks it against a standard, and an operator
+moves between the two on the same job. It is a panel toggle like its
+neighbours rather than a Tools verb, because its product is a list read beside
+the page, not a new file. Its fixes edit the document, so they are greyed
+outside Edit mode; the panel itself reads in every mode.
 
 **Form preview is present only on a dynamic XFA form**, whose PDF pages are a
 stand-in such as "Please wait...". It opens a window drawing the form's own
@@ -923,6 +931,7 @@ decided and each decision holds.
 | `file.copy_page_text`, `file.copy_document_text` | File ▸ Export | the Clipboard tab | copying is not authoring — it reads the page and writes the clipboard, and cannot change a byte. Read, whose standard is Acrobat Reader, copies text |
 | `view.panel_forms` | View ▸ Panels | Forms ▸ Manage | filling is not authoring, and it is a panel toggle rather than a verb, so it sits with the other panel toggles |
 | `file.ocr` | File ▸ Recognise | Tools ▸ Recognise | OCR must be reachable in Read and Tools is not in Read's tab list. File over View because OCR's product is a new file. Giving Read the whole Tools tab was the alternative and was refused: it would hand a reading stance batch merge, batch split and font embedding |
+| `view.preflight` | View ▸ Panels, after Output preview | Tools, or a Print Production tab | Acrobat groups Preflight with Output Preview under Print Production, and pdfcer has no such tab; the Panels group is where Output preview already lives. It opens a panel read beside the page, so it is a panel toggle, not a Tools verb, which produces files |
 | `view.reset_layout` | View ▸ Window | File | it resets panel geometry, which is a view concern (§3) |
 | `file.fonts` | File ▸ Document | View ▸ Panels | the Fonts panel answers *what is inside this file*, not *what is on my screen*, so it sits with Properties (§5.1). The left rail carries it too, and a rail is a panel strip rather than a tab |
 | `markup.comments` | Markup ▸ Comments | View ▸ Panels | comments are markup someone else reads, so the panel toggle stays with the marks it lists. It is on the left rail as well |

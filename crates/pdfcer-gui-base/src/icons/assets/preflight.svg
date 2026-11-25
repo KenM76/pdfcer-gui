@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A page with a check mark over it: the document checked against a standard. -->
+  <path d="M10 4h20l10 10v30H10z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M30 4v10h10" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M16 29l6 6 11-13" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

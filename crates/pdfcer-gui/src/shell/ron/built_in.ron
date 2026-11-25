@@ -278,6 +278,7 @@
                         Command(id: "view.panel_signatures"),
                         Command(id: "view.panel_tags"),
                         Command(id: "view.output_preview"),
+                        Command(id: "view.preflight"),
                         Command(id: "view.form_preview", visible_when: "doc.xfa_dynamic"),
                         Command(id: "view.panel_forms"),
                     ],

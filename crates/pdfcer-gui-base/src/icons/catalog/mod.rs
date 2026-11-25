@@ -1313,6 +1313,8 @@ pub enum Icon {
     Behind,
     /// The Tags panel: the structure tree a screen reader follows.
     Tags,
+    /// The Preflight panel: the document checked against a standard.
+    Preflight,
     /// The 3D viewer's drone sticks: show or hide the navigation controls.
     Sticks,
     /// Turn the walking camera back to straight ahead.

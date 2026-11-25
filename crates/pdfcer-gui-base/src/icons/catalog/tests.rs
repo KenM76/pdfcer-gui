@@ -76,9 +76,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 216 → 217: `actual-size`, the print preview's and status bar's actual size.
     // 217 → 218: `separations`, the print preview's plates switch.
     // 218 → 219: `measure-centre-line`, two lines with the dashed line between, for `measure.centre_line`.
+    // 219 → 220: `preflight`, the Preflight panel.
     assert_eq!(
         Icon::ALL.len(),
-        219,
+        220,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

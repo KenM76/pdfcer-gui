@@ -28,6 +28,7 @@ pub mod layers;
 pub mod objects;
 pub mod output_preview;
 pub mod pages;
+pub mod preflight;
 pub mod properties;
 pub mod redact;
 pub mod signatures;
@@ -77,6 +78,7 @@ pub fn show(
         Panel::OutputPreview => output_preview::body(ui, doc, state, actions),
         Panel::Compare => compare::body(ui, doc, state, actions),
         Panel::Tags => tags::body(ui, doc, state, actions),
+        Panel::Preflight => preflight::body(ui, doc, state, actions),
     }
     Vec::new()
 }
@@ -347,6 +349,9 @@ pub struct PanelsState {
     /// The Compare panel: the older version, the options and the last
     /// result. Reset with the document: a result describes one document.
     compare: compare::CompareUi,
+    /// The Preflight panel: the picked profile, a run in flight and the last
+    /// result. Reset with the document: a result describes one document.
+    preflight: preflight::PreflightUi,
     /// The Tags panel's open rows, keyed on the document serial.
     tags: tags::TagsUi,
     /// Output Preview's simulation profiles: the installed list and every
@@ -622,6 +627,11 @@ impl PanelsState {
     /// The Compare panel's state.
     pub fn compare_mut(&mut self) -> &mut compare::CompareUi {
         &mut self.compare
+    }
+
+    /// The Preflight panel's state.
+    pub fn preflight_mut(&mut self) -> &mut preflight::PreflightUi {
+        &mut self.preflight
     }
 
     /// The Tags panel's state.

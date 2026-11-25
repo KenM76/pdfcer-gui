@@ -8293,6 +8293,8 @@ Filed, one topic each: `request_preflight_engine.md` (which carries the low-reso
 
 The engine accepted the round as Passes 748.0 to 748.9 (`reply_O458_preflight_ACCEPTED.md`). It will release all of it together. A finding that targets page content is an index into `page_objects`, the same index `hit_test` returns, so a click in the panel selects the object.
 
+**Built (first cut, 2026-11-24, unreleased):** View ▸ Panels ▸ Preflight, after Output Preview. A built-in profile is picked by name and Run checks the document on a worker with progress and Cancel; findings are grouped by rule with counts, and violation, needs a person and incomplete are labelled apart and never shown as a pass. A click goes to the finding's page, and a page-object finding selects that object; Copy report, Fix per rule and Fix all (one undo step each) are there, and an edit marks the results out of date. Driven by `the_preflight_panel_runs_jumps_and_fixes`: digital-printing over a 242-page fixture found 5 findings in 739 ms while the window drew 85 frames; the 1 ppi picture's row selected page object 1 on page 2; Fix on rgb-colour applied one undo step. Not built: custom profiles and a profile editor, saving the report to a file, PDF/X and PDF/UA conversion surfaces, the Ink Manager, transparency flattening and hairline commands. Stays open.
+
 ## O459 — **OPEN** — benchmark the page view drawn on the graphics card; it pauses and is slower than the processor
 
 *"Also need you to benchmark the GPU canvas rendering. The first version to include it caused a random pause when navigating and zooming on the canvas. The performance was actually worse than on the CPU."*

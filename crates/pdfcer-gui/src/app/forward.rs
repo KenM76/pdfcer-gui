@@ -4,8 +4,9 @@
 //! `DESIGNS.md` § O414.
 //!
 //! It never mounts the panel: a Properties the operator closed, or a mode
-//! without one, stays as it is. A pick while the Objects tree is in front of
-//! Properties' stack leaves the tree there, because the tree shows the pick.
+//! without one, stays as it is. A pick while the Objects tree or Preflight is
+//! in front of Properties' stack leaves it there: the tree shows the pick, and
+//! Preflight is the list the operator walks to the next finding.
 
 use egui_shell::dock::PanelId;
 use pdfcer_gui_base::selectionidentity::Selection;
@@ -50,7 +51,7 @@ impl PdfcerApp {
     }
 
     /// Properties to the front of its stack, remembering what it covers;
-    /// `tool` when an armed tool asks, which the Objects tree does not stop.
+    /// `tool` when an armed tool asks, which neither list stops.
     fn bring_forward(&mut self, tool: bool) {
         let id = PanelId::new(Panel::Properties.command_id());
         let layout = self.dock.layout();
@@ -64,8 +65,10 @@ impl PdfcerApp {
         let front = side.columns[at.column].stacks[at.stack]
             .active_panel()
             .cloned();
-        let objects = PanelId::new(Panel::Objects.command_id());
-        if !tool && front.as_ref() == Some(&objects) && side.visible {
+        // A list that picks objects keeps the front: covering it would hide
+        // the next row the operator walks to.
+        let picker = [Panel::Objects, Panel::Preflight].map(|p| PanelId::new(p.command_id()));
+        if !tool && front.as_ref().is_some_and(|f| picker.contains(f)) && side.visible {
             return;
         }
         let shown = side.visible;

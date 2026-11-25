@@ -2737,6 +2737,8 @@ unfold-all.
   resting tool.
 - A pick does not displace the Objects tree when that tree is the tab in
   front of Properties' stack — the tree follows the pick itself (O416).
+- Nor does it displace Preflight: a finding's click selects its object, and
+  the operator walks the list to the next finding (O458).
 - When neither a tool with options nor a selection is left, the tab
   Properties covered comes back to the front, and a side that was hidden is
   hidden again. If the operator changed tab in the meantime, nothing moves.

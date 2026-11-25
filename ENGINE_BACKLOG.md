@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `wanted` — a real gap — **36 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -81,17 +81,13 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Preflight a document against a profile (first cut)** | **wanted — O458, the Preflight panel.** It is the panel's run. A profile is chosen from `Profile::BUILTIN_NAMES`, `preflight::run_with_meter` runs on a worker that never holds the session, and findings are grouped by rule. Needs-a-person and incomplete findings are labelled and never shown as a pass, and a click selects the finding's object. |
-| **Preflight fixups: apply a profile's fixups as one undo step** | **wanted — O458, the Preflight panel's Fix and Fix all.** `EditSession::apply_fixup` per rule and `apply_profile_fixups` for the profile, each one undo step. `FixupReport::to_text` is shown in the panel, and an unavailable fixup says so. |
-| **Preflight text report** — `report_text` and `pdfcer preflight --report` … | **wanted — O458, the Preflight panel's Copy report** (`report_text`). |
 | **Preflight: image above ppi check and downsample fixup** | **wanted — O458.** Reached through the Preflight panel once a profile carries the rule; it has no surface of its own. |
-| **Preflight: total area coverage (max TAC, over-limit area, regions)** | **wanted — O458.** The panel runs with `pdfcer_render::TacMeter`, so the `total-area-coverage` check measures instead of reporting incomplete. |
 | **Find hairlines, and raise them to a minimum width** | **wanted — O458.** The preflight fixup first; a Print production command with a minimum-width field after. |
 | **Ink Manager: list inks** — `prepress::inks` … | **wanted — O458: an Ink Manager window** listing `prepress::inks`. |
 | **Alias one ink to another** — `alias-ink --from --to` … | **wanted — O458, in the Ink Manager.** It changes the file, unlike Acrobat's output-time alias, and the window must say so. |
 | **Convert spot inks to process** — `spot-to-process` … | **wanted — O458, in the Ink Manager.** A refusal names the colour engine verbatim. |
 | **Detect transparency, and flatten it with a report** — `has_transparency` … | **wanted — O458.** A preflight fixup, with `pdfcer_emf::RecordingFlattener` as the flattener, then a Print production command. |
-| **Convert colours to one ICC profile** — `EditSession::convert_colours` … | **wanted — O458.** A Print production command with an ICC picker. Without a profile the preflight fixup reports `Unavailable`, and the panel shows that. |
+| **Convert colours to one ICC profile** — `EditSession::convert_colours` … | **wanted — O458.** <!--namesake:convert_colours--> The shell names the module `pdfcer_render::convert_colours` (its `IcccerConverter`, handed to Preflight's fixups), never the verb. A Print production command with an ICC picker. Without a profile the preflight fixup reports `Unavailable`, and the panel shows that. |
 | **Validate PDF/X-1a, X-3 and X-4, requirement by requirement** | **wanted — O458.** Profiles in the Preflight panel. |
 | **PDF/X conversion (X-1a/X-3/X-4)** | **wanted — O458.** Needs an ICC picker for the output intent. |
 | **Validate PDF/UA-1 and PDF/UA-2, clause by clause** | **wanted — O458.** Profiles in the Preflight panel. Needs-a-person findings are the bulk of PDF/UA and must read as such. |
@@ -236,7 +232,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **583 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **587 of 646** <!-- counted by tools/walk-engine-backlog.py, 2026-11-24; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -699,6 +695,15 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Black point compensation for ICC conversions** — a profile-to-profile ICC conversion … | **Reachable — Settings ▸ Colour ▸ *Black point compensation*, on by default**, passed through `Settings::render_options` (G249, O340). |
 | **A reusable pick index over a 3D model** — `pdfcer_3d::PickIndex::new(&meshes)` … | **Consumed — the 3D walkthrough's walls, floors and double-click go-to** pick through one index per model (G251). |
 | **Area-averaged image minification** — a downscaled scan … | **shipped — Settings ▸ Images ▸ *Average every pixel in each area*** is the third `MinifyFilter` choice and the default (`settingspages::images::minify`, key `image_minify`). Driven by `every_minify_filter_is_offered`. |
+
+### Preflight & prepress (O458)
+
+| Row (`FEATURES.md`, shipped) | Why |
+|---|---|
+| **Preflight a document against a profile (first cut)** | **shipped — View ▸ Panels ▸ Preflight** (O458). A profile is picked from `Profile::BUILTIN_NAMES` by its plain name and Run calls `preflight::run_with_meter` on a worker thread over `EditSession::fork_for_print`, so neither the session nor the UI thread is held; progress shows and Cancel stops it. Findings are grouped by rule with counts; violation, needs a person and incomplete are labelled apart and never shown as a pass, and `dropped` and `cancelled` are disclosed. A page-object finding selects that object (`SelectionAction::SelectObject`); others go to the page and its rect. An edit marks the result stale and offers Run again. Driven: `the_preflight_panel_runs_jumps_and_fixes`. |
+| **Preflight fixups: apply a profile's fixups as one undo step** | **shipped — Preflight ▸ Fix (per rule, `EditSession::apply_fixup` with `FixupScope::Rule`) and Fix all (`apply_profile_fixups`, `suggest=true`)**, each one undo step through the edit funnel with `FixupTools` carrying the ICC converter and `pdfcer_emf::RecordingFlattener`. `FixupReport::to_text` is shown in the panel and the result is marked stale. Greyed with the reason on hover in Read mode or with no document. Driven: `the_preflight_panel_runs_jumps_and_fixes`. |
+| **Preflight text report** — `report_text` and `pdfcer preflight --report` … | **shipped — Preflight ▸ Copy report** puts `report_text` on the clipboard. Driven: `the_preflight_panel_runs_jumps_and_fixes`. (the press; the clipboard contents are not read back) |
+| **Preflight: total area coverage (max TAC, over-limit area, regions)** | **shipped — consumed by the Preflight panel**, which always runs with `pdfcer_render::TacMeter`, so a profile carrying `total-area-coverage` measures instead of reporting incomplete. The driven run is digital-printing, which carries no TAC rule; no check drives a TAC finding. |
 
 ### Reading, navigation & printing
 

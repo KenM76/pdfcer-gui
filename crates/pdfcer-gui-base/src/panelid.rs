@@ -89,11 +89,14 @@ pub enum Panel {
     /// The structure tree a screen reader follows, read-only, with the
     /// picked element outlined on the page.
     Tags,
+    /// The document checked against a preflight profile, with findings
+    /// grouped by rule and a jump per finding — Acrobat's Preflight.
+    Preflight,
 }
 
 impl Panel {
     /// Every panel.
-    pub const ALL: [Self; 17] = [
+    pub const ALL: [Self; 18] = [
         Self::Attachments,
         Self::Bookmarks,
         Self::Layers,
@@ -111,11 +114,12 @@ impl Panel {
         Self::OutputPreview,
         Self::Compare,
         Self::Tags,
+        Self::Preflight,
     ];
 
     /// The ribbon command that shows this panel.
     ///
-    /// Seven of these are not `view.panel_*` ids; the placement of each is
+    /// Several of these are not `view.panel_*` ids; the placement of each is
     /// argued in this module's doc. The ids that open authoring surfaces sit on
     /// tabs Read is not shown, so the mode taxonomy gates them with no
     /// capability flag of its own.
@@ -145,6 +149,8 @@ impl Panel {
             // Tools, beside Batch: the other command that reads files from disk.
             Self::Compare => "tools.compare",
             Self::Tags => "view.panel_tags",
+            // Beside Output Preview, as Acrobat groups both under Print Production.
+            Self::Preflight => "view.preflight",
         }
     }
 
@@ -197,6 +203,7 @@ mod tests {
                 Panel::OutputPreview => 14,
                 Panel::Compare => 15,
                 Panel::Tags => 16,
+                Panel::Preflight => 17,
             }
         }
         let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();

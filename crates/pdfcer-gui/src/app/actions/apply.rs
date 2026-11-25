@@ -418,6 +418,7 @@ impl PdfcerApp {
             // them together would put a document-wide raster clear one careless
             // edit away from every markup placed on the canvas.
             Action::Dimension(action) => super::dimensions::apply(doc, action),
+            Action::PreflightFix(fix) => super::preflightfix::apply(doc, &fix),
             // One image, one undo entry, and every disclosure it owes.
             //
             // The closure's return value IS the disclosure list — the funnel's
