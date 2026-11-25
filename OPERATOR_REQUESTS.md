@@ -992,6 +992,8 @@ His words: *"Also we need to have a way to add/edit metadata."*
 
 **Status.** Part built, not yet released or driven. Document properties (File ▸ Document) edits the four fields, one undo step each; it is now also on the right-click menu of paper with nothing selected, its tooltip names it the document's metadata, and the panel says under the four rows that other entries, the creating program and the dates cannot be added or changed yet and that XMP is not kept in step. With engine v0.128.0 (G266) the panel also edits the creating program, as *Application*, and each field edit keeps the XMP copy in step or says on the status line why it did not; the note under the rows now says only that other entries and the dates cannot be changed yet. Listing, adding, editing and removing entries of other names is the remaining build; the engine now has the calls.
 
+**Built, not yet released, driven off-screen.** File ▸ Document ▸ Properties now has *Other entries*: every `/Info` entry beyond Title, Author, Subject, Keywords and Application, each value editable and removable, and an Add row for a new name and value. Each change is one undo step through `set_info_entry`; the XMP copy is kept in step and a skipped copy is said on the status line. Producer, CreationDate, ModDate and Trapped are read-only; typing one is refused in words. Driven by `a_custom_info_entry_reaches_info_and_xmp` (the saved copy holds `/DrawingNo` in `/Info` and `pdfx:DrawingNo` in XMP, and a second process lists it). The surface is Document properties itself (File ▸ Document, and the right-click menu of paper with nothing selected), not a separate *Metadata…* window; the panel's sentence saying other entries cannot be added is gone. The dates stay read-only: the engine reserves them. Awaiting his check.
+
 ## O380 — **OPEN** — a Clipboard tab, with large labelled buttons
 
 His words: *"I think clipboard features should be put under a new tab, and be larger icons with text."*
@@ -8346,3 +8348,9 @@ Said on 2026-11-24, about File ▸ Print ▸ preview with colour separations and
 - 4: "Sheet [n] of N": type a number and Enter (or Tab, or click away); Escape keeps the sheet.
 - 5: plates held up to 384 MiB and colour sheets up to 128 MiB, most recently shown kept; going back to a sheet renders nothing again.
 - Engine v0.173.0 (one composite per four inks): page 2's 4 plates land in 11,515 ms, against 44,223 ms.
+
+## O461 — **OPEN** — ce dimensions to centre lines, centre marks and radius/diameter circles; the circles' line style set apart from the ce dimension
+
+*"Please add the ability to dimension to center lines, center marks, and the circles made by the diameter and radius tool with the ability to change the line style of the circles separately from the dimension. Try to match all the features that these line styles have available in Solidworks."*
+
+Said on 2026-11-25. The ce dimension tools attach to a centre line (O453), a centre mark (O454) and the circle the radius/diameter tool draws, as their measured geometry. The circle's line style (colour, weight, line type such as centre, phantom, dashed, and its gap and dash lengths) is set on its own, apart from the ce dimension's. The CAD drawing package he uses is the reference for which line-style options centre lines, centre marks and these circles carry: centre-mark size, extended lines, the centre-line font, gap and overshoot past the outline.
