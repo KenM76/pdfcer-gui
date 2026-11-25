@@ -1,6 +1,6 @@
 ---
 name: filtered-test-run-hides-registry-tests
-description: run-all.sh runs no unit tests; a filtered cargo test skips registry-wide ones. Pin moves and command additions need the unfiltered workspace run before commit
+description: run-all.sh runs no unit tests; a filtered or one-crate cargo test skips registry-wide ones. Pin moves, commands AND new settings need the unfiltered workspace run before commit
 metadata:
   type: feedback
 ---
@@ -25,6 +25,13 @@ ledger counts. See [[feedback_skip_red_check_stop]].
 (`reflow::tests::the_index_is_one_the_engine_accepts_on_a_right_aligned_fixture`).
 A pin move changes engine behaviour under every test, so run
 `CARGO_BUILD_JOBS=2 cargo test --workspace` before that commit.
+
+**New settings too.** A Settings header is counted against a catalogue in
+the GUI crate (`the_window_draws_exactly_the_settings_this_catalog_describes`:
+add its triple and bump `SETTINGS_COUNT`). The per-tab mode setting was
+committed after only the base crate's tests (the prefs live there) and the
+catalogue was red for a commit. Use `--no-fail-fast` so one red crate does
+not hide the rest.
 
 **Do not isolate a cause with `git stash -u`.** It fails on the locked
 `.claude/agent-memory` folders, leaves the tree unreset, and then cannot pop.

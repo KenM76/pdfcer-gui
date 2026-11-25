@@ -1067,6 +1067,18 @@ fn show_in(
             f64::from(scroll_output.inner_rect.min.y - image_rect.min.y),
         )
     };
+    // Where the view is, for reopening the document here (O464). Not in the
+    // deep tier, whose offset is not a scroll position.
+    if !deep {
+        let vp = scroll_output.inner_rect.size();
+        doc.view_centre = Some((
+            acting,
+            (
+                (pan_at.0 as f32 + vp.x / 2.0) / image_rect.width().max(1.0),
+                (pan_at.1 as f32 + vp.y / 2.0) / image_rect.height().max(1.0),
+            ),
+        ));
+    }
     // Where the acting page's raster was actually painted. Equal to
     // `image_rect` below the pixmap ceiling; the region's rect above it, and
     // the only field that can witness O24c's lurch.

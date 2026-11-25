@@ -298,6 +298,13 @@ pub struct OpenDoc {
     /// `None` until it is first switched away from. Read only under
     /// `Prefs::remember_tab_mode` (O463).
     pub tab_mode: Option<String>,
+    /// The acting page and the viewport's centre as a fraction of that page's
+    /// drawn size, written by the canvas each frame outside the deep tier;
+    /// what is recorded when the document closes (O464).
+    pub view_centre: Option<(usize, (f32, f32))>,
+    /// A remembered centre fraction to place on `view.page_index` once the
+    /// canvas has laid out; spent by the canvas's `reopen` arm (O464).
+    pub reopen_at: Option<(f32, f32)>,
     /// **Wheel travel not yet spent on a page turn**, in logical points —
     /// `OPERATOR_REQUESTS.md` O30.
     ///
@@ -1134,6 +1141,8 @@ impl OpenDoc {
             tracked_page: 0,
             canvas_frames: 0,
             tab_mode: None,
+            view_centre: None,
+            reopen_at: None,
             wheel_travel: 0.0,
             render_in_flight: None,
             render_error: None,

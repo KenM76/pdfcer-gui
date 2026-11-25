@@ -68,6 +68,7 @@ impl eframe::App for PdfcerApp {
         // `flush` is a no-op when nothing is pending, so this costs an
         // `Option` read on the common exit and writes only when the debounce
         // was genuinely still holding something.
+        self.remember_every_view();
         let wrote = self.layout.flush();
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI

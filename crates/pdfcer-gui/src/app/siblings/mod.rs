@@ -269,6 +269,8 @@ impl PdfcerApp {
         if let Status::Open(doc) = &mut self.status {
             let count = doc.pages.len();
             doc.view.go_to_page(page, count);
+            // A page named at open outranks the one it was last left at.
+            doc.reopen_at = None;
         }
     }
 

@@ -200,6 +200,8 @@ fn every_preference_round_trips_through_the_file() {
                     colour_icons: false,
                     // Non-default: O463 ships `false`.
                     remember_tab_mode: true,
+                    // Non-default: O464 ships `false`.
+                    reopen_where_left: true,
                     // O166's thirteen keys, every one non-default, per this
                     // test's own rule. This is the only group whose parser and
                     // writer live outside `prefs::file` (they are in
@@ -791,6 +793,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         ui_scale: 1.65,
         colour_icons: true,
         remember_tab_mode: false,
+        reopen_where_left: false,
         // O166. Deliberately a DIFFERENT set of values from the round-trip
         // test above — a shared constant would make both tests depend on one
         // combination, and this one is asking a different question: does every

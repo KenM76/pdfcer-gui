@@ -372,6 +372,7 @@ fn page_body(
             display::auto_hide(ui, prefs);
             display::tab_faces(ui, prefs);
             display::tab_mode(ui, prefs);
+            display::reopen(ui, prefs);
             display::page_chrome(ui, prefs);
         }
         // Drawn whether or not an Acrobat was found: the ribbon control is

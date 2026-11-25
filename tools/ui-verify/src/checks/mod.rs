@@ -705,6 +705,7 @@ pub mod page_tabs_chooser;
 pub mod title_build_stamp;
 
 pub mod render_diagnostics;
+pub mod reopen_where_left;
 
 pub mod bezier_handle;
 

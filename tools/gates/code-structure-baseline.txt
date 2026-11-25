@@ -1,4 +1,3 @@
-dup crates/pdfcer-gui-base::absolute in crates/pdfcer-gui-base/src/guidestore.rs, crates/pdfcer-gui-base/src/viewer/remembered.rs
 dup crates/pdfcer-gui-base::id in crates/pdfcer-gui-base/src/filedrag.rs, crates/pdfcer-gui-base/src/smartselect.rs
 dup crates/pdfcer-gui::id in crates/pdfcer-gui/src/canvas/chunks.rs, crates/pdfcer-gui/src/canvas/placing.rs
 dup crates/pdfcer-gui::id in crates/pdfcer-gui/src/canvas/textedit/history.rs, crates/pdfcer-gui/src/canvas/textedit/note.rs

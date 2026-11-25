@@ -387,6 +387,7 @@ impl PdfcerApp {
         // be at those coordinates in the new file. The query and the operator's
         // options survive; see `crate::find::FindState::forget_document`.
         self.find.forget_document();
+        self.restore_last_view();
 
         // Remember the file — but only if it actually opened.
         //

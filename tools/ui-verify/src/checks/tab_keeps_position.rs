@@ -50,7 +50,7 @@ impl Check for EachTabKeepsItsOwnPosition {
 }
 
 /// The last `canvas-pos` point.
-fn position(trace: &Trace) -> Result<(f64, f64)> {
+pub(crate) fn position(trace: &Trace) -> Result<(f64, f64)> {
     let line = trace
         .last(POSITION)
         .ok_or_else(|| Error::new(format!("the canvas traced no `{POSITION}` line.")))?;
@@ -61,7 +61,7 @@ fn position(trace: &Trace) -> Result<(f64, f64)> {
 }
 
 /// Wheel `lines` at the canvas viewport's centre and return where it landed.
-fn scroll(
+pub(crate) fn scroll(
     session: &Session,
     pointer: &ScriptedPointer,
     ui_rect: &str,

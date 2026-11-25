@@ -140,7 +140,7 @@ fn parse(text: &str) -> Vec<(PageDisplay, PathBuf)> {
 
 /// Resolve `path` against the current directory **without touching the
 /// filesystem**.
-fn absolute(path: &Path) -> PathBuf {
+pub(crate) fn absolute(path: &Path) -> PathBuf {
     std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf())
 }
 

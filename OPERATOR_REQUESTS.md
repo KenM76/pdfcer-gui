@@ -8371,8 +8371,10 @@ Said on 2026-11-25, in the same message as O462 and O464. With the setting on, e
 
 Built: Settings > Display > *Remember the mode of each tab*, off by default. With it on, bringing a tab back puts the window in the mode that tab was left in; a newly opened document starts in the mode you are in. Driven off-screen by `each_tab_remembers_its_mode`, which runs with the setting off (the mode stays Review) and on (the first tab comes back in Edit).
 
-## O464 — **OPEN** — a setting to reopen a document at the page and position it was left at
+## O464 — **BUILT, awaiting Ken** — a setting to reopen a document at the page and position it was left at
 
 *"and what page and position a previously open document was in."*
 
 Said on 2026-11-25, in the same message as O462 and O463. With the setting on, a document opened again (from Recent, the file dialog, a drop or the command line, and across restarts) comes back at the page, scroll position and zoom it had when it was last closed.
+
+Built: Settings > Display > *Reopen each document at the page, position and zoom it was left at*, off by default. Where a document was is recorded when its tab closes and when pdfcer quits, for the last 200 documents; it comes back as the same page, the same point at the viewport centre, and the same zoom or fit. A page named on the command line, or a document moved between windows, still opens at that page. Driven off-screen: `a_document_reopens_where_it_was_left` (left on page 2, came back to the same pixel; with the setting off, it opened at the start). The record made on quitting is not yet driven, because quitting needs the window's own close button, which is on-screen only.

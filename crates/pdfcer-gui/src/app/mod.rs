@@ -72,6 +72,7 @@ pub mod keyclaim;
 // from `state.rs` under R2 along the seam those two subjects already drew:
 // that file is *what an open document is*, this one is *the document's lifetime
 // on the application*.
+mod lastview;
 pub mod lifecycle;
 pub mod modes;
 /// The View ▸ Display blend slider — the one control on that tab the ribbon

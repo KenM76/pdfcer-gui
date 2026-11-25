@@ -80,7 +80,9 @@ mod tests {
     // scale in the Appearance group. Whether a click opens a whole paragraph
     // (O295) is a shell preference in the Text group. What tabs show (O299)
     // is one header over the ribbon's and the dock's choice.
-    const SETTINGS_COUNT: usize = 57;
+    // What a tab remembers (O463) and where a document reopens (O464) are
+    // two headers in Display: one is about switching, the other about closing.
+    const SETTINGS_COUNT: usize = 59;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -328,6 +330,8 @@ mod tests {
                 page_labels_silence(),
                 page_labels_radius(),
             ),
+            (tab_mode_title(), tab_mode_silence(), tab_mode_radius()),
+            (reopen_title(), reopen_silence(), reopen_radius()),
         ]
     }
 

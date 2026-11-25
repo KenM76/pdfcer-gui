@@ -296,6 +296,16 @@ pub fn tab_mode(ui: &mut Ui, prefs: &mut Prefs) {
     ui.checkbox(&mut prefs.remember_tab_mode, t::tab_mode_label());
 }
 
+pub fn reopen(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::reopen_title(),
+        t::reopen_silence(),
+        t::reopen_radius(),
+    );
+    ui.checkbox(&mut prefs.reopen_where_left, t::reopen_label());
+}
+
 pub fn page_chrome(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,

@@ -329,6 +329,23 @@ pub(super) fn decide(
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("min-reveal", offset);
     } else if doc.canvas_frames >= SEED_FRAME
+        && let Some(frac) = doc.reopen_at.take()
+    {
+        // Reopening where the document was left (O464): the remembered point
+        // of the remembered page goes back to the viewport's centre. Ranked
+        // above page-scroll, which would turn to the page and show its top.
+        let page = doc.view.page_index;
+        doc.tracked_page = page;
+        let rect = layout.rect_of(page).unwrap_or(row_rect);
+        let local = geometry::offset_holding_anchor_at(
+            frac,
+            (vp.x / 2.0, vp.y / 2.0),
+            (rect.width(), rect.height()),
+            (vp.x, vp.y),
+        );
+        // ui-text-exempt: diagnostic token, never displayed in the UI
+        return Decision::won("reopen", strip_offset_in(rect, local));
+    } else if doc.canvas_frames >= SEED_FRAME
         // A page named at open (a moved or torn-off document) is turned to
         // on the seed frame, which this arm outranks; spent on frame 0, the
         // seed would re-place the view a frame later.

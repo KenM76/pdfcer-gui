@@ -25,6 +25,7 @@ pub use crate::viewframe as frame;
 // under R2, this project's 1,500-line-per-file ceiling.
 pub mod fit;
 // Where the per-document choice is written down, beside the type it persists.
+pub mod lastview;
 pub mod remembered;
 // Where every page sits, in one coordinate space. The answer to Phase 4.1's
 // "a page range rather than a single index", expressed as geometry.

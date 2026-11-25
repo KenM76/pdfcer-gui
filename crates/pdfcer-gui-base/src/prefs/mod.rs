@@ -645,6 +645,10 @@ pub struct Prefs {
     /// restored when the tab is brought back — `OPERATOR_REQUESTS.md` O463.
     /// `false` by default: one mode for the whole window.
     pub remember_tab_mode: bool,
+    /// Whether a document opens again at the page, position and zoom it was
+    /// closed at — `OPERATOR_REQUESTS.md` O464. `false` by default: every
+    /// document opens at its first page under [`Self::opening_fit`].
+    pub reopen_where_left: bool,
     /// **Which rendering standard the operator chose**, by its engine id —
     /// or `None` if they have never chosen one in any sitting.
     ///
@@ -947,6 +951,7 @@ impl Default for Prefs {
             ui_scale: DEFAULT_UI_SCALE,
             colour_icons: true,
             remember_tab_mode: false,
+            reopen_where_left: false,
             chosen_standard: None,
             // Empty = anonymous, deliberately. See the field's own note on
             // why the OS user name is not a defensible guess.

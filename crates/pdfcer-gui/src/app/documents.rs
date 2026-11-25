@@ -170,6 +170,7 @@ impl PdfcerApp {
             Some(Status::Empty) | None => format!("close slot={slot} nothing-open"),
         });
 
+        self.remember_view_of(slot);
         let was_active = self.active_slot;
         let mut all = self.take_slots();
         all.remove(slot);
