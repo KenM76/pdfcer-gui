@@ -188,3 +188,4 @@
 - [The PC bugchecks, even idle](project_machine_bugchecks_under_load.md) — 6 since 11-06, one 0x12B (RAM); fsck after a reset.
 - [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".
+- [Sweep OCR skips need models](feedback_sweep_ocr_needs_models.md) — drive copy lacks models/; re-drive with a model-bearing scratch exe.
