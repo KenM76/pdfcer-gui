@@ -585,6 +585,9 @@ impl PdfcerApp {
             };
             format!("open {kind}")
         });
+        if let Status::Open(d) = &self.status {
+            crate::app::actions::pages::trace_labels(d, "open");
+        }
     }
 
     /// **Close whatever is open and go back to [`Status::Empty`].**

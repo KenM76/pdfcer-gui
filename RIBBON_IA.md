@@ -564,6 +564,7 @@ standard — is better than what the comparison product does, and nothing here
 should dilute it. Area is the Perimeter tool's twin: the same corner picks and
 close-on-the-first-point, labelled with the enclosed area; a closed perimeter ce
 dimension switches between the two from its right-click menu and Properties.
+In *Manage ce-dimension groups…*, a group's right-click menu offers **New group like this one**, and *Add group like ‹name›* sits beside *Add group*: a new, empty group with the template's scale, number format, standard and style.
 
 Aligned is a constraint on the linear tool rather than a separate tool.
 Perimeter, Area and Length are in the ce dimension group rather than in

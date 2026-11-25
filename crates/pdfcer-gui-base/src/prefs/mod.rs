@@ -48,6 +48,7 @@ pub mod ocrmodels;
 /// its header.
 pub mod offpage;
 pub mod overprint;
+pub mod pagelabels;
 pub mod pictures;
 pub mod settingstext;
 pub mod shortcuts;
@@ -101,6 +102,7 @@ pub use ocrmodels::OcrModelPrefs;
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
 pub use overprint::OverprintDefault;
+pub use pagelabels::PageLabelPolicy;
 pub use pastechords::PasteChords;
 pub use pictures::PicturePrefs;
 pub use shortcuts::ShortcutPrefs;
@@ -410,6 +412,8 @@ pub struct Prefs {
     pub markup_tools: MarkupToolPrefs,
     /// Whether a document opens with overprint preview on. See [`overprint`].
     pub overprint_default: OverprintDefault,
+    /// What page labels do when pages move. See [`pagelabels`].
+    pub page_labels: PageLabelPolicy,
     /// The 3D walker's eye height, whole millimetres, 5 ft 6 in by default;
     /// `None` follows the model's size. See [`walkeye`].
     pub walk_eye_mm: Option<u32>,
@@ -882,6 +886,7 @@ impl Default for Prefs {
             form_style: FormStylePrefs::default(),
             markup_tools: MarkupToolPrefs::default(),
             overprint_default: OverprintDefault::default(),
+            page_labels: PageLabelPolicy::default(),
             walk_eye_mm: Some(walkeye::DEFAULT_MM),
             model_start_walk: true,
             model_view: std::collections::BTreeMap::new(),

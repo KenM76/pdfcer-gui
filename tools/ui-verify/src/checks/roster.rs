@@ -288,6 +288,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(scale_user_unit::ACalibrationOnAUserUnitPageReadsTheStatedLength),
         Box::new(group_fraction_reduces::AGroupsFractionsReduceToLowestTerms),
         Box::new(group_numbers_at_creation::ANewGroupsNumbersAreSetWhenItIsMade),
+        Box::new(dimension_like::AGroupMadeLikeAnotherCopiesItsSetUp),
         Box::new(dimension_tool_options::AHorizontalDimensionMeasuresOnlyTheRun),
         Box::new(dimension_tool_options::ADimensionJoinsTheGroupMadeInToolOptions),
         Box::new(dimension_tool_options::ANewGroupCopiesAGroupsScaleInItsOwnUnit),
@@ -356,6 +357,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         // only this one fails is a band that fills and is evicted.
         Box::new(page_prefetch::PagesAreDrawnBeforeHeScrollsToThem),
         Box::new(page_ops::PageOpsRoundTrip),
+        Box::new(page_labels_follow::AMovedOrDeletedSheetKeepsItsLabel),
+        Box::new(info_entries::ACustomInfoEntryReachesInfoAndXmp),
         // The FIRST check anywhere that drives the Pages PANEL rather than
         // the Pages tab. `page_ops` above drives the ribbon and records why it
         // does not touch the panel — the tile's context menu is an egui popup

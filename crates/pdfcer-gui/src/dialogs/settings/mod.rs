@@ -338,6 +338,8 @@ fn page_body(
             pages::separations(ui, draft);
             ui.add_space(10.0);
             pages::missing_as(ui, draft);
+            ui.add_space(10.0);
+            pages::page_labels(ui, draft);
         }
         "signatures" => {
             // The permission before the location: a path typed with the

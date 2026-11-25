@@ -80,7 +80,8 @@ impl PdfcerApp {
         // Everything past this point is an ordinary insert, and deliberately
         // the *same* one an Insert-from-file performs. See that function's
         // docs for the disclosure and for why the view goes to what arrived.
-        let inserted = super::pages::insert_from_view(target, &view, pages, position);
+        let inserted =
+            super::pages::insert_from_view(target, &view, pages, position, self.prefs.page_labels);
         if !take || inserted == 0 {
             return;
         }
@@ -108,7 +109,10 @@ impl PdfcerApp {
         // Read BEFORE `self.parked` is borrowed mutably below. `Settings`'
         // fields are `Copy`, so this is a value rather than a borrow, which is
         // what lets the closure use it while the source document is borrowed.
-        let separations = self.settings.separations;
+        let policy = super::pages::PagePolicy {
+            separations: self.settings.separations,
+            labels: self.prefs.page_labels,
+        };
         let parked_index = if source_slot < self.active_slot {
             source_slot
         } else {
@@ -153,7 +157,7 @@ impl PdfcerApp {
             // this is a page delete wearing a drag's clothes, and a policy that
             // applied on one route and not the other would be the divergence
             // the single funnel exists to prevent.
-            let outcome = super::pages::delete(session, pages, separations);
+            let outcome = super::pages::delete(session, pages, policy);
             if let Ok(notes) = &outcome {
                 source_notes.clone_from(notes);
             }

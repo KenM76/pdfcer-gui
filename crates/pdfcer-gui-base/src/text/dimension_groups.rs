@@ -181,6 +181,30 @@ pub const fn new_button() -> &'static str {
     "Add group"
 }
 
+/// The row menu's command that adds a group set up like that row's.
+#[must_use]
+pub const fn like_menu() -> &'static str {
+    "New group like this one"
+}
+
+/// The button beside Add group, naming the group it copies.
+#[must_use]
+pub fn like_button(name: &str) -> String {
+    format!("Add group like {name}")
+}
+
+/// What a group "like" another one carries over.
+#[must_use]
+pub const fn like_hover() -> &'static str {
+    "A new, empty group with this group's scale, number format, drafting standard and appearance. Uses the name typed above, or a numbered copy of this name."
+}
+
+/// The automatic name of a group made like `base`: `base 2`, `base 3`, ...
+#[must_use]
+pub fn like_name(base: &str, n: u32) -> String {
+    format!("{base} {n}")
+}
+
 /// Why the Add button is unavailable with an empty name.
 #[must_use]
 pub const fn new_needs_a_name() -> &'static str {

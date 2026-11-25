@@ -13,6 +13,7 @@ pub(super) fn insert_blank(
     size_pt: (f64, f64),
     count: usize,
     position: InsertPosition,
+    labels: pdfcer_gui_base::prefs::PageLabelPolicy,
 ) {
     let rect = pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, size_pt.0, size_pt.1);
     let blank = match pdfcer_gui_base::blank::document_sized(rect) {
@@ -33,5 +34,5 @@ pub(super) fn insert_blank(
             size_pt.0, size_pt.1
         )
     });
-    super::pages::insert_from_view(doc, &blank.view(), &vec![0; count], position);
+    super::pages::insert_from_view(doc, &blank.view(), &vec![0; count], position, labels);
 }

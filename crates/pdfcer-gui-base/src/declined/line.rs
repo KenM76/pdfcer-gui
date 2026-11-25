@@ -191,6 +191,7 @@ impl Declined {
             Self::OcrLayer(why) => (*why).line(),
             Self::Layer(why) => (*why).line(),
             Self::MarkupFlatten(why) => crate::text::flattenannot::refused(*why),
+            Self::InfoKey(why) => why.line(),
             Self::FormFontsNothingToRepair => crate::text::formfonts::nothing_to_repair(),
             Self::TextClick(why) => crate::text::textedit::refusal(*why),
             Self::OsPaste(why) => return why.line(),

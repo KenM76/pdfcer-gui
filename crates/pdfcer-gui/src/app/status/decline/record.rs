@@ -230,6 +230,11 @@ pub(crate) fn record_form_fonts_nothing_to_repair() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FormFontsNothingToRepair));
 }
 
+/// Record that a document information entry was refused for its name.
+pub(crate) fn record_info_key(why: crate::text::panels::docprops::InfoKeyRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::InfoKey(why)));
+}
+
 /// Record that making a markup part of the page was refused, and why.
 pub(crate) fn record_markup_flatten(why: pdfcer_core::edit::AnnotFlattenRefusalReason) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::MarkupFlatten(why)));

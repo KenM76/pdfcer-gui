@@ -518,6 +518,9 @@ impl PdfcerApp {
                         })
                 });
             }
+            Action::SetInfoEntry { key, value, adding } => {
+                super::infoentry::apply(doc, &key, value.as_deref(), adding);
+            }
             // The `Option` is `markup::Refusal::Mismatched` arriving at the
             // only place it can: a kind holding another family's geometry.
             //
@@ -1042,7 +1045,11 @@ impl PdfcerApp {
             // this scope can see and `pages::apply` cannot. See `pages::delete`
             // for the promise it was until 2026-08-28.
             Action::Page(action) => {
-                super::pages::apply(doc, &mut self.panels, action, self.settings.separations);
+                let policy = super::pages::PagePolicy {
+                    separations: self.settings.separations,
+                    labels: self.prefs.page_labels,
+                };
+                super::pages::apply(doc, &mut self.panels, action, policy);
             }
             Action::Region(action) => super::region::apply(doc, action),
             // One line, like its neighbours: the whole of this verb — its two

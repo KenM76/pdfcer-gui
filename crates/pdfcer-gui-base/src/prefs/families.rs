@@ -12,7 +12,7 @@ use super::printing::KeyOutcome;
 type Parse = fn(&mut Prefs, &str, &str) -> KeyOutcome;
 
 /// Every group, in the order a line is offered to them.
-const FAMILIES: [Parse; 17] = [
+const FAMILIES: [Parse; 18] = [
     |p, k, v| super::offpage::parse_key(&mut p.off_page, k, v),
     |p, k, v| super::printing::parse_key(&mut p.print, k, v),
     |p, k, v| super::exporting::parse_key(&mut p.export, k, v),
@@ -25,6 +25,7 @@ const FAMILIES: [Parse; 17] = [
     |p, k, v| super::formstyle::parse_key(&mut p.form_style, k, v),
     |p, k, v| super::markuptools::parse_key(&mut p.markup_tools, k, v),
     |p, k, v| super::overprint::parse_key(&mut p.overprint_default, k, v),
+    |p, k, v| super::pagelabels::parse_key(&mut p.page_labels, k, v),
     |p, k, v| super::walkeye::parse_key(&mut p.walk_eye_mm, k, v),
     |p, k, v| super::modelstart::parse_key(&mut p.model_start_walk, k, v),
     |p, k, v| super::modelview::parse_key(&mut p.model_view, k, v),

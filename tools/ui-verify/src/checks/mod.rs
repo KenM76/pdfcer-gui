@@ -232,6 +232,7 @@ pub mod annot_restyle;
 /// Shared driving for the ce dimension checks on `dimension-scaled.pdf`.
 mod dimdrive;
 pub mod dimension_colour_cmyk;
+pub mod dimension_like;
 pub mod dimension_text_select;
 pub mod dimension_tool_options;
 pub mod form_leaf_move;
@@ -446,6 +447,8 @@ pub mod page_display_pref;
 
 pub mod page_display_recentres;
 
+pub mod info_entries;
+pub mod page_labels_follow;
 pub mod page_ops;
 
 pub mod page_prefetch;

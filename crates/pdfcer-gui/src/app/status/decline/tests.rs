@@ -287,6 +287,12 @@ fn no_two_declines_share_a_sentence() {
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::AssignLocked),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::DrawLayerHidden),
         Declined::MarkupFlatten(pdfcer_core::edit::AnnotFlattenRefusalReason::Locked),
+        Declined::InfoKey(crate::text::panels::docprops::InfoKeyRefusal::Reserved(
+            pdfcer_core::edit::ReservedInfoKey::ModDate,
+        )),
+        Declined::InfoKey(crate::text::panels::docprops::InfoKeyRefusal::Invalid(
+            pdfcer_core::edit::InfoKeyProblem::TooLong,
+        )),
         Declined::FormFontsNothingToRepair,
         Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::NotDynamic),
         Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::Signed(2)),
@@ -699,8 +705,8 @@ b"
 /// Two tests above — [`no_two_declines_share_a_sentence`] and
 /// [`a_mode_refusal_reads_like_no_other_decline`] — assert that declines do not
 /// read alike, and both do it against a **hand-written list**. Between them
-/// they name **six** of the enum's **thirty-three** variants. The other
-/// twenty-seven are invisible to the checks built to find exactly this, and
+/// they name **a minority** of the enum's variants. The rest are invisible to
+/// the checks built to find exactly this, and
 /// the count still adds up: the tests pass, the suite grows, and a new decline
 /// that paraphrases an old one ships without a single thing going red.
 ///
@@ -717,8 +723,8 @@ b"
 /// # What this is NOT
 ///
 /// It is not the census. The honest state, written down rather than implied:
-/// **six of thirty-three variants are compared for a distinct sentence**, plus
-/// the six clipboard-mode refusals against those six. Building the full
+/// **only the listed variants are compared for a distinct sentence**, plus
+/// the clipboard-mode refusals against them. Building the full
 /// pairwise census needs one representative of each of the eight payload enums
 /// and would very likely surface a genuine collision or two — which is worth
 /// doing, and is not done here because a collision is a **wording decision**
@@ -731,7 +737,7 @@ b"
 /// with nothing going red. Re-measure instead of trusting it:
 ///
 /// ```text
-/// awk '/^pub\(crate\) enum Declined \{/,/^\}/' app/status/decline.rs \
+/// awk '/^pub enum Declined \{/,/^\}/' crates/pdfcer-gui-base/src/declined.rs \
 ///   | grep -cE '^    [A-Z][A-Za-z]*(\(|,| \{)'
 /// ```
 #[allow(dead_code)]
@@ -790,6 +796,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::OcrLayer(_)
         | Declined::Layer(_)
         | Declined::MarkupFlatten(_)
+        | Declined::InfoKey(_)
         | Declined::FormFontsNothingToRepair
         | Declined::FormPages(_)
         | Declined::FormFill(_)

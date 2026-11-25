@@ -1028,6 +1028,9 @@ pub enum Declined {
     /// Making a markup part of the page was refused; worded in
     /// [`crate::text::flattenannot::refused`].
     MarkupFlatten(pdfcer_core::edit::AnnotFlattenRefusalReason),
+    /// A document information entry was not written because of its name.
+    /// Worded in [`crate::text::panels::docprops::InfoKeyRefusal`].
+    InfoKey(crate::text::panels::docprops::InfoKeyRefusal),
     /// Forms ▸ Manage ▸ Repair fonts found no inline font to move. Worded in
     /// [`crate::text::formfonts::nothing_to_repair`].
     FormFontsNothingToRepair,

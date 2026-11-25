@@ -334,6 +334,18 @@ pub enum DimensionAction {
         author_into: bool,
     },
 
+    /// **Add a group set up like an existing one** —
+    /// `EditSession::add_dimension_group_like`: the template's scale, number
+    /// format, drafting standard and style, none of its ce dimensions. One undo
+    /// entry. Raised by `crate::panels::dimension_groups::like`.
+    AddGroupLike {
+        /// The new group's name, trimmed and non-empty, for
+        /// [`Self::AddGroup`]'s reason.
+        name: String,
+        /// The group it is set up like.
+        template: GroupId,
+    },
+
     /// **Rename a dimension group.**
     ///
     /// Raised by `crate::dialogs::dimension_groups`.

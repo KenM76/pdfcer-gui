@@ -847,6 +847,21 @@ pub enum Action {
         /// The new value, or `None` to remove the key entirely.
         value: Option<String>,
     },
+    /// **Set or remove any document information entry by its key** — a
+    /// title block's drawing number, revision or project, which
+    /// [`Self::SetInfoField`]'s fixed list does not name.
+    ///
+    /// Raised by `crate::panels::docprops::custom`.
+    SetInfoEntry {
+        /// The key as name bytes, without the `/`: an existing entry's key is
+        /// carried byte-for-byte, so one that is not UTF-8 still round-trips.
+        key: Vec<u8>,
+        /// The new value, or `None` to remove the key.
+        value: Option<String>,
+        /// Raised by the panel's Add row, so an existing key being replaced
+        /// is disclosed rather than looking like a new entry.
+        adding: bool,
+    },
     /// **Mark the text the operator has selected** — underline, strikeout or
     /// squiggly.
     ///

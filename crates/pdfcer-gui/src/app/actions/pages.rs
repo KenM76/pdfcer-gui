@@ -10,6 +10,7 @@ use pdfcer_core::object::ObjId;
 
 use crate::app::state::OpenDoc;
 use crate::text::pages as t;
+use pdfcer_gui_base::prefs::PageLabelPolicy;
 
 pub use pdfcer_gui_base::subactions::PageAction;
 
@@ -277,9 +278,9 @@ pub(super) fn rotate(
 pub(super) fn delete(
     session: &mut EditSession,
     pages: &[usize],
-    separations: pdfcer_core::pageops::SeparationPolicy,
+    policy: PagePolicy,
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
-    // `delete_pages_with`, not `delete_pages` — the latter is what makes
+    // `delete_pages_with_labels`, not `delete_pages` — the latter is what makes
     // the operator's separation policy a broken promise.
     //
     // `delete_pages` delegates to this verb with `SeparationPolicy::Repair`
@@ -301,19 +302,20 @@ pub(super) fn delete(
     // `vector_edit` traces the refusal. That is the operator's own instruction
     // being honoured, not a fault.
     session
-        .delete_pages_with(pages, separations)
+        .delete_pages_with_labels(pages, policy.separations, policy.labels.deleted())
         .map(|outcome| {
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     "pages-deleted removed={} freed={} bookmarks={} links={} \
-                 destinations={} labels_stale={}",
+                 destinations={} labels_stale={} label_ranges={}",
                     outcome.pages_removed,
                     outcome.objects_freed,
                     outcome.dangling.outline_items,
                     outcome.dangling.links,
                     outcome.dangling.named_destinations,
                     u8::from(outcome.dangling.page_labels_stale),
+                    outcome.page_label_ranges,
                 )
             });
             delete_disclosures(&outcome.dangling, outcome.separations.sets_split)
@@ -331,8 +333,36 @@ pub(super) fn delete(
 pub(super) fn reorder(
     session: &mut EditSession,
     order: &[usize],
+    labels: PageLabelPolicy,
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
-    session.reorder_pages(order).map(|()| Vec::new())
+    session
+        .reorder_pages_with_labels(order, labels.reordered())
+        .map(|_ranges| Vec::new())
+}
+
+/// **The two settings a page verb consults**, threaded in from the
+/// application because `apply` is handed only the document.
+#[derive(Debug, Clone, Copy)]
+pub(super) struct PagePolicy {
+    /// What happens to a separated set an edit splits.
+    pub separations: pdfcer_core::pageops::SeparationPolicy,
+    /// What page labels do when pages move.
+    pub labels: PageLabelPolicy,
+}
+
+/// Trace every page's label, for a driven check to read what a page verb or
+/// an open left behind. Nothing when the document stores no labels.
+pub(crate) fn trace_labels(doc: &OpenDoc, why: &str) {
+    crate::diag::trace(|| {
+        let labels = doc
+            .page_labels()
+            .map_or_else(String::new, |labels| labels.join("|"));
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "page-labels-now why={why} pages={} labels={labels}",
+            doc.pages.len()
+        )
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -344,11 +374,11 @@ pub(super) fn apply(
     doc: &mut OpenDoc,
     panels: &mut crate::panels::PanelsState,
     action: PageAction,
-    // The one setting any page verb consults, threaded in rather than read
-    // here: this function is handed `&mut OpenDoc`, and the configuration
-    // belongs to the application rather than to the document. See `delete`.
-    separations: pdfcer_core::pageops::SeparationPolicy,
+    // Threaded in rather than read here: this function is handed
+    // `&mut OpenDoc`, and the configuration belongs to the application.
+    policy: PagePolicy,
 ) {
+    let separations = policy.separations;
     match action {
         // ===============================================================
         // THE PAGE VERBS
@@ -565,9 +595,10 @@ pub(super) fn apply(
                 &view,
                 &pages,
                 pdfcer_core::pageops::InsertPosition::After(after),
+                policy.labels,
             );
         }
-        PageAction::DeletePages { pages } => delete_arm(doc, panels, &pages, separations),
+        PageAction::DeletePages { pages } => delete_arm(doc, panels, &pages, policy),
         // **The middle case**: every page survives, and every index
         // means a different sheet.
         //
@@ -582,9 +613,10 @@ pub(super) fn apply(
             if !order.is_empty() {
                 let before = doc.edit_epoch;
                 super::apply::vector_edit(doc, "reorder-pages", 0, order.len(), |session| {
-                    reorder(session, &order)
+                    reorder(session, &order, policy.labels)
                 });
                 if doc.edit_epoch != before {
+                    trace_labels(doc, "reorder");
                     let landed = crate::panels::pages::ops::inverse(&order);
                     panels.pages_mut().selection.remap(&landed);
                 }
@@ -603,13 +635,19 @@ pub(super) fn apply(
             path,
             pages,
             position,
-        } => insert_from_file(doc, &path, &pages, position),
+        } => insert_from_file(doc, &path, &pages, position, policy.labels),
         PageAction::InsertBlankPages {
             width_pt,
             height_pt,
             count,
             position,
-        } => super::insertblank::insert_blank(doc, (width_pt, height_pt), count, position),
+        } => super::insertblank::insert_blank(
+            doc,
+            (width_pt, height_pt),
+            count,
+            position,
+            policy.labels,
+        ),
         PageAction::ExtractPages {
             pages,
             labels,
@@ -617,7 +655,7 @@ pub(super) fn apply(
         } => {
             let written = super::extract::extract(doc, &pages, labels, separations);
             if written && delete_after {
-                delete_arm(doc, panels, &pages, separations);
+                delete_arm(doc, panels, &pages, policy);
             }
         }
         PageAction::SplitDocument(request) => super::split::split(doc, &request, separations),
@@ -629,7 +667,7 @@ fn delete_arm(
     doc: &mut OpenDoc,
     panels: &mut crate::panels::PanelsState,
     pages: &[usize],
-    separations: pdfcer_core::pageops::SeparationPolicy,
+    policy: PagePolicy,
 ) {
     if pages.is_empty() {
         return;
@@ -637,9 +675,10 @@ fn delete_arm(
     let first = pages.first().copied().unwrap_or(0);
     let before = doc.edit_epoch;
     super::apply::vector_edit(doc, "delete-pages", first, pages.len(), |session| {
-        delete(session, pages, separations)
+        delete(session, pages, policy)
     });
     if doc.edit_epoch != before {
+        trace_labels(doc, "delete");
         panels.pages_mut().selection.clear();
     }
 }

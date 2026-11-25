@@ -321,6 +321,7 @@ mod export_word;
 /// judgements `PlaceTextReport` carries about the operator's own file, and why
 /// the engine's ready-made sentences are not the ones printed.
 pub mod importtext;
+mod infoentry;
 mod purge_passwords;
 mod remove_metadata;
 /// **The two actions that change what is SELECTED and nothing else.** Its

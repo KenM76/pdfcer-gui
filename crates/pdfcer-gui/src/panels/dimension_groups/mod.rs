@@ -5,6 +5,8 @@
 
 /// Renaming a group and removing one.
 mod identity;
+/// A new group set up like an existing one.
+pub mod like;
 mod style;
 
 use egui::Ui;
@@ -211,7 +213,7 @@ impl DimensionGroupsUi {
                 crate::diag::ui_rect(REGION_BODY, ui.max_rect());
                 ui.label(t::intro());
                 ui.add_space(6.0);
-                self.group_list(ui, &ctx, &model, active);
+                self.group_list(ui, &ctx, &model, active, actions);
                 ui.separator();
                 // **Adding comes directly under the LIST, above the selected
                 // group's settings**, and that is the window's own hard-won
@@ -255,6 +257,7 @@ impl DimensionGroupsUi {
         ctx: &egui::Context,
         model: &pdfcer_core::dimension::DimensionModel,
         active: GroupId,
+        actions: &mut Vec<Action>,
     ) {
         ui.label(t::groups_heading());
         ui.label(t::draw_into_hint());
@@ -311,6 +314,7 @@ impl DimensionGroupsUi {
                 if row.clicked() {
                     self.selected = Some(group.id);
                 }
+                like::row_menu(&row, model, group, &mut self.new_name, actions);
             });
             // The two facts that say *which group this is* when the names are
             // `Plan` and `Detail` and they were set up an hour ago. Indented
@@ -549,6 +553,8 @@ impl DimensionGroupsUi {
                 self.new_name.clear();
             }
         }
+        let selected = self.selected.and_then(|id| model.group(id));
+        like::button(ui, model, selected, &mut self.new_name, actions);
     }
 }
 

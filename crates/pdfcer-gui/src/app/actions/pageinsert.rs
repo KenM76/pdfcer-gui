@@ -4,6 +4,8 @@
 
 use std::path::Path;
 
+use pdfcer_gui_base::prefs::PageLabelPolicy;
+
 use crate::app::state::OpenDoc;
 
 pub(super) fn insert_from_file(
@@ -11,6 +13,7 @@ pub(super) fn insert_from_file(
     path: &Path,
     pages: &[usize],
     position: pdfcer_core::pageops::InsertPosition,
+    labels: PageLabelPolicy,
 ) {
     // Loaded OUTSIDE the edit closure and borrowed inside it: `insert_pages`
     // takes a `DocumentView` over it, so it has to outlive the call — and
@@ -30,16 +33,20 @@ pub(super) fn insert_from_file(
             return;
         }
     };
-    insert_from_view(doc, &source.view(), pages, position);
+    insert_from_view(doc, &source.view(), pages, position, labels);
 }
 
 /// What an insert brings besides the pages: the bookmarks that reach them,
 /// after this document's own, and the named destinations naming them, as
-/// Acrobat's Insert Pages does.
-fn carry() -> pdfcer_core::pageops::InsertOptions {
+/// Acrobat's Insert Pages does; and the labels the operator's policy gives
+/// the inserted pages. `insert_pages_with_options` rather than the shorter
+/// `insert_pages_with`, which sets the labels alone and would drop the
+/// outline and destination carry.
+fn carry(labels: PageLabelPolicy) -> pdfcer_core::pageops::InsertOptions {
     pdfcer_core::pageops::InsertOptions::default()
         .with_outline(pdfcer_core::pageops::InsertedOutline::Append)
         .with_named_destinations(true)
+        .with_labels(labels.inserted())
 }
 
 /// **The half of an insert that does not care where the source came from.**
@@ -48,6 +55,7 @@ pub(super) fn insert_from_view(
     view: &pdfcer_core::view::DocumentView<'_>,
     pages: &[usize],
     position: pdfcer_core::pageops::InsertPosition,
+    labels: PageLabelPolicy,
 ) -> usize {
     if pages.is_empty() {
         crate::diag::trace(|| {
@@ -73,7 +81,7 @@ pub(super) fn insert_from_view(
 
     super::apply::vector_edit(doc, "insert-pages", landing, count, |session| {
         session
-            .insert_pages_with_options(view, pages, position, &carry())
+            .insert_pages_with_options(view, pages, position, &carry(labels))
             // `orphaned_widgets` is exact, so the number goes in front of the
             // operator unhedged and a zero drops the clause entirely.
             //
@@ -101,6 +109,7 @@ pub(super) fn insert_from_view(
     // disclosure, and moving the view on a failure would be a second, wordless
     // claim that something landed.
     if doc.pages.len() > before {
+        super::pages::trace_labels(doc, "insert");
         let target = landing.min(doc.pages.len().saturating_sub(1));
         doc.view.go_to_page(target, doc.pages.len());
         // `tracked_page` is deliberately left behind: under a continuous display

@@ -20,12 +20,6 @@ pub const fn note() -> &'static str {
      empty a box to remove it from the document altogether."
 }
 
-/// What the metadata rows cannot do yet, under them.
-#[must_use]
-pub const fn not_yet() -> &'static str {
-    "Entries of other names and the dates cannot be added or changed here yet."
-}
-
 /// The label on one document-information field.
 #[must_use]
 pub fn info_label(field: pdfcer_core::edit::InfoField) -> &'static str {
@@ -350,6 +344,118 @@ pub fn box_size(
     format!("{size} ({how})")
 }
 
+/// The heading over the document's other information entries.
+#[must_use]
+pub const fn custom_heading() -> &'static str {
+    "Other entries"
+}
+
+/// What the other entries are, and what an empty box does.
+#[must_use]
+pub const fn custom_note() -> &'static str {
+    "Entries of any name, such as a drawing number, revision or project. They are stored in the file, and pdfcer keeps the file's XMP copy in step. Empty a box to remove the entry."
+}
+
+/// The line when the document has no other entries.
+#[must_use]
+pub const fn custom_none() -> &'static str {
+    "This document has no other entries."
+}
+
+/// A value that is not text, shown but not editable.
+#[must_use]
+pub const fn custom_not_text() -> &'static str {
+    "(not text; shown, not changed here)"
+}
+
+/// The remove button on one entry.
+#[must_use]
+pub const fn custom_remove() -> &'static str {
+    "Remove"
+}
+
+/// The remove button's hover.
+#[must_use]
+pub const fn custom_remove_hover() -> &'static str {
+    "Remove this entry from the document."
+}
+
+/// The hint in the new entry's name box.
+#[must_use]
+pub const fn custom_new_key_hint() -> &'static str {
+    "Name, e.g. Drawing number"
+}
+
+/// The hint in the new entry's value box.
+#[must_use]
+pub const fn custom_new_value_hint() -> &'static str {
+    "Value"
+}
+
+/// The add button.
+#[must_use]
+pub const fn custom_add() -> &'static str {
+    "Add entry"
+}
+
+/// The add button's hover while it cannot add.
+#[must_use]
+pub const fn custom_add_needs_name() -> &'static str {
+    "Type a name for the entry first."
+}
+
+/// An added entry's name was already in the document.
+#[must_use]
+pub fn custom_replaced(key: &str) -> String {
+    format!("The document already had an entry called {key}; its value was replaced.")
+}
+
+/// Why the engine would not write an entry of that name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InfoKeyRefusal {
+    /// A key pdfcer keeps itself.
+    Reserved(pdfcer_core::edit::ReservedInfoKey),
+    /// What is wrong with the name itself.
+    Invalid(pdfcer_core::edit::InfoKeyProblem),
+}
+
+impl InfoKeyRefusal {
+    /// The refusal an engine error is, if it is one.
+    #[must_use]
+    pub const fn of(error: &pdfcer_core::edit::EditError) -> Option<Self> {
+        match error {
+            pdfcer_core::edit::EditError::InfoKeyReserved { key } => Some(Self::Reserved(*key)),
+            pdfcer_core::edit::EditError::InvalidInfoKey { problem } => {
+                Some(Self::Invalid(*problem))
+            }
+            _ => None,
+        }
+    }
+
+    /// The decline, in one sentence.
+    #[must_use]
+    pub const fn line(self) -> &'static str {
+        use pdfcer_core::edit::{InfoKeyProblem as P, ReservedInfoKey as R};
+        match self {
+            Self::Reserved(R::Producer) => {
+                "Not changed: Producer names the program that wrote the file, and pdfcer sets it when it saves."
+            }
+            Self::Reserved(R::CreationDate | R::ModDate) => {
+                "Not changed: the file's dates cannot be edited here."
+            }
+            Self::Reserved(R::Trapped) => "Not changed: Trapped is a yes-or-no setting, not text.",
+            Self::Invalid(P::Empty) => "Not added: the entry needs a name.",
+            Self::Invalid(P::ContainsNul) => {
+                "Not added: the name holds a character a PDF name cannot store."
+            }
+            Self::Invalid(P::TooLong) => {
+                "Not added: the name is longer than PDF readers must accept (127 bytes)."
+            }
+            _ => "Not changed: pdfcer cannot write an entry of that name.",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -453,5 +559,33 @@ mod tests {
                 "a disclosure that opens by blaming the program: {sentence}"
             );
         }
+    }
+    /// Every engine refusal of a name has its own sentence, and none falls to
+    /// the catch-all.
+    #[test]
+    fn the_listed_info_key_refusals_are_worded() {
+        use pdfcer_core::edit::{EditError, InfoKeyProblem as P, ReservedInfoKey as R};
+        let fallback = "Not changed: pdfcer cannot write an entry of that name.";
+        let errors = [
+            EditError::InfoKeyReserved { key: R::Producer },
+            EditError::InfoKeyReserved {
+                key: R::CreationDate,
+            },
+            EditError::InfoKeyReserved { key: R::ModDate },
+            EditError::InfoKeyReserved { key: R::Trapped },
+            EditError::InvalidInfoKey { problem: P::Empty },
+            EditError::InvalidInfoKey {
+                problem: P::ContainsNul,
+            },
+            EditError::InvalidInfoKey {
+                problem: P::TooLong,
+            },
+        ];
+        for error in errors {
+            let why = InfoKeyRefusal::of(&error).expect("a name refusal");
+            assert_ne!(why.line(), fallback, "{why:?} fell to the catch-all");
+            assert!(!why.line().contains("  "), "{why:?}: {}", why.line());
+        }
+        assert!(InfoKeyRefusal::of(&EditError::ObjectNumbersExhausted).is_none());
     }
 }

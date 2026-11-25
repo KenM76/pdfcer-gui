@@ -42,6 +42,8 @@ use crate::text::panels::docprops as t;
 /// Page boxes the file wrote and pdfcer did not use as written.
 mod box_sizes;
 mod boxes;
+/// The other `/Info` entries: list, add, edit, remove.
+pub mod custom;
 /// The PDF/X level the file claims.
 mod pdfx;
 /// Security notes: the wrapper warning and the action census.
@@ -90,6 +92,8 @@ pub struct InfoDrafts {
     /// indistinguishable, which is the state this panel spends most of its
     /// life in.
     seeded_at: Option<u64>,
+    /// The other entries' section.
+    custom: custom::CustomDrafts,
 }
 
 impl std::fmt::Debug for InfoDrafts {
@@ -98,6 +102,7 @@ impl std::fmt::Debug for InfoDrafts {
         f.debug_struct("InfoDrafts")
             .field("lengths", &self.drafts.each_ref().map(String::len))
             .field("seeded_at", &self.seeded_at)
+            .field("custom", &self.custom)
             .finish()
     }
 }
@@ -176,8 +181,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
         };
         row(ui, index, field, draft, current.as_ref(), actions);
     }
-    // Until G266: what the engine cannot yet write.
-    ui.weak(t::not_yet());
+    custom::section(ui, doc, &mut drafts.custom, actions);
 
     // `ui_rect_visible` rather than `ui_rect`, and published LAST — the
     // reason survives the move even though the collapse that prompted it did

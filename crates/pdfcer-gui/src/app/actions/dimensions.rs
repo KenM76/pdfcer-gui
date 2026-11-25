@@ -104,6 +104,33 @@ fn add_group(
     }
 }
 
+/// Add a group set up like `template`, then trace whether the new group's
+/// scale, format, standard and style read back equal to the template's.
+fn add_group_like(doc: &mut OpenDoc, name: &str, template: pdfcer_core::dimension::GroupId) {
+    super::apply::vector_edit(doc, "add-dimension-group-like", 0, 1, |session| {
+        let id = session.add_dimension_group_like(name, template)?;
+        let model = session.dimension_model();
+        if let (Some(new), Some(like)) = (model.group(id), model.group(template)) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "dimension-group-like group={} template={} unit={:?} numbers={} same_scale={} same_format={} same_standard={} same_style={} undo_depth={}",
+                    id.0,
+                    template.0,
+                    new.format.unit,
+                    fraction_key(new.format.fraction),
+                    u8::from(new.scale == like.scale),
+                    u8::from(new.format == like.format),
+                    u8::from(new.standard == like.standard),
+                    u8::from(new.style == like.style),
+                    session.undo_depth()
+                )
+            });
+        }
+        Ok::<_, pdfcer_core::edit::EditError>(Vec::new())
+    });
+}
+
 /// A fraction mode as a trace token: `decimal:<places>`, `reduced:<den>` or
 /// `kept:<den>`.
 fn fraction_key(fraction: pdfcer_core::dimension::FractionMode) -> String {
@@ -204,6 +231,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             scale_from,
             author_into,
         } => add_group(doc, &name, format, scale_from, author_into),
+        DimensionAction::AddGroupLike { name, template } => add_group_like(doc, &name, template),
         // The one group verb that regenerates NOTHING. No member's
         // appearance depends on what its group is called, so no raster is
         // dropped and `regenerates_the_whole_group` says so.

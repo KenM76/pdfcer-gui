@@ -25,6 +25,7 @@ use pdfcer_core::pageops::SeparationPolicy;
 use pdfcer_core::settings::MissingAppearanceState;
 
 use super::{Draft, widgets};
+use crate::prefs::PageLabelPolicy;
 use crate::text::settings as t;
 
 /// What happens when only some plates of a separated page survive an edit.
@@ -87,4 +88,23 @@ pub fn missing_as(ui: &mut Ui, draft: &mut Draft) {
         t::missing_as_off_label(),
         Some(t::missing_as_off_note()),
     );
+}
+
+/// What page labels do when pages are moved, deleted or inserted.
+pub fn page_labels(ui: &mut Ui, draft: &mut Draft) {
+    widgets::header(
+        ui,
+        t::page_labels_title(),
+        t::page_labels_silence(),
+        t::page_labels_radius(),
+    );
+    for choice in PageLabelPolicy::ALL {
+        widgets::option(
+            ui,
+            &mut draft.working_prefs.page_labels,
+            *choice,
+            t::page_labels_label(*choice),
+            Some(t::page_labels_note(*choice)),
+        );
+    }
 }

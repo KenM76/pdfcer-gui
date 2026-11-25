@@ -269,6 +269,7 @@ impl Declined {
             Self::OcrLayer(_)
             | Self::Layer(_)
             | Self::MarkupFlatten(_)
+            | Self::InfoKey(_)
             | Self::FormFontsNothingToRepair
             | Self::FormPages(_)
             | Self::FormFill(_)
