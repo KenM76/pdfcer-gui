@@ -287,3 +287,111 @@ pub const fn convert_pdfx() -> &'static str {
 pub const fn convert_pdfx_hover() -> &'static str {
     "Open Convert to PDF/X: flatten, convert colours and set the output profile so the file meets the standard."
 }
+
+/// Save report….
+#[must_use]
+pub const fn save_report() -> &'static str {
+    "Save report…"
+}
+
+/// Hover on Save report….
+#[must_use]
+pub const fn save_report_hover() -> &'static str {
+    "Save the whole report as a plain-text file, the same text Copy report copies."
+}
+
+/// The save dialog's title for the report.
+#[must_use]
+pub const fn save_report_title() -> &'static str {
+    "Save preflight report"
+}
+
+/// The report file filter.
+#[must_use]
+pub const fn report_filter() -> &'static str {
+    "Text file"
+}
+
+/// The report's suggested file name.
+#[must_use]
+pub const fn report_file_name() -> &'static str {
+    "preflight-report.txt"
+}
+
+/// After a file was written.
+#[must_use]
+pub fn saved_to(name: &str) -> String {
+    format!("Saved {name}.")
+}
+
+/// After a file could not be written.
+#[must_use]
+pub fn save_failed(why: &str) -> String {
+    format!("Could not save: {why}")
+}
+
+/// Load profile….
+#[must_use]
+pub const fn load_profile() -> &'static str {
+    "Load profile…"
+}
+
+/// Hover on Load profile….
+#[must_use]
+pub const fn load_profile_hover() -> &'static str {
+    "Read a profile file (JSON) and add it to the picker as your own profile."
+}
+
+/// Save profile….
+#[must_use]
+pub const fn save_profile() -> &'static str {
+    "Save profile…"
+}
+
+/// Hover on Save profile….
+#[must_use]
+pub const fn save_profile_hover() -> &'static str {
+    "Write the picked profile's rules to a file (JSON) you can edit and load back."
+}
+
+/// The open dialog's title for a profile.
+#[must_use]
+pub const fn load_profile_title() -> &'static str {
+    "Load preflight profile"
+}
+
+/// The save dialog's title for a profile.
+#[must_use]
+pub const fn save_profile_title() -> &'static str {
+    "Save preflight profile"
+}
+
+/// The profile file filter.
+#[must_use]
+pub const fn profile_filter() -> &'static str {
+    "Preflight profile"
+}
+
+/// A profile's suggested file name.
+#[must_use]
+pub const fn profile_file_name() -> &'static str {
+    "preflight-profile.json"
+}
+
+/// After a profile file was read.
+#[must_use]
+pub fn loaded(name: &str, rules: usize) -> String {
+    format!("Loaded {name}: {rules} rule(s).")
+}
+
+/// After a profile file could not be read: the engine's own sentence.
+#[must_use]
+pub fn load_failed(file: &str, why: &str) -> String {
+    format!("{file} is not a profile this version can read: {why}")
+}
+
+/// A loaded profile's entry in the picker.
+#[must_use]
+pub fn custom_profile(name: &str) -> String {
+    format!("{name} (your profile)")
+}

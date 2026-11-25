@@ -521,6 +521,8 @@ pub mod forms_spotlight;
 pub mod forms_style;
 /// A field's alignment chosen, then handed back to what the form states.
 pub mod inherited_alignment;
+/// File ▸ Print ▸ Ink Manager: alias and convert spot inks.
+pub mod ink_manager;
 /// Mark an insertion with a caret from Markup.
 pub mod insert_text;
 /// Put a selected object or annotation on a layer.
@@ -565,6 +567,8 @@ pub mod password_fill;
 pub mod pdfx_claim;
 /// The Objects panel says where each placed drawing on the page is drawn.
 pub mod placed_drawings;
+/// The Preflight panel's report and profile files.
+pub mod preflight_files;
 /// The Preflight panel: run, jump to a finding, fix.
 pub mod preflight_panel;
 /// File ▸ Print's Fix hairlines, Flatten transparency and Convert colours.

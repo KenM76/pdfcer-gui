@@ -220,6 +220,7 @@ pub fn tab() -> Tab {
                     command("file.flatten_transparency"),
                     command("file.convert_colours"),
                     command("file.convert_to_pdfx"),
+                    command("file.ink_manager"),
                     command("file.network_print"),
                 ],
             ),

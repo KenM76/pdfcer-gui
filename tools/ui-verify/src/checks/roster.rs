@@ -405,6 +405,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(preflight_panel::ThePreflightPanelRunsJumpsAndFixes),
         Box::new(prepress::ThePrepressCommandsChangeThePageAndSayWhatTheyDid),
         Box::new(prepress::ThePreflightPanelGivesAStandardsVerdict),
+        Box::new(preflight_files::ThePreflightPanelSavesItsReportAndLoadsAProfile),
+        Box::new(ink_manager::TheInkManagerAliasesAndConvertsSpotsAsOneStep),
         Box::new(model_memory::TheViewerRemembersItsSettings),
         Box::new(model_defaults::TheViewersSettingsAreSavedOnlyAsDefaults),
         Box::new(model_start::TheViewerOpensWalking),

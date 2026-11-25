@@ -432,7 +432,8 @@ impl PdfcerApp {
             "file.fix_hairlines"
             | "file.flatten_transparency"
             | "file.convert_colours"
-            | "file.convert_to_pdfx" => {
+            | "file.convert_to_pdfx"
+            | "file.ink_manager" => {
                 let picked = self.panels.selected_pages();
                 self.dialogs.open_prepress(&self.status, id, picked);
             }

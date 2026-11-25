@@ -32,6 +32,7 @@ fn all() -> Vec<CommandText> {
         file_flatten_transparency(),
         file_convert_colours(),
         file_convert_to_pdfx(),
+        file_ink_manager(),
         file_stamp_collection(),
         file_export_form_data(),
         file_export_word(),

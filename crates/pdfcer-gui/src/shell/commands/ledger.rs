@@ -448,9 +448,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 272 → 273: `view.preflight`, View ▸ Panels.
     // 273 → 277: Fix hairlines, Flatten transparency, Convert colours, Convert
     // to PDF/X, File ▸ Print.
+    // 277 → 278: Ink Manager, File ▸ Print.
     assert_eq!(
         registry().len(),
-        277 + 2 * usize::from(cfg!(feature = "signing"))
+        278 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -907,9 +908,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 233 → 234: `view.highlight_fields` shares `form-field`.
     // 235 → 236: `view.preflight`, with its own icon.
     // 236 → 240: the four File ▸ Print prepress commands share `preflight`.
+    // 240 → 241: Ink Manager shares `preflight` too.
     assert_eq!(
         named,
-        240 + 2 * usize::from(cfg!(feature = "signing"))
+        241 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

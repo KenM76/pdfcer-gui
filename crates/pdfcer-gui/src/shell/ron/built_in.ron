@@ -120,6 +120,7 @@
                         Command(id: "file.flatten_transparency"),
                         Command(id: "file.convert_colours"),
                         Command(id: "file.convert_to_pdfx"),
+                        Command(id: "file.ink_manager"),
                         Command(id: "file.network_print"),
                     ],
                 ),

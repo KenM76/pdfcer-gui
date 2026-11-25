@@ -1,7 +1,7 @@
 # `panels::preflight` — the document checked against a preflight profile
 
 **Purpose.** Check the open document against one of the engine's built-in
-profiles (`Profile::BUILTIN_NAMES`), list what fails grouped by rule, go to a
+profiles (`Profile::BUILTIN_NAMES`) or a profile file, list what fails grouped by rule, go to a
 finding, copy the report, and fix a rule or every fixable rule (O458).
 Acrobat's Preflight, beside Output Preview as Acrobat groups both under
 Print Production (`RIBBON_IA.md`, Preflight amendment).
@@ -67,10 +67,27 @@ starts after it.
 - `preflight-picked rule= page= target= selected=` (1-based page; `-` for
   none)
 - `preflight-copied bytes=`
+- `preflight-report-saved ok= bytes=`, `preflight-profile-saved ok= bytes=`,
+  `preflight-profile-loaded ok= rules=`; a failure ends with `why=`.
 - Regions: `preflight.body`, `preflight.run`, `preflight.cancel`,
-  `preflight.copy`, `preflight.fix_all`, `preflight.fix.<rule>`,
+  `preflight.copy`, `preflight.save_report`, `preflight.load_profile`,
+  `preflight.save_profile`, `preflight.fix_all`, `preflight.fix.<rule>`,
   `preflight.row.<n>`.
 
-**Not built.** Custom profiles, a profile editor, saving a report to a file.
+**Files (`files.rs`).** Save report… writes `report_text`, the engine's only
+report format, through the save dialog (`.txt`). Load profile… reads a file
+with `Profile::from_json`; on success the profile joins the picker under the
+key `custom`, labelled with its own name, and is picked. A refused file names
+`ProfileError`'s sentence under the picker and leaves the picked profile as
+it was. Save profile… writes the picked profile (built-in or loaded) with
+`Profile::to_json`, the form Load reads back. A loaded profile carries no
+standard verdict: the verdict is keyed on the built-in names. Seams for
+`ui-verify`: `PDFCER_DIAG_PREFLIGHT_REPORT_SAVE`,
+`PDFCER_DIAG_PREFLIGHT_PROFILE_LOAD`, `PDFCER_DIAG_PREFLIGHT_PROFILE_SAVE`;
+an empty value is a cancel.
 
-**Driven by.** `the_preflight_panel_runs_jumps_and_fixes`.
+**Not built.** A profile editor; a structured (machine-read) report, which
+the engine does not offer.
+
+**Driven by.** `the_preflight_panel_runs_jumps_and_fixes`,
+`the_preflight_panel_saves_its_report_and_loads_a_profile`.

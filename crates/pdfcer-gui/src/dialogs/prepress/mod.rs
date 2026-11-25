@@ -1,8 +1,10 @@
 //! # `dialogs::prepress` — File ▸ Print's Fix hairlines, Flatten
-//! transparency and Convert colours, and the Preflight panel's Convert to PDF/X
+//! transparency, Convert colours and Ink Manager, and the Preflight panel's
+//! Convert to PDF/X
 //!
 //! Contract: one window per [`Kind`], document-scoped. Each shows its engine
-//! verb's options and, except for PDF/X (which is about the whole file), the
+//! verb's options and, except for PDF/X and the Ink Manager (which are about
+//! the whole file), the
 //! same [`PageScope`] Recognise text uses. Apply pushes
 //! [`Action::Prepress`] with a fresh run number and the window stays open;
 //! when the handler (`app::actions::prepress`) has run the verb as one undo
@@ -14,6 +16,7 @@
 //! `prepress-shown run= refused=` when the note arrives.
 
 mod colour;
+mod inks;
 
 use pdfcer_core::transparency::FlattenOptions;
 use pdfcer_gui_base::prepress::{PrepressNote, PrepressRun, PrepressVerb, next_run};
@@ -47,6 +50,7 @@ pub enum Kind {
     Flatten,
     Colours,
     Pdfx,
+    Inks,
 }
 
 impl Kind {
@@ -57,6 +61,7 @@ impl Kind {
             "file.flatten_transparency" => Some(Self::Flatten),
             "file.convert_colours" => Some(Self::Colours),
             "file.convert_to_pdfx" => Some(Self::Pdfx),
+            "file.ink_manager" => Some(Self::Inks),
             _ => None,
         }
     }
@@ -68,6 +73,7 @@ impl Kind {
             Self::Flatten => "flatten",     // ui-text-exempt: a region suffix
             Self::Colours => "colours",     // ui-text-exempt: a region suffix
             Self::Pdfx => "pdfx",           // ui-text-exempt: a region suffix
+            Self::Inks => "inks",           // ui-text-exempt: a region suffix
         }
     }
 
@@ -82,6 +88,7 @@ impl Kind {
             Self::Flatten => t::flatten_title(),
             Self::Colours => t::colours_title(),
             Self::Pdfx => t::pdfx_title(),
+            Self::Inks => crate::text::inks::title(),
         }
     }
 
@@ -91,6 +98,7 @@ impl Kind {
             Self::Flatten => t::flatten_intro(),
             Self::Colours => t::colours_intro(),
             Self::Pdfx => t::pdfx_intro(),
+            Self::Inks => crate::text::inks::intro(),
         }
     }
 
@@ -101,7 +109,13 @@ impl Kind {
             Self::Flatten => "prepress-flatten",     // ui-text-exempt: a viewport key
             Self::Colours => "prepress-colours",     // ui-text-exempt: a viewport key
             Self::Pdfx => "prepress-pdfx",           // ui-text-exempt: a viewport key
+            Self::Inks => "prepress-inks",           // ui-text-exempt: a viewport key
         }
+    }
+
+    /// Whether the window offers a page scope: not for whole-file verbs.
+    const fn scoped(self) -> bool {
+        !matches!(self, Self::Pdfx | Self::Inks)
     }
 }
 
@@ -115,6 +129,7 @@ pub struct PrepressDialog {
     min_width_pt: f64,
     flatten: FlattenOptions,
     colours: colour::ColourForm,
+    inks: inks::InkForm,
     /// The run whose note this window waits for or shows.
     asked: Option<u64>,
     /// The note last traced as shown.
@@ -137,6 +152,7 @@ impl PrepressDialog {
             min_width_pt: DEFAULT_MIN_PT,
             flatten: FlattenOptions::new(),
             colours: colour::ColourForm::new(doc),
+            inks: inks::InkForm::default(),
             asked: None,
             shown: None,
             apply_requested: false,
@@ -162,6 +178,9 @@ impl PrepressDialog {
         if doc.serial != self.serial {
             return false;
         }
+        if self.kind == Kind::Inks {
+            self.inks.refresh(doc);
+        }
         let note = doc
             .prepress_note
             .as_ref()
@@ -185,7 +204,7 @@ impl PrepressDialog {
     fn body(&mut self, ui: &mut egui::Ui, note: Option<&PrepressNote>) {
         ui.label(self.kind.intro());
         ui.add_space(8.0);
-        if self.kind != Kind::Pdfx {
+        if self.kind.scoped() {
             let region = self.kind.region(REGION_SCOPE);
             self.scope
                 .show(ui, self.page_count, &region, "prepress-scope");
@@ -196,6 +215,7 @@ impl PrepressDialog {
             Kind::Flatten => self.flatten_options(ui),
             Kind::Colours => self.colours.colour_options(ui, self.kind),
             Kind::Pdfx => self.colours.pdfx_options(ui, self.kind),
+            Kind::Inks => self.inks.options(ui),
         }
         ui.add_space(10.0);
         ui.separator();
@@ -240,12 +260,16 @@ impl PrepressDialog {
     }
 
     /// Why Apply is greyed, or `None` when it is not.
-    fn blocked(&self) -> Option<&'static str> {
-        if self.kind != Kind::Pdfx && self.scope.pages(self.page_count).is_none() {
-            return Some(t::names_no_page());
+    fn blocked(&self) -> Option<String> {
+        if self.kind.scoped() && self.scope.pages(self.page_count).is_none() {
+            return Some(t::names_no_page().to_owned());
         }
         match self.kind {
-            Kind::Colours | Kind::Pdfx => self.colours.blocked(self.kind == Kind::Pdfx),
+            Kind::Colours | Kind::Pdfx => self
+                .colours
+                .blocked(self.kind == Kind::Pdfx)
+                .map(str::to_owned),
+            Kind::Inks => self.inks.blocked(),
             _ => None,
         }
     }
@@ -259,7 +283,7 @@ impl PrepressDialog {
         ui.horizontal(|ui| {
             let apply = ui
                 .add_enabled(blocked.is_none(), egui::Button::new(t::apply()))
-                .on_disabled_hover_text(blocked.unwrap_or_default());
+                .on_disabled_hover_text(blocked.as_deref().unwrap_or_default());
             crate::diag::ui_rect_visible(&apply_at, apply.rect, ui.clip_rect());
             if apply.clicked() {
                 self.apply_requested = true;
@@ -313,6 +337,7 @@ impl PrepressDialog {
                 },
                 Err(why) => return self.colours.refuse(why),
             },
+            Kind::Inks => self.inks.take_verb(),
         };
         let pages = self.scope.pages(self.page_count).unwrap_or_default();
         let run = next_run();

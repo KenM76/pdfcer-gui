@@ -334,6 +334,15 @@ pub const fn file_convert_to_pdfx() -> CommandText {
     )
 }
 
+/// `file.ink_manager`
+#[must_use]
+pub const fn file_ink_manager() -> CommandText {
+    CommandText::new(
+        "Ink Manager…",
+        "List every ink the document names; print a spot ink as another ink or convert it to process colours. Needs an open document in Edit mode.",
+    )
+}
+
 /// `file.properties`
 #[must_use]
 pub const fn file_properties() -> CommandText {

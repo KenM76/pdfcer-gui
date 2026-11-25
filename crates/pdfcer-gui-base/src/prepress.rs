@@ -1,7 +1,7 @@
 //! # `prepress` — a print-production verb, on its way to the edit funnel
 //!
-//! File ▸ Print's Fix hairlines, Flatten transparency and Convert colours
-//! dialogs, and the Preflight panel's Convert to PDF/X, cannot edit: they
+//! File ▸ Print's Fix hairlines, Flatten transparency, Convert colours and
+//! Ink Manager windows, and the Preflight panel's Convert to PDF/X, cannot edit: they
 //! raise [`PrepressRun`] as an action. The handler runs it through the edit
 //! funnel as one undo step and parks the engine's account in [`PrepressNote`],
 //! keyed by the run's number so the window that asked is the one that shows it.
@@ -17,8 +17,8 @@ use pdfcer_core::transparency::FlattenOptions;
 pub struct PrepressRun {
     /// [`next_run`]'s number; the note this run leaves carries it back.
     pub run: u64,
-    /// The pages, zero-based. Ignored by [`PrepressVerb::Pdfx`], which is
-    /// about the whole file.
+    /// The pages, zero-based. Ignored by [`PrepressVerb::Pdfx`] and
+    /// [`PrepressVerb::Inks`], which are about the whole file.
     pub pages: Vec<usize>,
     /// The verb and its options.
     pub verb: PrepressVerb,
@@ -38,6 +38,13 @@ pub enum PrepressVerb {
         level: PdfxLevel,
         conversion: Box<PdfxConversion>,
     },
+    /// The Ink Manager: `EditSession::alias_ink` per `(from, to)` pair in
+    /// order, then `EditSession::spot_to_process` over `to_process` when it
+    /// is not empty. Whole-document; [`PrepressRun::pages`] is ignored.
+    Inks {
+        aliases: Vec<(String, String)>,
+        to_process: Vec<String>,
+    },
 }
 
 impl PrepressVerb {
@@ -49,6 +56,7 @@ impl PrepressVerb {
             Self::Flatten(_) => "flatten",
             Self::ConvertColours(_) => "convert-colours",
             Self::Pdfx { .. } => "pdfx",
+            Self::Inks { .. } => "inks",
         }
     }
 }

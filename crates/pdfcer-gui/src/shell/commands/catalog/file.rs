@@ -849,6 +849,9 @@ pub(super) fn band() -> Vec<Command> {
         command("file.convert_to_pdfx", t::file_convert_to_pdfx(), 145)
             .with_icon("preflight")
             .with_enable(prepress_enable()),
+        command("file.ink_manager", t::file_ink_manager(), 146)
+            .with_icon("preflight")
+            .with_enable(prepress_enable()),
         command("file.properties", t::file_properties(), 140)
             .with_icon("properties")
             .enabled_when("doc.open"),

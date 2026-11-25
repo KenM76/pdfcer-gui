@@ -1,7 +1,8 @@
 //! # `app::actions::prepress` — a prepress window's Apply, as one undo step
 //!
-//! Contract: runs [`PrepressRun`]'s verb through the edit funnel, each of the
-//! four engine verbs committing one undo entry of its own, then parks a
+//! Contract: runs [`PrepressRun`]'s verb through the edit funnel as one undo
+//! entry — the Ink Manager's several engine commands folded with
+//! `coalesce_last` — then parks a
 //! [`PrepressNote`] keyed by the run so the window that asked shows the
 //! engine's account. A refusal leaves a note too, saying why nothing changed;
 //! a session another thread still holds leaves none, because nothing ran.
@@ -9,9 +10,10 @@
 //! Traces `prepress-applied verb= run= pages= changed= ms=` plus the verb's
 //! own counts, or `prepress-refused-run verb= run= why=`.
 
-use pdfcer_core::edit::{EditError, EditSession};
+use pdfcer_core::edit::{CommandKind, EditError, EditSession};
 use pdfcer_core::prepress::{
-    ConvertColoursReport, ConvertScope, OutputIntentChange, PdfxConversionReport,
+    ConvertColoursReport, ConvertScope, InkEditReport, InkSelection, OutputIntentChange,
+    PdfxConversionReport,
 };
 use pdfcer_core::transparency::{FlattenMode, FlattenTransparencyReport};
 use pdfcer_emf::RecordingFlattener;
@@ -19,6 +21,7 @@ use pdfcer_gui_base::prepress::{PrepressNote, PrepressRun, PrepressVerb};
 use pdfcer_render::convert_colours::IcccerConverter;
 
 use crate::app::state::OpenDoc;
+use crate::text::inks as ti;
 use crate::text::prepress as t;
 
 /// What a verb reported: the note's text and the trace's counts.
@@ -108,6 +111,10 @@ fn call(session: &mut EditSession, run: &PrepressRun) -> Result<(Done, Vec<Strin
             let r = session.convert_to_pdfx(*level, conversion, &flattener, &converter)?;
             (pdfx(&r), r.disclosures)
         }
+        PrepressVerb::Inks {
+            aliases,
+            to_process,
+        } => inks(session, aliases, to_process)?,
     };
     if !disclosures.is_empty() {
         done.text.push(String::new());
@@ -246,4 +253,112 @@ fn pdfx(r: &PdfxConversionReport) -> Done {
         ),
         text,
     }
+}
+
+/// What the Ink Manager's run has said so far.
+#[derive(Default)]
+struct InkTally {
+    pushed: usize,
+    aliased: usize,
+    converted: usize,
+    refused: usize,
+    overprint_lost: usize,
+    text: Vec<String>,
+    told: Vec<String>,
+}
+
+impl InkTally {
+    /// Count one engine report: its refusals, lost overprints and disclosures.
+    fn take(&mut self, r: &InkEditReport) {
+        self.pushed += usize::from(!r.is_empty());
+        self.refused += r.refused.len();
+        self.overprint_lost += r.overprint_lost.len();
+        self.text.extend(r.refused.iter().map(|x| {
+            let object = x.object.map_or_else(String::new, |o| o.to_string());
+            ti::refused(&x.ink, &object, &x.reason)
+        }));
+        self.text.extend(
+            r.overprint_lost
+                .iter()
+                .map(|o| ti::overprint_lost(&o.to_string())),
+        );
+        for d in &r.disclosures {
+            if !self.told.contains(d) {
+                self.told.push(d.clone());
+            }
+        }
+    }
+}
+
+/// The Ink Manager: each alias, then the conversion, folded into one undo
+/// entry. A refusal before anything applied is the run's refusal; one after
+/// is reported and stops the run, and what applied stays, folded.
+fn inks(
+    session: &mut EditSession,
+    aliases: &[(String, String)],
+    to_process: &[String],
+) -> Result<(Done, Vec<String>), EditError> {
+    super::foldeach::within_undo_depth(aliases.len() + 1)?;
+    let mut tally = InkTally::default();
+    let mut stopped = false;
+    for (from, to) in aliases {
+        match session.alias_ink(from, to) {
+            Ok(r) => {
+                tally.aliased += usize::from(!r.is_empty());
+                tally.text.push(if r.is_empty() {
+                    ti::alias_nothing(from, to)
+                } else {
+                    ti::aliased(from, to, r.spaces)
+                });
+                tally.take(&r);
+            }
+            Err(e) if tally.pushed == 0 => return Err(e),
+            Err(e) => {
+                tally.text.push(ti::alias_stopped(from, to, &e.to_string()));
+                stopped = true;
+                break;
+            }
+        }
+    }
+    if !stopped && !to_process.is_empty() {
+        let names = to_process.join(", "); // ui-text-exempt: a list separator
+        match session.spot_to_process(&InkSelection::Only(to_process.to_vec())) {
+            Ok(r) => {
+                tally.converted = r.spaces;
+                tally.text.push(if r.is_empty() {
+                    ti::converted_nothing(&names)
+                } else {
+                    ti::converted(&names, r.spaces, r.paints, r.images, r.shadings, r.lookups)
+                });
+                tally.take(&r);
+            }
+            Err(e) if tally.pushed == 0 => return Err(e),
+            Err(e) => tally.text.push(ti::convert_stopped(&e.to_string())),
+        }
+    }
+    let kind = if to_process.is_empty() {
+        CommandKind::AliasInk
+    } else {
+        CommandKind::SpotToProcess
+    };
+    let mut told = std::mem::take(&mut tally.told);
+    let folded = tally.pushed == 0 || {
+        let before = told.len();
+        super::foldeach::fold_or_say(session, tally.pushed, kind, &mut told);
+        told.len() == before
+    };
+    let done = Done {
+        changed: tally.pushed > 0,
+        counts: format!(
+            "aliased={} converted={} refused={} overprint-lost={} commands={} folded={}", // ui-text-exempt: a trace token list
+            tally.aliased,
+            tally.converted,
+            tally.refused,
+            tally.overprint_lost,
+            tally.pushed,
+            u8::from(folded)
+        ),
+        text: tally.text,
+    };
+    Ok((done, told))
 }

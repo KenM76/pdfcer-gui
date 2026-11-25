@@ -153,6 +153,8 @@ pub mod import_text;
 /// implementer's voice.
 pub mod importtext;
 pub mod inkpick;
+/// File ▸ Print ▸ Ink Manager.
+pub mod inks;
 /// Pages ▸ Insert blank pages… — the dialog's own copy.
 pub mod insertblank;
 pub mod insertfields;

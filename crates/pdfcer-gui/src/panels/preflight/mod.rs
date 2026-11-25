@@ -1,11 +1,13 @@
 //! # `panels::preflight` — the document checked against a preflight profile
 //!
-//! Pick a built-in profile, run it on a worker over a fork of the session,
-//! read the findings grouped by rule, jump to one, copy the report, and fix
-//! a rule or everything as one undo step each.
+//! Pick a built-in profile or load one from a file, run it on a worker over
+//! a fork of the session, read the findings grouped by rule, jump to one,
+//! copy or save the report, and fix a rule or everything as one undo step
+//! each.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/preflight.md`.
 
+mod files;
 mod job;
 mod results;
 mod standard;
@@ -13,6 +15,8 @@ mod standard;
 use std::time::Instant;
 
 use pdfcer_core::preflight::{FindingKind, PreflightReport, Profile, report_text};
+
+use self::files::CUSTOM;
 use pdfcer_gui_base::preflightfix::PreflightFix;
 
 use self::job::{Job, Poll};
@@ -35,8 +39,12 @@ const REGION_PROFILE: &str = "preflight.profile"; // ui-text-exempt: diagnostic 
 
 /// The panel's state between frames. Reset with the document.
 pub struct PreflightUi {
-    /// The built-in profile name in the picker.
+    /// The picker's key: a built-in profile name, or [`CUSTOM`].
     profile: &'static str,
+    /// The profile Load profile… read, picked as [`CUSTOM`].
+    custom: Option<Profile>,
+    /// What the last save or load said.
+    file_note: Option<String>,
     pending: Option<Pending>,
     results: Option<Results>,
     /// The last run's worker went away without an answer.
@@ -47,6 +55,8 @@ impl Default for PreflightUi {
     fn default() -> Self {
         Self {
             profile: DEFAULT_PROFILE,
+            custom: None,
+            file_note: None,
             pending: None,
             results: None,
             lost: false,
@@ -98,9 +108,18 @@ impl PreflightUi {
         }
     }
 
+    /// The profile the picker names.
+    fn picked_profile(&self) -> Option<Profile> {
+        if self.profile == CUSTOM {
+            self.custom.clone()
+        } else {
+            Profile::builtin(self.profile)
+        }
+    }
+
     /// Start a run of the picked profile over the document as it stands.
     fn start(&mut self, doc: &OpenDoc, ctx: &egui::Context) {
-        let Some(profile) = Profile::builtin(self.profile) else {
+        let Some(profile) = self.picked_profile() else {
             return;
         };
         crate::diag::trace(|| {
@@ -184,13 +203,16 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     pf.sync(doc);
     pf.poll();
     run_row(ui, doc, pf);
+    if let Some(said) = &pf.file_note {
+        ui.small(said);
+    }
     if pf.lost {
         ui.label(egui::RichText::new(t::worker_lost()).weak());
     }
     let fixing = crate::canvas::tool::capabilities(ui.ctx()).edit_content;
     if let Some(results) = &pf.results {
         ui.separator();
-        results_view(ui, doc, results, fixing, actions);
+        results_view(ui, doc, results, fixing, &mut pf.file_note, actions);
     }
     fix_note(ui, doc, pf.results.as_ref());
 }
@@ -201,8 +223,12 @@ fn run_row(ui: &mut egui::Ui, doc: &OpenDoc, pf: &mut PreflightUi) {
     ui.horizontal(|ui| {
         ui.label(t::profile_label());
         ui.add_enabled_ui(!running, |ui| {
+            let shown = match (&pf.custom, pf.profile == CUSTOM) {
+                (Some(c), true) => t::custom_profile(&c.name),
+                _ => t::profile_name(pf.profile),
+            };
             let picker = egui::ComboBox::from_id_salt(REGION_PROFILE)
-                .selected_text(t::profile_name(pf.profile))
+                .selected_text(shown)
                 // Every built-in profile at once: the default height hides the PDF/X ones.
                 .height(f32::INFINITY)
                 .show_ui(ui, |ui| {
@@ -215,9 +241,17 @@ fn run_row(ui: &mut egui::Ui, doc: &OpenDoc, pf: &mut PreflightUi) {
                             .on_hover_text(hover);
                         crate::diag::ui_rect(&format!("{REGION_PROFILE}:{name}"), entry.rect);
                     }
+                    if let Some(c) = &pf.custom {
+                        let label = t::custom_profile(&c.name);
+                        let entry = ui
+                            .selectable_value(&mut pf.profile, CUSTOM, label)
+                            .on_hover_text(c.description.as_str());
+                        crate::diag::ui_rect(&format!("{REGION_PROFILE}:{CUSTOM}"), entry.rect);
+                    }
                 })
                 .response;
             crate::diag::ui_rect(REGION_PROFILE, picker.rect);
+            files::profile_buttons(ui, pf);
         });
     });
     if let Some(pending) = &pf.pending {
@@ -255,6 +289,7 @@ fn results_view(
     doc: &OpenDoc,
     results: &Results,
     fixing: bool,
+    note: &mut Option<String>,
     actions: &mut Vec<Action>,
 ) {
     let report = &results.report;
@@ -287,6 +322,7 @@ fn results_view(
             });
             ui.ctx().copy_text(text);
         }
+        files::save_report(ui, results, note);
         if results.groups.iter().any(|g| g.fixable) {
             let all = fix_button(ui, t::fix_all(), t::fix_all_hover(), fix_reason);
             crate::diag::ui_rect(REGION_FIX_ALL, all.rect);
