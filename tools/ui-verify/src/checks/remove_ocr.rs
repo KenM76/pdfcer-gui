@@ -58,8 +58,11 @@ fn press(session: &Session, driver: &Driver, ui_rect: &str) -> Result<bool> {
     session.settle(30);
     // A document holding pdfcer layers opens the window; one holding none
     // goes straight to the refusal.
-    if let Some(commit) = driving::declared(&session.trace()?, ui_rect, COMMIT) {
-        driver.click_at(session.frame()?.declared_center(commit))?;
+    let trace = session.trace()?;
+    if let Some(commit) = driving::declared(&trace, ui_rect, COMMIT) {
+        // The commit button lives in the dialog's own viewport.
+        let frame = driving::frame_of(session, &trace, ui_rect, COMMIT)?;
+        driver.click_at(frame.declared_center(commit))?;
         session.settle(30);
     }
     Ok(true)

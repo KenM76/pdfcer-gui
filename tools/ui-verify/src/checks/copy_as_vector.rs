@@ -298,13 +298,27 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // supposed to describe one thing are exactly the pair a refactor separates.
     if let Some(reported) = placed.get("formats") {
         let named: Vec<&str> = reported.split(',').filter(|s| !s.is_empty()).collect();
-        if named.len() != EXPECTED.len() {
+        // The measured order is a PREFIX: the copy also places the clip's own
+        // `application/pdf` after it, so the trace may name more. Each extra
+        // must be on the clipboard, or the disclosure names a copy not made.
+        if named.len() < EXPECTED.len() {
             return Ok(Some(format!(
                 "the shell reported placing {} format(s) — `{reported}` — and the measured \
-                 order is {}. The disclosure describes a different copy from the one on the \
+                 order needs {}. The disclosure describes a different copy from the one on the \
                  clipboard.",
                 named.len(),
                 EXPECTED.len()
+            )));
+        }
+        if let Some(missing) = named[EXPECTED.len()..]
+            .iter()
+            .find(|n| !formats.iter().any(|e| is_format(e, n)))
+        {
+            return Ok(Some(format!(
+                "the shell reported placing `{missing}` (in `{reported}`) and the clipboard \
+                 does not hold it: {}. The disclosure describes a different copy from the one \
+                 on the clipboard.",
+                describe(&formats)
             )));
         }
         for (position, want) in EXPECTED.iter().enumerate() {
