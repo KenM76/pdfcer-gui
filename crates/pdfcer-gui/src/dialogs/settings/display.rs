@@ -286,6 +286,16 @@ pub fn tab_faces(ui: &mut Ui, prefs: &mut Prefs) {
     }
 }
 
+pub fn tab_mode(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::tab_mode_title(),
+        t::tab_mode_silence(),
+        t::tab_mode_radius(),
+    );
+    ui.checkbox(&mut prefs.remember_tab_mode, t::tab_mode_label());
+}
+
 pub fn page_chrome(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,

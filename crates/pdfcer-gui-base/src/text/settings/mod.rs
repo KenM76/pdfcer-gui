@@ -40,6 +40,7 @@ pub mod richstyle;
 pub mod shell;
 pub mod snapshot;
 pub mod tabface;
+pub mod tabmemory;
 
 pub use blackpoint::*;
 pub use bytes::*;
@@ -58,6 +59,7 @@ pub use remote::*;
 pub use richstyle::*;
 pub use shell::*;
 pub use tabface::*;
+pub use tabmemory::*;
 
 use pdfcer_core::settings::StoreKind;
 use pdfcer_core::settings::StoreLocation;

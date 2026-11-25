@@ -250,6 +250,14 @@ impl Prefs {
                         line,
                     }),
                 },
+                "remember_tab_mode" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.remember_tab_mode = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "colour_icons" => match opening::bool_from_key(value) {
                     Some(on) => prefs.colour_icons = on,
                     None => notes.push(PrefNote::BadValue {
@@ -633,6 +641,15 @@ impl Prefs {
         );
         out.push_str("colour_icons = "); // ui-text-exempt: a file KEY, as above.
         out.push_str(opening::bool_key(self.colour_icons));
+        out.push('\n');
+        out.push_str(
+            // ui-text-exempt: file comments, never displayed in the UI.
+            "\n\
+             # remember_tab_mode: true | false. Whether each document tab keeps\n\
+             # its own Read, Review or Edit mode. false: one mode for all tabs.\n",
+        );
+        out.push_str("remember_tab_mode = "); // ui-text-exempt: a file KEY, as above.
+        out.push_str(opening::bool_key(self.remember_tab_mode));
         out.push('\n');
         out.push_str(
             // ui-text-exempt: file comments, never displayed in the UI.

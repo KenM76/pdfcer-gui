@@ -294,6 +294,10 @@ pub struct OpenDoc {
     /// O23: with a pasteboard, egui's initial zero is the content's origin
     /// rather than the strip's, so the view is seeded once.
     pub canvas_frames: u8,
+    /// The Read/Review/Edit mode this tab was last shown in, by mode id;
+    /// `None` until it is first switched away from. Read only under
+    /// `Prefs::remember_tab_mode` (O463).
+    pub tab_mode: Option<String>,
     /// **Wheel travel not yet spent on a page turn**, in logical points —
     /// `OPERATOR_REQUESTS.md` O30.
     ///
@@ -1129,6 +1133,7 @@ impl OpenDoc {
             // reason the operator asked for.
             tracked_page: 0,
             canvas_frames: 0,
+            tab_mode: None,
             wheel_travel: 0.0,
             render_in_flight: None,
             render_error: None,

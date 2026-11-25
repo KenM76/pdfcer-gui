@@ -8363,11 +8363,13 @@ Said on 2026-11-25. A defect report. Each open document keeps its own page, scro
 
 Built: each document keeps its own scroll position, so scrolling one tab no longer moves another. `each_tab_keeps_its_own_position` scrolls the first document, opens and scrolls a second, then switches back. The first returns to the same point; the unfixed build put it 454 pt away.
 
-## O463 — **OPEN** — a setting to remember each tab's mode (Read, Review, Edit)
+## O463 — **BUILT, awaiting Ken** — a setting to remember each tab's mode (Read, Review, Edit)
 
 *"also I'd like a setting option to remember what mode each tab is in (read/review/write)"*
 
 Said on 2026-11-25, in the same message as O462 and O464. With the setting on, each open document keeps its own Read/Review/Edit mode: switching tabs restores that tab's mode rather than carrying the active one across. His "write" is the Edit mode.
+
+Built: Settings > Display > *Remember the mode of each tab*, off by default. With it on, bringing a tab back puts the window in the mode that tab was left in; a newly opened document starts in the mode you are in. Driven off-screen by `each_tab_remembers_its_mode`, which runs with the setting off (the mode stays Review) and on (the first tab comes back in Edit).
 
 ## O464 — **OPEN** — a setting to reopen a document at the page and position it was left at
 

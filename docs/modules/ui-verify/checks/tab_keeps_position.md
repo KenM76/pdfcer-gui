@@ -17,7 +17,7 @@ The app is launched off-screen (`-4200,-4200,1400,900`, scripted pointer,
 
 ## Oracle
 
-The last `canvas-pos at=` after the switch is within 1 pt of where the first
+The last `canvas-pos at=` after the switch is within 1 px (screen pixels from the page corner) of where the first
 document was left. A `document-activate slot=0` line must follow the click.
 
 SKIP when the wheel did not move the first document, or when the switch was

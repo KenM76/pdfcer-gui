@@ -53,6 +53,9 @@ impl PdfcerApp {
             return Vec::new();
         }
         let mut all = std::mem::take(&mut self.parked);
+        if let Status::Open(doc) = &mut self.status {
+            doc.tab_mode = self.ribbon.mode().map(str::to_owned);
+        }
         let active = std::mem::replace(&mut self.status, Status::Empty);
         let at = self.active_slot.min(all.len());
         all.insert(at, active);
@@ -71,6 +74,29 @@ impl PdfcerApp {
         self.status = all.remove(active);
         self.parked = all;
         self.active_slot = active;
+        self.restore_tab_mode();
+    }
+
+    /// Under `remember_tab_mode` (O463), put the ribbon back in the mode the
+    /// tab now on screen was last shown in. A tab never switched away from
+    /// has none and keeps the current mode.
+    fn restore_tab_mode(&mut self) {
+        if !self.prefs.remember_tab_mode {
+            return;
+        }
+        let Status::Open(doc) = &self.status else {
+            return;
+        };
+        let Some(mode) = doc.tab_mode.clone() else {
+            return;
+        };
+        if self.ribbon.mode() != Some(mode.as_str()) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("tab-mode-restored slot={} mode={mode}", self.active_slot)
+            });
+            self.ribbon.set_mode(mode);
+        }
     }
 
     /// **The tab this path is already open in**, if it is.

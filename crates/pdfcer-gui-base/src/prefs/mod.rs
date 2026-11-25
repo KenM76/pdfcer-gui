@@ -641,6 +641,10 @@ pub struct Prefs {
     /// [`Self::ui_scale`], because it too changes only the program's own
     /// appearance. See [`crate::icons::accent`].
     pub colour_icons: bool,
+    /// Whether each document tab keeps its own Read/Review/Edit mode,
+    /// restored when the tab is brought back — `OPERATOR_REQUESTS.md` O463.
+    /// `false` by default: one mode for the whole window.
+    pub remember_tab_mode: bool,
     /// **Which rendering standard the operator chose**, by its engine id —
     /// or `None` if they have never chosen one in any sitting.
     ///
@@ -942,6 +946,7 @@ impl Default for Prefs {
             chrome: PageChrome::default(),
             ui_scale: DEFAULT_UI_SCALE,
             colour_icons: true,
+            remember_tab_mode: false,
             chosen_standard: None,
             // Empty = anonymous, deliberately. See the field's own note on
             // why the OS user name is not a defensible guess.
