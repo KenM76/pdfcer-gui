@@ -36,8 +36,9 @@ const PAGE_REGION: &str = "page";
 const SHAPE: ((f64, f64), (f64, f64)) = ((0.35, 0.35), (0.55, 0.50));
 /// `TAIL`, four keystrokes. See the module header.
 const WORD: [u16; 4] = [vk::T, vk::A, vk::I, vk::L];
-/// The apply arm's line for a paste, carrying whether the note survived.
-const PASTED: &str = "paste-markup-requested";
+/// The canvas clipboard's line for a paste. It names how many annotations were
+/// pasted, not whether their notes came with them; [`CENSUS`] after it answers that.
+const PASTED: &str = "clipboard-paste";
 /// `chord-not-offered id=… mode=…` — the shell's line for a chord that arrived
 /// and was refused by the mode gate. See the phase-G branch in [`drive`].
 const CHORD_NOT_OFFERED: &str = "chord-not-offered";
@@ -307,17 +308,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- G: the note survives a copy and a paste ---------------------------
     //
-    // The shape's centre, computed from the same fractions phase A drew it
-    // at, so the click lands on the annotation rather than on whatever page
-    // content is nearby. A markup tool is still armed from the launch invoke,
+    // The shape's left edge, computed from the same fractions phase A drew it
+    // at: an unfilled box claims only its stroke, so a click at its centre
+    // reaches whatever lies under it. A markup tool is still armed from the launch invoke,
     // so the pointer is put down first — a click with the rectangle tool armed
     // is the start of a new shape, not a selection.
-    let centre = ((SHAPE.0.0 + SHAPE.1.0) / 2.0, (SHAPE.0.1 + SHAPE.1.1) / 2.0);
+    let edge = (SHAPE.0.0, f64::midpoint(SHAPE.0.1, SHAPE.1.1));
     let at = aim(
         ctx,
         &session,
         page,
-        DocPoint::new(0, centre.0 * page.width_pt, centre.1 * page.height_pt),
+        DocPoint::new(0, edge.0 * page.width_pt, edge.1 * page.height_pt),
     )?;
     driver.press(vk::V)?;
     session.settle(8);
@@ -431,20 +432,41 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
-    if pasted.get("note") != Some("true") {
+    if pasted.get_usize("annots") != Some(1) {
         return Ok(Some(format!(
-            "THE PASTE LOST THE COMMENT: `{}`. The annotation copied carries a note — this check \
-             wrote it four steps ago and the panel read it back — and the pasted copy does not. \
-             That is the clipboard round-tripping through `MarkupSpec`, which cannot express \
-             `/Contents`, `/T` or `/M`. ★ It is invisible on the page: the words live in a pop-up \
-             this shell does not draw, so the copy looks correct and is not. \
-             the engine's `MarkupCarry` (Pass 270.0) is what should have carried them.",
+            "Ctrl+V pasted something other than the one annotation copied: `{}`.",
             pasted.raw
         )));
     }
+    // The census the panel drew after the paste must count one more annotation
+    // and one more note than the one drawn after the selection. A paste that
+    // dropped `/Contents` adds to `listed` and not to `with_note`.
+    let count = |line: &str, key: &str| -> usize {
+        line.split_whitespace()
+            .find_map(|f| f.strip_prefix(key)?.strip_prefix('='))
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
+    };
+    let before = census_now.as_deref().unwrap_or_default();
+    let Some(after) = trace.last_after(CENSUS, pasted.lineno) else {
+        return Err(Error::new(format!(
+            "no `{CENSUS}` line after the paste, so the panel never re-listed. SKIPPED. \
+             Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    let grew = |key| count(&after.raw, key) == count(before, key) + 1;
+    if !(grew("listed") && grew("with_note")) {
+        return Ok(Some(format!(
+            "THE PASTE LOST THE COMMENT. Before: `{before}`. After: `{}`. The pasted copy is \
+             listed but carries no note; the words live in a pop-up the page does not draw, so \
+             the copy looks correct and is not.",
+            after.raw
+        )));
+    }
     report.note(format!(
-        "★★★ the note survived a copy and a paste: `{}`",
-        pasted.raw
+        "the note survived a copy and a paste: `{}`, then `{}`",
+        pasted.raw, after.raw
     ));
     Ok(None)
 }

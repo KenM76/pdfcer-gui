@@ -303,9 +303,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // inside either branch below because it is true of both.
     //
     // The tier only moves down for a page the shell has OBSERVED compositing in
-    // ink (`render::strategy::Ink`), and the observation is one line in
-    // `OpenDoc::absorb_render` reading the renderer's own counters. If that
-    // line stops working, `for_page` answers `Additive` for ever, the tier
+    // ink (`render::strategy::Ink`). Two writers record it: `OpenDoc::learn_ink`
+    // asks the engine before the first raster, and `absorb_render` reads the
+    // renderer's counters afterwards, tracing only when it is first to learn
+    // it. If neither works, `for_page` answers `Additive` for ever, the tier
     // never moves, and every raster past the ceiling comes back in sRGB again.
     //
     // Without this, that regression would be **invisible to this check**: it
@@ -316,20 +317,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // raster can legitimately exceed the default ceiling (the engine measures
     // ~633 MB at 4K) and failing there would be wrong. This is the part of the
     // mechanism that has no legitimate reason to be absent.
-    if !trace.started(INK_PAGE_EVENT) {
+    let learned_up_front = trace
+        .events(INK_ASKED_EVENT)
+        .any(|l| l.get("ink") == Some("1"));
+    if !learned_up_front && !trace.started(INK_PAGE_EVENT) {
         return Ok(Some(format!(
             "the page composited in ink — a `{BLEND_EVENT}` line reports `cmyk_buffer=true` — \
-             and the shell never traced `{INK_PAGE_EVENT}`. That is the observation the render \
-             tier depends on: `render::strategy::Ink::Subtractive` is only ever produced for a \
-             page in `OpenDoc::ink_pages`, and that set is written in exactly one place, from \
-             `cmyk_buffer_engaged` / `cmyk_buffer_refused`, in `absorb_render`. With it absent \
+             and the shell traced neither `{INK_ASKED_EVENT} … ink=1` nor `{INK_PAGE_EVENT}`. \
+             That is the observation the render tier depends on: \
+             `render::strategy::Ink::Subtractive` is only ever produced for a page in \
+             `OpenDoc::ink_pages`, written by `learn_ink` and `absorb_render`. With it absent \
              the tier never ends at the colour ceiling and every raster past it composites in \
              sRGB — the operator's original report, reacquired. Trace: {}.",
             session.trace_path().display()
         )));
     }
     report.note(format!(
-        "the shell observed the page composites in ink (`{INK_PAGE_EVENT}`), which is what lets \
+        "the shell observed the page composites in ink (`{INK_ASKED_EVENT}` or \
+         `{INK_PAGE_EVENT}`), which is what lets \
          the render tier end at the colour ceiling rather than at the pixmap one"
     ));
 
@@ -393,6 +398,11 @@ const BLEND_EVENT: &str = "raster-blend-space";
 /// page composite in ink, which is the observation the render tier's colour
 /// ceiling depends on.
 const INK_PAGE_EVENT: &str = "ink-page";
+
+/// `ink-asked page=… ink=0|1 source=…` — `OpenDoc::learn_ink`'s answer from the
+/// engine before the first raster. With `ink=1` the page is already in
+/// `ink_pages`, so `absorb_render`'s transition-only [`INK_PAGE_EVENT`] never fires.
+const INK_ASKED_EVENT: &str = "ink-asked";
 
 /// **Whether the page ever composited in ink at all.**
 fn buffer_was_engaged(trace: &crate::trace::Trace) -> bool {
