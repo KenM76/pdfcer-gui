@@ -1,6 +1,6 @@
 # Memory index
 
-- [Not at the keyboard unless he says so](user_keyboard_unless_says.md) — assume the PC is free; he texts and will TELL you.
+- [Not at the keyboard unless he says so](user_keyboard_unless_says.md) — [screen hours](user_screen_hours.md): weekdays 17–08, weekends.
 - [ui-verify competes for the machine](feedback_ui_verify_competes.md) — ask in one line with the cost.
 - [A driven check reached the real printer](feedback_driven_check_reached_printer.md) — 42 sheets; pause the queue around print-dialog drives.
 - [No pdfcer specialist agents on this roster](project_pdfcer_agent_roster.md) — dispatching them fails; go general-purpose.
@@ -93,7 +93,7 @@
 - [An assertion both outcomes satisfy](feedback_assertion_both.md) — name what the WRONG one can't produce; `Ok(None)` read as success.
 - [A hit inside the repo is no outside mandate](feedback_gate_hit_inside_repo.md) — a half-renamed archive is worse.
 - [A branch pin moves on its own](feedback_branch_pinned.md) — it changed mid-session with no command.
-- [Python-to-a-file does not protect an escape](feedback_write_python_file.md) — build `\` with chr(92); an LF anchor misses CRLF.
+- [Python edits: escapes and CRLF](feedback_write_python_file.md) — `\` via chr(92) or Edit; [`'w'` writes CRLF](feedback_python_write_crlf.md): newline=''.
 - [A guard's placement picks its explainer](feedback_guards_placement.md) — reading the predicate isn't reading the guard.
 - [A doc quoting its own command](feedback_document_quotes.md) — a verbatim newline split a row.
 - [A fix naming its victims misses one](feedback_fix_names_victims.md) — a write-path guard skips the DELETE path.
@@ -163,12 +163,11 @@
 - [Park drafts in D:\scratch](feedback_park_drafts_scratch.md) — never D:/temp; apply scripts and control exes live there too.
 - [Overshooting a band passes on the defect](feedback_overshoot_window.md) — picture at the first wall; SKIP if the trace shows the far tier.
 - [Neighbour checks can encode the defect](feedback_neighbour_checks_encode_defect.md) — a funnel fix reddened 2 green checks; re-drive all readers of its trace line.
-- [Python 'w' writes CRLF, truncates first](feedback_python_write_crlf.md) — newline='', utf-8 both ways; text before open().
 - [Defined is not on the page](feedback_defined_not_on_page.md) — an appended save keeps a deleted body; scan the page's /Annots.
 - [No `timeout` around run-all](feedback_gate_run_no_timeout.md) — rc=124 at 58 min threw away 48 green gates; background, no wrapper.
 - [A backlog row's key is the engine's words](feedback_backlog_key_matches_engine.md) — a full path where the engine wrote `ocr::upscale` is unaccounted.
 - [A sed-redirected dry run was not dry](feedback_dry_run_redirect.md) — no-match sed; script hit the real tree mid-gates. Take the root as an argument.
-- [A fixture's twin page answers a whole-file judge](feedback_fixture_twin_page.md) — annots-align repeats page 1 on page 2; judge one page.
+- Read back narrowly: [a twin page answers a whole-file judge](feedback_fixture_twin_page.md); [the first stream isn't the page](feedback_first_stream_order.md).
 - [A new variant orphans its old matchers](feedback_new_variant_orphans_matchers.md) — Anchor::Block broke Reflow; let-else compiles clean.
 - [Unset is not a different value](feedback_unset_vs_default.md) — None=default black read as a 3rd look; dump the stream first.
 - [Drive only what changed](feedback_drive_only_affected.md) — [an early tag empties it](feedback_early_tag_empties_affected.md): pass `--affected=<prev tag>`. [bare runs all](feedback_empty_check_list_runs_all.md).
@@ -177,7 +176,6 @@
 - [A seam's unit can widen under it](feedback_seam_unit_widens.md) — whole-draft seed wiped a paragraph; reach the old unit by his switch.
 - [Press-select and click must share modifiers](feedback_press_select_modifier.md) — Ctrl+click picked at press, toggled out at release: sel=0.
 - [Consuming a reply keeps its files](feedback_channel_keeps_files.md) — add done_*; never rm in the channel (no git).
-- [The first stream is not the page](feedback_first_stream_order.md) — pick a read-back stream by content; an object stream came first.
 - [Moving a command's tab breaks checks](feedback_moving_command_tab.md) — grep checks for the old `ribbon.tab.`; the chain stays green.
 - [A "new" file can overwrite a tracked one](feedback_new_file_overwrote_tracked.md) — `overprint.rs` existed; check `git ls-files` first.
 - [No GUI workarounds for engine gaps](feedback_no_gui_workarounds.md) — file the request and wait; he will wait for the engine.
@@ -186,6 +184,5 @@
 - [A replace-all verb drops keys](feedback_replace_all_verb.md) — keys its type lacks are dropped; disclose and file.
 - [A control past the window's edge](feedback_read_layout_before_bug.md) — may be below a scrolling fold; read the layout first.
 - [The PC bugchecks, even idle](project_machine_bugchecks_under_load.md) — 6 since 11-06, one 0x12B (RAM); fsck after a reset.
-- [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".
-- [Sweep OCR skips need models](feedback_sweep_ocr_needs_models.md) — drive copy lacks models/; re-drive with a model-bearing scratch exe.
+- Sweep-only failures: [3D viewport stalls](feedback_fullscreen_viewport_stalls.md), solo passes; [OCR skips need models/](feedback_sweep_ocr_needs_models.md) beside the drive exe.
