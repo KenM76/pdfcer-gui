@@ -79,7 +79,7 @@ use crate::app::actions::dimensions::DimensionAction;
 use crate::app::state::OpenDoc;
 use crate::canvas::gesture::Phase;
 use crate::canvas::mapping::PageMapping;
-use crate::canvas::selection::{AnnotKind, SelectionState};
+use crate::canvas::selection::SelectionState;
 
 /// The trace channel a driven check reads to prove a placement committed.
 pub const TRACE: &str = "dimension-place"; // ui-text-exempt: diagnostic trace name
@@ -88,15 +88,7 @@ pub const TRACE: &str = "dimension-place"; // ui-text-exempt: diagnostic trace n
 /// this module can drag.
 #[must_use]
 pub fn selected(doc: &OpenDoc, selection: &SelectionState) -> Option<(DimensionId, DimensionKind)> {
-    let annot = selection.annot()?;
-    if annot.target.kind != AnnotKind::CeDimension {
-        return None;
-    }
-    let model = doc.session.dimension_model();
-    let record = model
-        .dimensions()
-        .iter()
-        .find(|r| r.annot == Some(annot.target.id))?;
+    let (id, kind) = ends::record(doc, selection)?;
     // The gate that keeps an un-draggable kind from ever starting a gesture.
     // See the module header: an angular dimension's placement is a radius and
     // an angle, and this module's delta is in points.
@@ -105,14 +97,14 @@ pub fn selected(doc: &OpenDoc, selection: &SelectionState) -> Option<(DimensionI
     // angle), which `placed` resolves through the engine's own
     // `placement_from_point`.
     if !matches!(
-        record.kind,
+        kind,
         DimensionKind::Linear { .. }
             | DimensionKind::Perimeter { .. }
             | DimensionKind::Circular { .. }
     ) {
         return None;
     }
-    Some((record.id, record.kind.clone()))
+    Some((id, kind))
 }
 
 /// The screen-space box a press must land in to mean *move this dimension*.
@@ -299,28 +291,6 @@ pub const VERTEX_REGION: &str = "canvas.dimension-vertex"; // ui-text-exempt: tr
 /// How much slack a press gets around a vertex handle, in points.
 const VERTEX_GRAB_SLACK_PT: f32 = 3.0;
 
-/// **Every vertex of the selected perimeter, in CANVAS space**, in index order.
-#[must_use]
-pub fn vertices(doc: &OpenDoc, selection: &SelectionState) -> Vec<egui::Pos2> {
-    let Some((_, kind)) = selected(doc, selection) else {
-        return Vec::new();
-    };
-    let Some((points, _)) = kind.polyline() else {
-        return Vec::new();
-    };
-    let Some(page) = doc.pages.get(doc.view.page_index) else {
-        return Vec::new();
-    };
-    points
-        .iter()
-        .filter_map(|p| {
-            #[allow(clippy::cast_possible_truncation)]
-            let as_pos = egui::Pos2::new(p.x as f32, p.y as f32);
-            crate::viewer::pdf_space_to_canvas(as_pos, page)
-        })
-        .collect()
-}
-
 /// **Which vertex a press at `screen` landed on**, if any.
 #[must_use]
 pub fn vertex_at(
@@ -431,8 +401,7 @@ fn inner(
     alt_held: bool,
     actions: &mut Vec<Action>,
 ) -> Option<VertexDrag> {
-    let (id, kind) = selected(doc, selection)?;
-    let (points, closed) = kind.polyline()?;
+    let (id, kind, points, closed) = ends::reshapeable(doc, selection)?;
     let page = doc.pages.get(doc.view.page_index)?;
     let old = *points.get(index)?;
 
@@ -518,7 +487,7 @@ fn inner(
             intent,
             index,
             target,
-            points,
+            points: &points,
             closed,
             phase,
             session: &doc.session,
@@ -558,19 +527,11 @@ fn inner(
         return Some(VertexDrag::default());
     }
 
-    // The preview, through the same segment function a committed perimeter is
-    // drawn from — this module's standing rule, and `measure::pick` supplies
-    // the closing segment for a ring rather than this call site guessing at it.
+    // The preview, through the same segment function a committed ce
+    // dimension is drawn from — this module's standing rule, and
+    // `measure::pick` supplies a ring's closing segment.
     Some(VertexDrag {
-        segments: Some(super::measure::pick::dimension_preview_segments(
-            &DimensionKind::Perimeter {
-                points: moved,
-                closed,
-                area: false,
-                offset: 0.0,
-                text_along: 0.0,
-            },
-        )),
+        segments: Some(ends::preview(&kind, &moved, closed)),
         snap,
     })
 }
@@ -789,6 +750,9 @@ pub fn annot_shapes(
     }
     out
 }
+
+mod ends;
+pub use ends::vertices;
 
 #[cfg(test)]
 mod tests;

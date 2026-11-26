@@ -12,12 +12,12 @@ use crate::launch::Session;
 use crate::report::CheckReport;
 
 // ui-text-exempt: command ids, trace event names and values, never displayed.
-const INVOKE: &str = "mode.review,measure.centre_line";
+pub(super) const INVOKE: &str = "mode.review,measure.centre_line";
 const CENTRE_EVENT: &str = "centre-line";
 const REFUSED_EVENT: &str = "centre-line-refused";
-const ENGINE_EVENT: &str = "add-dimension";
+pub(super) const ENGINE_EVENT: &str = "add-dimension";
 
-const TWO_LINES: Fixture = Fixture {
+pub(super) const TWO_LINES: Fixture = Fixture {
     file: "two-lines.pdf",
     method: "Rebuild it with `python fixtures/two-lines.PROVENANCE.py`.",
     page: PageGeometry {
@@ -26,9 +26,9 @@ const TWO_LINES: Fixture = Fixture {
     },
 };
 /// On the lower line, (100,100)-(300,100), away from its ends.
-const LOWER: (f64, f64) = (160.0, 100.0);
+pub(super) const LOWER: (f64, f64) = (160.0, 100.0);
 /// On the upper line, (100,180)-(300,180).
-const UPPER: (f64, f64) = (240.0, 180.0);
+pub(super) const UPPER: (f64, f64) = (240.0, 180.0);
 /// The two lines overlap along their whole 200 pt.
 const OVERLAP: &str = "200.00";
 
