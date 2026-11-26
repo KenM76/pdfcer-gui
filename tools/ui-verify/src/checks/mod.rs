@@ -21,6 +21,7 @@ pub mod calibrated_cmyk_setting;
 pub mod card_navigation;
 pub mod card_pages;
 pub mod centre_line;
+pub mod centre_line_anchor;
 pub mod centre_line_ends;
 pub mod centre_mark;
 pub mod centre_mark_after;

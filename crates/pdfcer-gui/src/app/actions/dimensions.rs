@@ -162,6 +162,19 @@ fn shape_token(kind: &pdfcer_core::dimension::DimensionKind) -> &'static str {
     }
 }
 
+/// The trace's word for a commit's anchors: `-`, or `index:target:role`
+/// joined by commas.
+fn anchor_tokens(anchors: &[(usize, pdfcer_core::dimension::Anchor)]) -> String {
+    if anchors.is_empty() {
+        return "-".to_owned();
+    }
+    anchors
+        .iter()
+        .map(|(i, a)| format!("{i}:{}:{}", a.target.0, a.role.token()))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 /// Apply one ce-dimension verb to the open document.
 pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
     if action.regenerates_the_whole_group() {
@@ -176,6 +189,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             group,
             kind,
             disclosures,
+            anchors,
         } => {
             let constraint = match &kind {
                 pdfcer_core::dimension::DimensionKind::Linear { constraint, .. } => {
@@ -188,11 +202,12 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                 // The gesture's disclosures are returned as the edit's, which
                 // is what puts them on the status bar stamped with the epoch
                 // this commit produced.
-                session.add_dimension(page, group, kind).map(|(annot, dim)| {
+                let anchored = anchor_tokens(&anchors);
+                session.add_dimension_anchored(page, group, kind, &anchors).map(|(annot, dim)| {
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed
                         format!(
-                            "dimension-added dim={} annot={}_{} group={} constraint={constraint} shape={shape}",
+                            "dimension-added dim={} annot={}_{} group={} constraint={constraint} shape={shape} anchors={anchored}",
                             dim.0, annot.num, annot.generation, group.0
                         )
                     });
@@ -464,6 +479,24 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                         Vec::new()
                     }
                 })
+            });
+        }
+        DimensionAction::SetAnchor {
+            dimension,
+            point,
+            anchor,
+        } => {
+            super::apply::vector_edit(doc, "set-dimension-anchor", 0, 1, |session| {
+                session
+                    .set_dimension_anchor(dimension, point, anchor)
+                    .map(|outcome| match outcome.state {
+                        Some(pdfcer_core::dimension::AnchorState::Unsolvable(why)) => {
+                            vec![pdfcer_gui_base::text::panels::dimension::anchor_unsolved(
+                                why,
+                            )]
+                        }
+                        _ => Vec::new(),
+                    })
             });
         }
         DimensionAction::SetArea { dimension, area } => {

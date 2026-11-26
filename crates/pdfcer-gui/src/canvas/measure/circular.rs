@@ -65,6 +65,7 @@ fn commit_unlabelled(st: &mut MeasureState, actions: &mut Vec<Action>) -> bool {
         group: st.group,
         kind: placing.kind,
         disclosures: placing.disclosures,
+        anchors: Vec::new(),
     }));
     true
 }

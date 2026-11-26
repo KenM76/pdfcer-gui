@@ -2,7 +2,7 @@
 
 use crate::subactions::AttachmentRef;
 use pdfcer_core::dimension::{
-    DimStandard, DimensionId, DimensionKind, GroupId, GroupStyle, NumberFormat, ScaleState,
+    Anchor, DimStandard, DimensionId, DimensionKind, GroupId, GroupStyle, NumberFormat, ScaleState,
     StyleOverrides, Unit,
 };
 use pdfcer_core::edit::GroupDeletion;
@@ -234,6 +234,11 @@ pub enum DimensionAction {
         /// A refusal is the opposite case and correctly uses `record_note`:
         /// nothing is committed, so no apply phase will overwrite it.
         disclosures: Vec<String>,
+        /// Measured points bound to another ce dimension's centre geometry,
+        /// as `(point index, anchor)`: the snap the pick landed on supplied
+        /// each one. Committed through `add_dimension_anchored`, so the new
+        /// ce dimension follows its target; empty commits a plain one.
+        anchors: Vec<(usize, Anchor)>,
     },
 
     /// **Calibrate a dimension group** — say what its numbers mean.
@@ -867,6 +872,18 @@ pub enum DimensionAction {
         dimension: DimensionId,
         /// The mark to carry, or `None` to remove it.
         mark: Option<pdfcer_core::dimension::CentreMarkSpec>,
+    },
+
+    /// **Bind a measured point to another ce dimension's centre geometry, or
+    /// let it go.** `EditSession::set_dimension_anchor`; `None` detaches and
+    /// leaves the point where it is.
+    SetAnchor {
+        /// The dependent ce dimension.
+        dimension: DimensionId,
+        /// The anchored point's index (`DimensionKind::anchor_point_count`).
+        point: usize,
+        /// The new anchor, or `None` to detach.
+        anchor: Option<Anchor>,
     },
 
     /// **Switch a closed perimeter ce dimension between its perimeter and its

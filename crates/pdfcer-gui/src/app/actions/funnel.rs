@@ -137,7 +137,12 @@ fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     // The commit's own cost on the UI thread, traced as `ms=`.
     let started = std::time::Instant::now();
     match edit(session) {
-        Ok(disclosures) => {
+        Ok(mut disclosures) => {
+            // Ce dimensions that followed an anchor changed without being
+            // selected, so every edit owes them a sentence.
+            disclosures.extend(crate::text::measure::anchors_followed(
+                session.last_anchor_resolutions(),
+            ));
             // Nothing about a successful edit changes: whatever was live goes
             // back exactly as it was, and if the verb recorded something of its
             // own during the call, that stands.

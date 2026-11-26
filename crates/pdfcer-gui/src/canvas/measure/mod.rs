@@ -319,6 +319,7 @@ fn commit_run(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         group: st.group,
         kind: placing.kind,
         disclosures: placing.disclosures,
+        anchors: Vec::new(),
     }));
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -426,6 +427,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
             group: st.group,
             kind: placed,
             disclosures: placing.disclosures,
+            anchors: Vec::new(),
         }));
         trace_pick(kind, &st, true);
         store(ctx, st);
@@ -492,6 +494,17 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
     let before = actions.len();
     match kind {
         MeasureKind::Linear => {
+            // The anchor is the snap's only when the pick IS the snapped
+            // point: a direction-aimed or promoted pick sits elsewhere.
+            let anchor = candidate
+                .filter(|c| c.point == p)
+                .and_then(|c| c.ce_dimension)
+                .and_then(|t| t.anchor);
+            match (st.linear.first, st.linear.second) {
+                (None, _) => st.linear_anchors = [anchor, None],
+                (Some(_), None) => st.linear_anchors[1] = anchor,
+                (Some(_), Some(_)) => {}
+            }
             if let Some(authored) = st.linear.commit_point(p) {
                 actions.push(Action::Dimension(DimensionAction::Commit {
                     page: page_index,
@@ -502,6 +515,7 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
                     // pointed at rather than a classification of it. See
                     // `DimensionAction::Commit`'s field.
                     disclosures: Vec::new(),
+                    anchors: st.take_linear_anchors(),
                 }));
             }
         }

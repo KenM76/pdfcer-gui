@@ -3,7 +3,10 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/panels/dimension.md`.
 
-use pdfcer_core::dimension::{DecimalMarker, DimStandard, StyleSource, Tolerance, Unit};
+use pdfcer_core::dimension::{
+    AnchorRole, ArcCondition, DecimalMarker, DimStandard, DimensionEnd, DimensionKind, StyleSource,
+    Tolerance, Unit, Unsolvable,
+};
 
 /// The section's heading.
 #[must_use]
@@ -68,6 +71,63 @@ pub const fn display_circle() -> &'static str {
 #[must_use]
 pub const fn display_circle_hover() -> &'static str {
     "Off, the measurement, leader and any centre mark stay; only the circle is left out."
+}
+
+/// The heading over a ce dimension's anchored points.
+#[must_use]
+pub const fn anchors_heading() -> &'static str {
+    "Anchored points"
+}
+
+/// Which measured point an anchor row is about, by the dependent's kind.
+#[must_use]
+pub fn anchor_point(kind: &DimensionKind, index: usize) -> String {
+    match kind {
+        DimensionKind::Linear { .. } if index == 0 => "First end".to_owned(),
+        DimensionKind::Linear { .. } => "Second end".to_owned(),
+        DimensionKind::Angular { .. } => "Apex".to_owned(),
+        _ => format!("Corner {}", index + 1),
+    }
+}
+
+/// What an anchored point follows: the role on the target, then the target.
+#[must_use]
+pub fn anchor_target(role: AnchorRole, target: Option<&DimensionKind>) -> String {
+    let noun = match target {
+        Some(DimensionKind::CentreLine { .. }) => "the centre line",
+        Some(DimensionKind::CentreMark { .. }) => "the centre mark",
+        Some(DimensionKind::Circular { .. }) => "the radius or diameter ce dimension",
+        _ => "a ce dimension no longer in the document",
+    };
+    let role = match role {
+        AnchorRole::MarkCentre | AnchorRole::Rim(ArcCondition::Centre) => "the centre of",
+        AnchorRole::LineEnd(DimensionEnd::A) => "the first end of",
+        AnchorRole::LineEnd(_) => "the second end of",
+        AnchorRole::LineMidpoint => "the midpoint of",
+        AnchorRole::LineAxis => "the line through",
+        AnchorRole::Rim(ArcCondition::Min) => "the near edge of the circle of",
+        AnchorRole::Rim(_) => "the far edge of the circle of",
+        _ => "a point of",
+    };
+    format!("follows {role} {noun}")
+}
+
+/// The button that ends an anchor.
+#[must_use]
+pub const fn anchor_detach() -> &'static str {
+    "Detach"
+}
+
+/// Hover text on [`anchor_detach`].
+#[must_use]
+pub const fn anchor_detach_hover() -> &'static str {
+    "Stop following. The point stays where it is now and keeps its value."
+}
+
+/// An anchor the engine could not solve: the point kept its last position.
+#[must_use]
+pub fn anchor_unsolved(why: Unsolvable) -> String {
+    format!("This point could not follow its anchor ({why}), so it stays where it was.")
 }
 
 /// The centre-mark switch on a radius or diameter ce dimension.

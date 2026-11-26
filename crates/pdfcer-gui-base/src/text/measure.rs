@@ -9,7 +9,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/measure.md`.
 
-use pdfcer_core::dimension::{CentreLineRefusal, TwoLineRefusal};
+use pdfcer_core::dimension::{CentreLineRefusal, Resolved, TwoLineRefusal};
 
 /// Why a two-line pick could not author anything.
 #[must_use]
@@ -51,6 +51,35 @@ pub const fn centre_line_refused(refusal: CentreLineRefusal) -> &'static str {
             "The centre line could not be drawn: its overshoot past the lines is not a valid length."
         }
     }
+}
+
+/// One sentence per ce dimension the last edit changed without its being
+/// selected: it followed the centre geometry it is anchored to, or let go of
+/// a target that was deleted.
+#[must_use]
+pub fn anchors_followed(report: &[Resolved]) -> Vec<String> {
+    report
+        .iter()
+        .map(|r| {
+            let named = if r.after_label.is_empty() {
+                "A ce dimension".to_owned()
+            } else {
+                format!("The ce dimension {}", r.after_label)
+            };
+            if r.detached {
+                format!(
+                    "{named} was anchored to the geometry just deleted; it stays where it was and no longer follows anything."
+                )
+            } else if r.before_label == r.after_label || r.before_label.is_empty() {
+                format!("{named} moved with the geometry it is anchored to.")
+            } else {
+                format!(
+                    "The ce dimension {} moved with the geometry it is anchored to and now reads {}.",
+                    r.before_label, r.after_label
+                )
+            }
+        })
+        .collect()
 }
 
 /// What the centre-line tool read the pair as, when that is not the plain

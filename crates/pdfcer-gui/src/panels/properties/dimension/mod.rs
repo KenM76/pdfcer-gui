@@ -14,6 +14,8 @@ use crate::app::state::OpenDoc;
 use crate::canvas::selection::AnnotKind;
 use crate::text::panels::dimension as t;
 
+mod anchors;
+
 /// The region this section publishes.
 const REGION: &str = "properties.dimension"; // ui-text-exempt: trace region name, never displayed
 /// The region the label-override box publishes, for a driven check to aim at.
@@ -127,6 +129,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     display_toggle(ui, record, actions);
     area_toggle(ui, record, actions);
     label_row(ui, record, actions);
+    anchors::show(ui, doc, &model, record, actions);
 
     // --- the overrides --------------------------------------------------
     ui.separator();

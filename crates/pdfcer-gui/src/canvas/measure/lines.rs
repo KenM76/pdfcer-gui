@@ -121,6 +121,7 @@ fn centre_line(st: &mut MeasureState, doc: &OpenDoc, epsilon: f64, actions: &mut
                 group: st.group,
                 kind: authoring.kind,
                 disclosures,
+                anchors: Vec::new(),
             }));
         }
         Err(refusal) => refused(doc, refusal),

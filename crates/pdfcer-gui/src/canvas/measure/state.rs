@@ -60,6 +60,9 @@ pub struct MeasureState {
     pub derived_promoted: Option<Point>,
     /// The linear-dimension pick (`CanvasTool::MeasureLinear`).
     pub linear: LinearPick,
+    /// The anchor each of the linear pick's two measured points snapped
+    /// onto, by point index; set as each point is picked.
+    pub linear_anchors: [Option<pdfcer_core::dimension::Anchor>; 2],
     /// The circular best-fit pick-set (`CanvasTool::MeasureCircular`).
     pub circular: CircularPick,
     /// The perimeter trace (`MeasureKind::Perimeter`) - the vertices picked so
@@ -132,6 +135,15 @@ pub struct MeasureState {
 }
 
 impl MeasureState {
+    /// The linear pick's anchors as `(point index, anchor)`, cleared.
+    pub fn take_linear_anchors(&mut self) -> Vec<(usize, pdfcer_core::dimension::Anchor)> {
+        std::mem::take(&mut self.linear_anchors)
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, a)| a.map(|a| (i, a)))
+            .collect()
+    }
+
     /// Build fresh tool state for `page_index`, seeding the active group to the
     /// always-present default group (ui-spec §5.3), snapping ON.
     #[must_use]
@@ -154,6 +166,7 @@ impl MeasureState {
             snap_cycle: 0,
             derived_promoted: None,
             linear: LinearPick::new(),
+            linear_anchors: [None; 2],
             circular: CircularPick::new(),
             perimeter: super::perimeter::PerimeterPick::default(),
             scale: ScalePick::new(),
