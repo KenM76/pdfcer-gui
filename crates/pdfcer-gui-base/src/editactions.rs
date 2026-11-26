@@ -859,6 +859,16 @@ pub enum DimensionAction {
         shown: bool,
     },
 
+    /// **Add, change or remove a placed ce dimension's centre mark.**
+    /// `EditSession::set_centre_mark`; `None` is offered only where
+    /// `CentreMarkHost::can_clear` holds. Raised only on an actual change.
+    SetCentreMark {
+        /// The radius/diameter or standalone centre-mark ce dimension.
+        dimension: DimensionId,
+        /// The mark to carry, or `None` to remove it.
+        mark: Option<pdfcer_core::dimension::CentreMarkSpec>,
+    },
+
     /// **Switch a closed perimeter ce dimension between its perimeter and its
     /// enclosed area.** `EditSession::set_dimension_area`; raised only on an
     /// actual change, for the reason [`Self::SetDisplay`] gives.

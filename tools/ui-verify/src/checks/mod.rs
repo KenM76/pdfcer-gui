@@ -22,6 +22,7 @@ pub mod card_navigation;
 pub mod card_pages;
 pub mod centre_line;
 pub mod centre_mark;
+pub mod centre_mark_after;
 pub mod circle_shown;
 pub mod export_keep_text;
 /// The in-place field editor sets text in the field's own layout.
@@ -254,6 +255,7 @@ pub mod group_numbers_at_creation;
 pub mod group_objects;
 pub mod group_of_groups;
 pub mod group_unit_converts;
+pub mod hole_dim;
 pub mod leafplace;
 pub mod leaftransform;
 pub mod markup_click_through;

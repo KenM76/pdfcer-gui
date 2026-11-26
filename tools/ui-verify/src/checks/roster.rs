@@ -627,6 +627,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(snap_image::MeasureToolSnapsToAnImage),
         Box::new(centre_line::ACentreLineIsDrawnBetweenTwoLines),
         Box::new(centre_mark::ACircleGetsACentreMarkWithOrWithoutItsMeasurement),
+        Box::new(centre_mark_after::APlacedDimensionTakesAndDropsACentreMark),
         Box::new(circle_shown::ADimensionsCircleCanBeHidden),
         Box::new(text_box_live::ATextBoxIsTypedOnThePage),
         Box::new(nudgecontent::ArrowKeysMoveASelectedObjectOnThePage),

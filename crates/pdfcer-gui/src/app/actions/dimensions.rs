@@ -452,6 +452,20 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .map(|_| Vec::new())
             });
         }
+        DimensionAction::SetCentreMark { dimension, mark } => {
+            super::apply::vector_edit(doc, "set-centre-mark", 0, 1, |session| {
+                session.set_centre_mark(dimension, mark).map(|outcome| {
+                    if outcome.label_moved {
+                        vec![
+                            pdfcer_gui_base::text::panels::dimension::centre_mark_label_moved()
+                                .to_owned(),
+                        ]
+                    } else {
+                        Vec::new()
+                    }
+                })
+            });
+        }
         DimensionAction::SetArea { dimension, area } => {
             super::apply::vector_edit(doc, "set-dimension-area", 0, 1, |session| {
                 session

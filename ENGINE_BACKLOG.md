@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **31 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `wanted` — a real gap — **31 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -99,7 +99,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Add, change or remove a centre mark on a placed ce dimension** — `EditSession::set_centre_mark`, `centre_mark_host` (G330) | **wanted — O461.** A Properties row on a radius, diameter or centre mark ce dimension: *Centre mark* on/off, extension lines, angle, asked first through `centre_mark_host` so *Remove* greys where `can_clear` is false. |
+| **A standalone centre mark's extension lines and any mark's angle** — `EditSession::centre_mark_host` (G330) | **wanted — O461.** A standalone centre-mark ce dimension's Properties: *Extension lines* and the mark's angle, asked first through `centre_mark_host` so *Remove* is offered only where `can_clear` holds. |
 | **Move a centre line's two ends** — `move_dimension_vertex` on a centre line (G335) | **wanted — O461.** <!--namesake:move_dimension_vertex--> The call is the perimeter vertex drag; no grip reaches it on a centre line. The vertex drag already reaches `move_dimension_vertex` for a perimeter; a centre line's two end grips need the same handles, and Insert/Remove vertex withheld on it. |
 | **A ce dimension's point follows a centre line, centre mark or circle rim** — `set_dimension_anchor`, `add_dimension_anchored`, the module `pdfcer_core::dimension::anchor` (G332) | **wanted — O461, the request's first sentence.** Placing a linear ce dimension on a snapped centre line, mark or rim carries the snap's `CeDimensionTarget::anchor` into `add_dimension_anchored`; an anchored point shows its target in Properties with *Detach*. |
 | **Snap to the rim of a ce dimension's circle** — `SnapKind::RimNearest`/`Quadrant`/`Tangent` (G328) | **wanted — O461.** <!--namesake:RimNearest--> The hits are the status-line wording and glyph arms. The three kinds are worded on the status line and drawn as snap glyphs at the pin; not yet driven on a circle, and the tangent's previous pick (`SnapConfig::with_from`) is not passed. |
@@ -151,7 +151,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `blocked` — waiting on something named — **2 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -169,7 +169,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -180,7 +180,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `declined` — deliberately no surface — **21 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -227,7 +227,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **603 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **604 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -438,6 +438,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 |---|---|
 | **Named drafting line types for ce dimensions** — the module `pdfcer_core::dimension::line_type`: `LineType`, `LineTypeRef`, `line_type_scale_in_range` (G331) | **shipped — O461.** `dimlinetype::line_type_editor` offers the six named types and a custom dash on a member's Properties and on a group's style; *Line-type scale* is a Properties row. Driven: `a_groups_line_style_and_opacity_reach_its_members` (Hidden). |
 | **A circular ce dimension's circle is its own part** — `set_circular_circle_shown`, the module `pdfcer_core::dimension::part_stroke` (G329) | **shipped — O461.** *Draw the circle* in a radius or diameter ce dimension's Properties (`DimensionAction::SetCircleShown`), and the circle's own dash, width and colour rows (`dimpartrows`). |
+| **Add, change or remove a centre mark on a placed ce dimension** — `EditSession::set_centre_mark` (G330) | **shipped — O461, on a radius or diameter ce dimension; the standalone mark is the `wanted` row.** *Centre mark* and, under it, *Extension lines* in a radius or diameter ce dimension's Properties, dispatched in `app::actions::dimensions`; `label_moved` goes to the status row. Driven by `a_placed_dimension_takes_and_drops_a_centre_mark`. |
 | **A centre line and a centre mark have their own stroke, gap, extension and line font** — the module `pdfcer_core::dimension::centre_style`: `CentreStyle`, `DashFit` (G333, G334) | **shipped — O461, on a member.** `dimpartrows` draws the centre line's and centre mark's dash, width, colour, gap, extension and line font on a member's Properties. Owed: the same rows on a group's style (`GroupStyle::centre`). |
 | **Centre line between two lines** — `dimension::author_centre_line` in the module `pdfcer_core::dimension::centre`: `CentreLineAuthoring`, `CentreLineRefusal`, `DimensionKind::CentreLine`, `EditError::CentreGeometryDegenerate`, `EditError::CentreGeometryHasNoLabel` (G322) | **shipped** — Measure ▸ Centre line (`canvas::measure::lines`), two clicks on lines committing at once; driven by `a_centre_line_is_drawn_between_two_lines`. <!--namesake:CentreLine--> |
 | **Centre mark on a circle or arc (standalone or with a radius/diameter)** — `DimensionKind::CentreMark`, `CentreMarkSpec`, the `centre_mark` field on `DimensionKind::Circular`, `CentreMarkSize` and the style field `centre_mark_size` on `GroupStyle`, `StyleOverrides`, `StyleDefaults`, `StyleProvenance` and `DimensionStyle` (G323) | **shipped** — the radius/diameter tool's *Add measurement* and *Add centre mark* switches (`canvas::measure::circular::set_outputs`, read by `CircularPick::author`): both author a `Circular` carrying a `CentreMarkSpec`, the mark alone a `CentreMark` committed on the finishing gesture with no placing click. Driven by `a_circle_gets_a_centre_mark_with_or_without_its_measurement`. The mark size is edited in the group style panel and a ce dimension's overrides (`dimensionoverrides::centre_mark_size_editor`). <!--namesake:CentreMark--><!--namesake:GroupStyle--><!--namesake:StyleOverrides--><!--namesake:StyleDefaults--><!--namesake:StyleProvenance--><!--namesake:DimensionStyle--><!--namesake:CentreMarkSize--><!--namesake:centre_mark_size--> |

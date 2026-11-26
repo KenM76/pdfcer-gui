@@ -70,6 +70,36 @@ pub const fn display_circle_hover() -> &'static str {
     "Off, the measurement, leader and any centre mark stay; only the circle is left out."
 }
 
+/// The centre-mark switch on a radius or diameter ce dimension.
+#[must_use]
+pub const fn centre_mark_on() -> &'static str {
+    "Centre mark"
+}
+
+/// Hover text on [`centre_mark_on`].
+#[must_use]
+pub const fn centre_mark_on_hover() -> &'static str {
+    "A cross at the circle's centre. Its size, gap and stroke are in the style rows."
+}
+
+/// The extension-lines switch under a centre mark.
+#[must_use]
+pub const fn centre_mark_extension_lines() -> &'static str {
+    "Extension lines"
+}
+
+/// Hover text on [`centre_mark_extension_lines`].
+#[must_use]
+pub const fn centre_mark_extension_lines_hover() -> &'static str {
+    "Lines from the cross out past the rim."
+}
+
+/// The disclosure when adding or removing a centre mark moved the label.
+#[must_use]
+pub const fn centre_mark_label_moved() -> &'static str {
+    "The label moved outside the rim to clear the centre mark."
+}
+
 /// What switching between them does, and does not, change.
 #[must_use]
 pub const fn display_hint() -> &'static str {

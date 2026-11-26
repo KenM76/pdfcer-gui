@@ -23,6 +23,9 @@ pub const LABEL_REGION: &str = "properties.dimension.label"; // ui-text-exempt: 
 pub const REGION_DISPLAY: &str = "properties.dimension.display"; // ui-text-exempt: trace region name, never displayed
 /// The *Draw the circle* checkbox.
 pub const REGION_CIRCLE: &str = "properties.dimension.circle"; // ui-text-exempt: trace region name, never displayed
+/// The centre-mark switch and its extension-lines switch.
+pub const REGION_CENTRE_MARK: &str = "properties.dimension.centre-mark"; // ui-text-exempt: trace region name, never displayed
+pub const REGION_CENTRE_MARK_EXTENSION: &str = "properties.dimension.centre-mark.extension"; // ui-text-exempt: trace region name, never displayed
 
 /// The Perimeter / Area radio pair of a closed perimeter ce dimension.
 pub const REGION_AREA: &str = "properties.dimension.area"; // ui-text-exempt: trace region name, never displayed
@@ -211,12 +214,14 @@ fn display_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Actio
     let DimensionKind::Circular {
         show_diameter,
         show_circle,
+        centre_mark,
         ..
     } = record.kind
     else {
         return;
     };
     circle_toggle(ui, record.id, show_circle, actions);
+    centre_mark_toggles(ui, record.id, centre_mark, actions);
     let mut chosen = show_diameter;
     ui.horizontal(|ui| {
         ui.label(t::display_label());
@@ -256,6 +261,46 @@ fn circle_toggle(ui: &mut Ui, id: DimensionId, shown: bool, actions: &mut Vec<Ac
         actions.push(Action::Dimension(DimensionAction::SetCircleShown {
             dimension: id,
             shown: chosen,
+        }));
+    }
+}
+
+/// **Centre mark** and, under it, **Extension lines**, for a radius or
+/// diameter ce dimension. A new mark keeps the engine's default spec; turning
+/// extension lines on or off keeps the mark's angle.
+fn centre_mark_toggles(
+    ui: &mut Ui,
+    id: DimensionId,
+    mark: Option<pdfcer_core::dimension::CentreMarkSpec>,
+    actions: &mut Vec<Action>,
+) {
+    let mut on = mark.is_some();
+    let r = ui
+        .checkbox(&mut on, t::centre_mark_on())
+        .on_hover_text(t::centre_mark_on_hover());
+    crate::diag::ui_rect(REGION_CENTRE_MARK, r.rect);
+    let mut chosen = on.then(|| mark.unwrap_or_default());
+    if let Some(spec) = chosen.as_mut().filter(|_| mark.is_some()) {
+        ui.indent(REGION_CENTRE_MARK, |ui| {
+            let r = ui
+                .checkbox(&mut spec.extension_lines, t::centre_mark_extension_lines())
+                .on_hover_text(t::centre_mark_extension_lines_hover());
+            crate::diag::ui_rect(REGION_CENTRE_MARK_EXTENSION, r.rect);
+        });
+    }
+    if chosen != mark {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "dimension-centre-mark id={} on={} extension={}",
+                id.0,
+                u8::from(chosen.is_some()),
+                u8::from(chosen.is_some_and(|m| m.extension_lines))
+            )
+        });
+        actions.push(Action::Dimension(DimensionAction::SetCentreMark {
+            dimension: id,
+            mark: chosen,
         }));
     }
 }
