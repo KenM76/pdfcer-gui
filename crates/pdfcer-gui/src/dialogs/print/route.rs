@@ -15,7 +15,7 @@ use pdfcer_gui_base::printregions;
 use pdfcer_print::output_color::OutputColor;
 
 use super::PrintDialog;
-use crate::dialogs::print::spooler::{PageBitmap, PagePlan, VectorTally};
+use crate::dialogs::print::spooler::{PageBitmap, PagePlan, ProfileReasons, VectorTally};
 use crate::text::print::route as t;
 
 impl PrintDialog {
@@ -124,6 +124,17 @@ fn tally(outcome: &pdfcer_emf::EmfOutcome) -> VectorTally {
         transparent: outcome.vectorised.ops,
         patches: outcome.patches.cases(),
         profiles_unused: usize::from(outcome.diagnostics.icc_profiles_unmodelled > 0),
+        profile_reasons: profile_reasons(&outcome.diagnostics),
+    }
+}
+
+/// One page's refused-profile reasons, as a page each reason applied to.
+fn profile_reasons(d: &pdfcer_render::Diagnostics) -> ProfileReasons {
+    ProfileReasons {
+        unreadable: usize::from(d.icc_profiles_unparsed > 0),
+        output_intent_unreadable: usize::from(d.icc_output_intent_unparsed > 0),
+        no_conversion: usize::from(d.icc_profiles_without_chain > 0),
+        wrong_channels: usize::from(d.icc_profiles_probe_refused > 0),
     }
 }
 
@@ -179,6 +190,7 @@ pub(super) fn plain_sheet(
         image_reason,
         tally: VectorTally {
             profiles_unused: usize::from(rendered.diagnostics.icc_profiles_unmodelled > 0),
+            profile_reasons: profile_reasons(&rendered.diagnostics),
             ..VectorTally::default()
         },
     })

@@ -70,7 +70,10 @@ impl PrintDialog {
             ));
         }
         if report.tally.profiles_unused > 0 {
-            notes.push(t::route::profiles_unused(report.tally.profiles_unused));
+            notes.push(t::route::profiles_unused(
+                report.tally.profiles_unused,
+                &report.tally.profile_reasons,
+            ));
         }
         // Both sentences in ONE call. `record_notes`' own doc comment records
         // why: the slot holds a single disclosure, so a second `record_note`
@@ -463,11 +466,18 @@ mod tests {
             transparent: 2,
             patches: 2,
             profiles_unused: 1,
+            profile_reasons: spooler::ProfileReasons {
+                wrong_channels: 1,
+                ..spooler::ProfileReasons::default()
+            },
         };
         let notes = PrintDialog::commit_notes(Ok(&ok)).expect("a receipt");
         assert!(notes.iter().any(|n| n.starts_with("2 areas")), "{notes:?}");
         assert!(
-            notes.iter().any(|n| n.starts_with("On 1 page")),
+            notes.iter().any(|n| n.starts_with("On 1 page")
+                && n.ends_with(
+                    "Why: the profile has the wrong number of colour channels (1 page)."
+                )),
             "{notes:?}"
         );
         ok.tally.patches = 0;

@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 1eee0ea4e0b5905b4a4593f58bdd80083577425f
+# baseline: 11f644011bff9e2a18f68355d196e2b31d11099f
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 13549
+# items: 13554
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -211,6 +211,12 @@ exempt pdfcer-render method pdfcer_render::text::TextState::text_space_params --
 exempt pdfcer-render module pdfcer_render::gouraud::bands -- the rasterizer's banding of Gouraud shadings into flat quads; this shell holds no shading and sees the result only as rendered pixels.
 exempt pdfcer-render module pdfcer_render::shading::spot_ramp -- the shading interpreter's spot-colour ramp sampling; this shell holds no shading and sees the result only as rendered pixels.
 exempt pdfcer-render variant pdfcer_render::font::subset::SubsetError::Cff2NotSupported -- a refusal this shell words through the engine's own Display text: `app::actions::textstyle::donor_plan` and `handsign::typed` both map every `plan_subset` error with `to_string()`, so no variant is matched here and none needs a sentence of ours.
+exempt pdfcer-render variant pdfcer_render::icc::IccUnmodelled::DestinationUnparsed -- a reason for one refused embedded colour profile; this shell reads the four per-reason `Diagnostics` counts the engine folds from it (`dialogs::print::route::profile_reasons`), never the enum itself.
+exempt pdfcer-render variant pdfcer_render::icc::IccUnmodelled::NoChain -- a reason for one refused embedded colour profile; this shell reads the four per-reason `Diagnostics` counts the engine folds from it (`dialogs::print::route::profile_reasons`), never the enum itself.
+exempt pdfcer-render variant pdfcer_render::icc::IccUnmodelled::ProbeRefused -- a reason for one refused embedded colour profile; this shell reads the four per-reason `Diagnostics` counts the engine folds from it (`dialogs::print::route::profile_reasons`), never the enum itself.
+exempt pdfcer-render variant pdfcer_render::icc::IccUnmodelled::SourceUnparsed -- a reason for one refused embedded colour profile; this shell reads the four per-reason `Diagnostics` counts the engine folds from it (`dialogs::print::route::profile_reasons`), never the enum itself.
+exempt pdfcer-render variant pdfcer_render::image::ImageError::AllocationFailed -- an image refused because the allocator declined its buffer; the engine counts it in `Diagnostics::images_unsupported`, which the status line already reports as an image not drawn.
+exempt pdfcer-render variant pdfcer_render::mask::MaskRefusal::AllocationFailed -- an image refused because the allocator declined its buffer; the engine counts it in `Diagnostics::images_unsupported`, which the status line already reports as an image not drawn.
 exempt pdfcer-render variant pdfcer_render::mesh::Shade::Spot -- a mesh vertex colour inside the rasterizer: the shading-mesh interpreter builds and interpolates Shade values and composites them; this shell holds no mesh, constructs no Shade, and sees the result only as rendered pixels.
 
 pdfcer-3d const pdfcer_3d::illuminance::MAX_ILLUMINANCE_RAYS
@@ -12472,6 +12478,7 @@ pdfcer-render enum pdfcer_render::gouraud::Decline
 pdfcer-render enum pdfcer_render::gpu::scene::GpuRefusal
 pdfcer-render enum pdfcer_render::gstate::LineCap
 pdfcer-render enum pdfcer_render::gstate::LineJoin
+pdfcer-render enum pdfcer_render::icc::IccUnmodelled
 pdfcer-render enum pdfcer_render::image::ImageError
 pdfcer-render enum pdfcer_render::image::ImageOrigin
 pdfcer-render enum pdfcer_render::image::MaskApplied
@@ -12785,7 +12792,11 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::glyphs_notdef
 pdfcer-render field pdfcer_render::interpret::Diagnostics::glyphs_substituted
 pdfcer-render field pdfcer_render::interpret::Diagnostics::glyphs_supplied
 pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_managed_paints
+pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_output_intent_unparsed
+pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_profiles_probe_refused
 pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_profiles_unmodelled
+pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_profiles_unparsed
+pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_profiles_without_chain
 pdfcer-render field pdfcer_render::interpret::Diagnostics::icc_unmanaged_paints
 pdfcer-render field pdfcer_render::interpret::Diagnostics::image_notes
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_codec_unsupported

@@ -346,6 +346,37 @@ pub struct VectorTally {
     /// Pages holding an embedded colour profile no transform could be built
     /// from, so its colour fell back to the alternate space.
     pub profiles_unused: usize,
+    /// Of those pages, how many each reason applied to.
+    pub profile_reasons: ProfileReasons,
+}
+
+/// Why an embedded colour profile could not be used, in pages per reason; a
+/// page with two reasons counts under both. Mirrors the engine's
+/// `pdfcer_render::icc::IccUnmodelled`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ProfileReasons {
+    /// The document's profile does not parse.
+    pub unreadable: usize,
+    /// The output intent's profile does not parse.
+    pub output_intent_unreadable: usize,
+    /// Both parse, but no conversion can be built between them.
+    pub no_conversion: usize,
+    /// The profile's channel count disagrees with the colour space's `/N`.
+    pub wrong_channels: usize,
+}
+
+impl ProfileReasons {
+    /// Both counts added.
+    #[must_use]
+    pub const fn plus(self, other: Self) -> Self {
+        Self {
+            unreadable: self.unreadable + other.unreadable,
+            output_intent_unreadable: self.output_intent_unreadable
+                + other.output_intent_unreadable,
+            no_conversion: self.no_conversion + other.no_conversion,
+            wrong_channels: self.wrong_channels + other.wrong_channels,
+        }
+    }
 }
 
 impl VectorTally {
@@ -357,6 +388,7 @@ impl VectorTally {
             transparent: self.transparent + other.transparent,
             patches: self.patches + other.patches,
             profiles_unused: self.profiles_unused + other.profiles_unused,
+            profile_reasons: self.profile_reasons.plus(other.profile_reasons),
         }
     }
 }

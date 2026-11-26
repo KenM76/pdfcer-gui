@@ -74,18 +74,43 @@ pub fn patched(areas: usize) -> String {
 }
 
 /// After a job some of whose pages hold a colour profile that could not be
-/// used.
+/// used, with each reason the engine gave and the pages it applied to.
 #[must_use]
-pub fn profiles_unused(pages: usize) -> String {
-    if pages == 1 {
-        "On 1 page a colour profile could not be used, so its colours printed \
-         from the fallback colours the document names."
+pub fn profiles_unused(pages: usize, reasons: &crate::printspooler::ProfileReasons) -> String {
+    let head = if pages == 1 {
+        "On 1 page a colour profile could not be used, so its colours printed          from the fallback colours the document names."
             .to_owned()
     } else {
         format!(
-            "On {pages} pages a colour profile could not be used, so their colours \
-             printed from the fallback colours the document names."
+            "On {pages} pages a colour profile could not be used, so their colours              printed from the fallback colours the document names."
         )
+    };
+    let named: Vec<String> = [
+        (reasons.unreadable, "the profile is damaged"),
+        (
+            reasons.output_intent_unreadable,
+            "the document's printing-condition profile is damaged",
+        ),
+        (
+            reasons.no_conversion,
+            "the profile cannot be converted to the printer's colours",
+        ),
+        (
+            reasons.wrong_channels,
+            "the profile has the wrong number of colour channels",
+        ),
+    ]
+    .into_iter()
+    .filter(|(n, _)| *n > 0)
+    .map(|(n, why)| match n {
+        1 => format!("{why} (1 page)"),
+        _ => format!("{why} ({n} pages)"),
+    })
+    .collect();
+    if named.is_empty() {
+        head
+    } else {
+        format!("{head} Why: {}.", named.join("; "))
     }
 }
 
