@@ -203,6 +203,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(settings_sun_disc::SettingsSunDisc),
         Box::new(settings_text_size::SettingsTextSize),
         Box::new(smooth_pictures::SmoothPicturesSetting),
+        Box::new(copier_scan::CopierScanShowsItsPicture),
         Box::new(card_pages::CardPages),
         Box::new(card_navigation::CardNavigation),
         Box::new(off_page_blank_overhang::BlankOverhangIsCountedNotListed),

@@ -8381,10 +8381,12 @@ Said on 2026-11-25, in the same message as O462 and O463. With the setting on, a
 
 Built: Settings > Display > *Reopen each document at the page, position and zoom it was left at*, off by default. Where a document was is recorded when its tab closes and when pdfcer quits, for the last 200 documents; it comes back as the same page, the same point at the viewport centre, and the same zoom or fit. A page named on the command line, or a document moved between windows, still opens at that page. Driven off-screen: `a_document_reopens_where_it_was_left` (left on page 2, came back to the same pixel; with the setting off, it opened at the start). The record made on quitting is not yet driven, because quitting needs the window's own close button, which is on-screen only.
 
-## O465 — **FILED (engine, G336)** — a copier scan opens with none of its images showing
+## O465 — **BUILT, awaiting Ken** — a copier scan opens with none of its images showing
 
 *"\"C:\Users\Ken\OneDrive\pdfTests\EmilysOffice\Compass CPA Revised Design unmarked copy.pdf\" doesn't open properly. none of the images are showing."*
 
 Said on 2026-11-26. A defect report. Every page of a scanned document shows its scan, at every zoom, as it does in any other reader.
 
 Cause, measured: the file is eight 600 dpi colour scans of legal sheets, each one JPEG of 5100 × 8400 = 42.8 million pixels. The engine refuses any image over 33.5 million pixels (`MAX_IMAGE_PIXELS`), so every page renders blank; the engine's own `render-page` does the same. Filed to the engine as G336, asking it to decode at the drawn size or to size the ceiling by memory. No shell workaround. The status line says "1 image not drawn" and does not say why; it should name the reason.
+
+Built on engine pin `11f64401`, past v0.178.0: G336 raised the ceiling to 2^27 pixels (Pass 780.1 is to remove a fixed ceiling altogether), and the scan renders. `a_600_dpi_copier_scan_shows_its_picture` opens a page-sized 5100 × 8400 JPEG and requires its blue block drawn blue: PASS, 64,460 of 64,460 pixels; on `.20261125.3` it FAILs at 0 of 64,460. The operator's page 1 renders through the engine CLI at the same pin. Still owed by the engine, G337: a zoom while such a page is decoding freezes the window for the whole decode (a cancel join of 2,711 ms measured), because the cancel token is not read inside an image decode.

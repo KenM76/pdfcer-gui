@@ -26,6 +26,8 @@ pub mod centre_line_ends;
 pub mod centre_mark;
 pub mod centre_mark_after;
 pub mod circle_shown;
+/// A 600 dpi copier scan of a legal page shows its picture.
+pub mod copier_scan;
 pub mod export_keep_text;
 /// The in-place field editor sets text in the field's own layout.
 pub mod field_carets;
