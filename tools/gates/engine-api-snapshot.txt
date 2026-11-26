@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 11331c2e3bca21e5f85ac863c4cc22bf85565f5b
+# baseline: 1eee0ea4e0b5905b4a4593f58bdd80083577425f
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 13548
+# items: 13549
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -83,9 +83,11 @@ exempt pdfcer-core const pdfcer_core::text_edit::model::rich_copy::RICH_COPY_DEF
 exempt pdfcer-core const pdfcer_core::text_edit::model::rich_copy::RICH_COPY_MAX_OUTPUT_BYTES -- the rich-copy writers clamp sizes and output internally; the shell hands `RichText` to `to_cf_html` and `to_rtf` and never builds a size or measures output itself.
 exempt pdfcer-core const pdfcer_core::text_edit::model::rich_copy::RICH_COPY_MAX_SIZE_PT -- the rich-copy writers clamp sizes and output internally; the shell hands `RichText` to `to_cf_html` and `to_rtf` and never builds a size or measures output itself.
 exempt pdfcer-core const pdfcer_core::text_edit::model::rich_copy::RICH_COPY_MIN_SIZE_PT -- the rich-copy writers clamp sizes and output internally; the shell hands `RichText` to `to_cf_html` and `to_rtf` and never builds a size or measures output itself.
+exempt pdfcer-core const pdfcer_core::vector::clip::CLIP_VERSION_PRE_ANCHORS -- the vector clipboard codec's version history; the shell hands clips to the engine's own encoder and decoder and never compares a version.
 exempt pdfcer-core const pdfcer_core::vector::decompose::MAX_TEXT_PREVIEW_PAGE_CHARS -- the engine's memory ceiling on one decomposition's preview text. Nothing here chooses or compares against it: a run cut by it arrives as `truncated`, which `panels::objects::summary` already carries into the row's ellipsis, and `text::panels::objects::quoted_text_preview` elides every preview at display time whatever its length.
 exempt pdfcer-core enum pdfcer_core::ocr::vl_page::EdgeSource -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
 exempt pdfcer-core field pdfcer_core::build::BuildInfo::icccer -- the About box reads the colour engine's version and revision from Cargo.lock in `build.rs` (`icccer-cmm`), the same fact BuildInfo carries for the engine's own build.
+exempt pdfcer-core field pdfcer_core::edit::AnnotFlattenOutcome::ce_dimensions_flattened -- the engine words this count itself in `AnnotFlattenOutcome::disclosures`, which `text::flattenannot::flattened` appends in full; reading the counter too would be a second sentence for one fact.
 exempt pdfcer-core field pdfcer_core::edit::PasswordPurgeOutcome::layout -- what the empty redraw decided: autosize, an unmodelled colour, unencodable characters. An empty value draws no text, so none of it can arise; `app::actions::purge_passwords` has nothing to word.
 exempt pdfcer-core field pdfcer_core::edit::WidgetEdit::replace_foreign_appearance -- the field under `WidgetEdit::with_replace_foreign_appearance`, which `panels::properties::widgetedit::border_edit` calls for every border edit; the shell sets it through the builder and never reads it back, and the outcome's `foreign_appearance_replaced` is what it reports.
 exempt pdfcer-core field pdfcer_core::ocr::vl_page::RegionRead::column_edges -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
@@ -2076,6 +2078,7 @@ pdfcer-core field pdfcer_core::edit::AdoptOutcome::field_id
 pdfcer-core field pdfcer_core::edit::AdoptOutcome::field_type
 pdfcer-core field pdfcer_core::edit::AdoptOutcome::name
 pdfcer-core field pdfcer_core::edit::AdoptOutcome::renamed
+pdfcer-core field pdfcer_core::edit::AnnotFlattenOutcome::ce_dimension_anchors_detached
 pdfcer-core field pdfcer_core::edit::AnnotFlattenOutcome::changed
 pdfcer-core field pdfcer_core::edit::AnnotFlattenOutcome::disclosures
 pdfcer-core field pdfcer_core::edit::AnnotFlattenOutcome::flattened

@@ -1056,6 +1056,13 @@ The request O280 is built on, answered and consumed.
 - **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).
 - **G272** — CONSUMED at v0.130.0: `FrameLampShadows::for_model_after` with the previous choice and `FrameLights::use_lamp_shadows`; the cap `MAX_LAMP_SHADOWS` said when reached (O393).
 
+## Engine arrivals at v0.176.0 — not verdict rows
+
+Anchors carried through page transforms, paste and centre-mark edits, and a flattened ce dimension leaving the model.
+
+- **Flattening a ce dimension** — `AnnotFlattenOutcome::ce_dimensions_flattened`, `AnnotFlattenOutcome::ce_dimension_anchors_detached`: the engine words both in `AnnotFlattenOutcome::disclosures`, which the flatten status line appends in full, so the counters would be a second sentence for one fact.
+- **The vector clipboard codec** — `CLIP_VERSION_PRE_ANCHORS`: exempt; a copied ce dimension now keeps its anchors through the engine's own encoder.
+
 ## Engine arrivals at v0.175.0 — not verdict rows
 
 O461's engine half (G327–G335) and three O458 rows.
