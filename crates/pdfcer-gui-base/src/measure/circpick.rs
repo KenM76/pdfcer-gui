@@ -166,6 +166,7 @@ impl CircularPick {
             return Some(DimensionKind::Circular {
                 fit,
                 show_diameter: self.show_diameter,
+                show_circle: true,
                 leader_angle: 0.0,
                 text_distance: None,
                 centre_mark: mark,
@@ -274,6 +275,7 @@ mod tests {
             DimensionKind::Circular {
                 fit,
                 show_diameter: false,
+                show_circle: true,
                 leader_angle: 0.0,
                 text_distance: None,
                 centre_mark: None,
@@ -287,6 +289,7 @@ mod tests {
             dia,
             DimensionKind::Circular {
                 show_diameter: true,
+                show_circle: true,
                 ..
             }
         ));
@@ -356,6 +359,7 @@ mod tests {
         let cli_kind = DimensionKind::Circular {
             fit: fit_circle_taubin(&pts).unwrap(),
             show_diameter: true,
+            show_circle: true,
             leader_angle: 0.0,
             text_distance: None,
             centre_mark: None,

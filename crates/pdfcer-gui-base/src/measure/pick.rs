@@ -1001,6 +1001,7 @@ mod tests {
         let segs = dimension_preview_segments(&DimensionKind::Circular {
             fit,
             show_diameter: false,
+            show_circle: true,
             leader_angle: 0.0,
             text_distance: None,
             centre_mark: None,
@@ -1035,6 +1036,7 @@ mod tests {
         let dia = dimension_preview_segments(&DimensionKind::Circular {
             fit,
             show_diameter: true,
+            show_circle: true,
             leader_angle: 0.0,
             text_distance: None,
             centre_mark: None,

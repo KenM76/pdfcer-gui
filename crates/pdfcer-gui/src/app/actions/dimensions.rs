@@ -15,9 +15,7 @@ fn colour_key(colour: pdfcer_core::annot_author::Color) -> String {
 }
 
 #[cfg(test)]
-use pdfcer_core::dimension::{
-    DimStandard, DimensionId, GroupStyle, ScaleState, StyleOverrides, Unit,
-};
+use pdfcer_core::dimension::{DimStandard, DimensionId, ScaleState, Unit};
 use pdfcer_core::edit::GroupDeletion;
 
 use crate::app::state::OpenDoc;
@@ -404,7 +402,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
         }
         DimensionAction::SetGroupStyle { group, style } => {
             super::apply::vector_edit(doc, "set-group-style", 0, 1, |session| {
-                session.set_group_style(group, style).map(|_| Vec::new())
+                session.set_group_style(group, *style).map(|_| Vec::new())
             });
             trace_members_style(doc, group);
         }
@@ -433,7 +431,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             }
             super::apply::vector_edit(doc, "set-dimension-style", 0, 1, |session| {
                 session
-                    .set_dimension_style(dimension, style)
+                    .set_dimension_style(dimension, *style)
                     .map(|_| Vec::new())
             });
         }
@@ -444,6 +442,13 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             super::apply::vector_edit(doc, "set-dimension-display", 0, 1, |session| {
                 session
                     .set_dimension_display(dimension, show_diameter)
+                    .map(|_| Vec::new())
+            });
+        }
+        DimensionAction::SetCircleShown { dimension, shown } => {
+            super::apply::vector_edit(doc, "set-circle-shown", 0, 1, |session| {
+                session
+                    .set_circular_circle_shown(dimension, shown)
                     .map(|_| Vec::new())
             });
         }
@@ -529,11 +534,12 @@ fn trace_members_style(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "dimension-member-style group={} dim={} dash={} solid={} opacity={} opacity_from={}",
+                "dimension-member-style group={} dim={} dash={} solid={} line_type={} opacity={} opacity_from={}",
                 group.0,
                 member.id.0,
                 from.dash.token(),
                 drawn.dash.is_solid(),
+                drawn.line_type.line_type().map_or("custom", |l| l.token()),
                 drawn.opacity,
                 from.opacity.token()
             )
@@ -565,7 +571,7 @@ mod tests {
             },
             DimensionAction::SetGroupStyle {
                 group: g,
-                style: GroupStyle::default(),
+                style: Box::default(),
             },
             DimensionAction::ToggleLayer {
                 group: g,
@@ -589,7 +595,7 @@ mod tests {
             },
             DimensionAction::SetStyle {
                 dimension: d,
-                style: StyleOverrides::default(),
+                style: Box::default(),
             },
             DimensionAction::SetDisplay {
                 dimension: d,

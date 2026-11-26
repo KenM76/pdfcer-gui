@@ -22,6 +22,7 @@ pub mod card_navigation;
 pub mod card_pages;
 pub mod centre_line;
 pub mod centre_mark;
+pub mod circle_shown;
 pub mod export_keep_text;
 /// The in-place field editor sets text in the field's own layout.
 pub mod field_carets;

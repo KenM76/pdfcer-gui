@@ -735,8 +735,9 @@ pub enum DimensionAction {
     SetGroupStyle {
         /// The group whose defaults change.
         group: GroupId,
-        /// The complete next tier, read-modify-written by the dialog.
-        style: GroupStyle,
+        /// The complete next tier, read-modify-written by the dialog; boxed,
+        /// being the largest payload any action carries.
+        style: Box<GroupStyle>,
     },
 
     /// **Show or hide a dimension group's layer.**
@@ -806,8 +807,9 @@ pub enum DimensionAction {
     SetStyle {
         /// The sidecar record to override.
         dimension: DimensionId,
-        /// The complete next tier for it, read-modify-written by the panel.
-        style: StyleOverrides,
+        /// The complete next tier for it, read-modify-written by the panel;
+        /// boxed, as [`Self::SetGroupStyle`]'s.
+        style: Box<StyleOverrides>,
     },
 
     /// **Switch a placed circular ce dimension between radius and diameter.**
@@ -845,6 +847,16 @@ pub enum DimensionAction {
         dimension: DimensionId,
         /// `true` ⇒ print the diameter; `false` ⇒ print the radius.
         show_diameter: bool,
+    },
+
+    /// **Draw or hide a radius or diameter ce dimension's circle.**
+    /// `EditSession::set_circular_circle_shown`; raised only on an actual
+    /// change, for the reason [`Self::SetDisplay`] gives.
+    SetCircleShown {
+        /// The circular ce dimension.
+        dimension: DimensionId,
+        /// `true` draws the circle.
+        shown: bool,
     },
 
     /// **Switch a closed perimeter ce dimension between its perimeter and its

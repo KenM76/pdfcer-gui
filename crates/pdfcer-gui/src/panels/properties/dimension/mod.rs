@@ -6,7 +6,7 @@
 use pdfcer_gui_base::dimensionoverrides as overrides;
 
 use egui::Ui;
-use pdfcer_core::dimension::{DimensionKind, DimensionRecord};
+use pdfcer_core::dimension::{DimensionId, DimensionKind, DimensionRecord};
 
 use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
@@ -21,6 +21,8 @@ pub const LABEL_REGION: &str = "properties.dimension.label"; // ui-text-exempt: 
 
 /// The region the radius/diameter choice publishes.
 pub const REGION_DISPLAY: &str = "properties.dimension.display"; // ui-text-exempt: trace region name, never displayed
+/// The *Draw the circle* checkbox.
+pub const REGION_CIRCLE: &str = "properties.dimension.circle"; // ui-text-exempt: trace region name, never displayed
 
 /// The Perimeter / Area radio pair of a closed perimeter ce dimension.
 pub const REGION_AREA: &str = "properties.dimension.area"; // ui-text-exempt: trace region name, never displayed
@@ -128,7 +130,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     ui.label(t::overrides_heading());
     ui.weak(t::overrides_hint());
     let mut next = record.style;
-    let valid = overrides::show(ui, group, &mut next);
+    let valid = overrides::show(ui, group, &record.kind, &mut next);
     // Raised only when the draft VALIDATES and differs. The validity gate is
     // the tolerance's: an inverted limit pair or a negative magnitude is
     // refused by the engine with a sentence, and pushing the action anyway
@@ -137,7 +139,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     if valid && next != record.style {
         actions.push(Action::Dimension(DimensionAction::SetStyle {
             dimension: record.id,
-            style: next,
+            style: Box::new(next),
         }));
     }
     ui.separator();
@@ -206,9 +208,15 @@ fn label_row(
 
 /// The radius / diameter choice, for a circular ce dimension only.
 fn display_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Action>) {
-    let DimensionKind::Circular { show_diameter, .. } = record.kind else {
+    let DimensionKind::Circular {
+        show_diameter,
+        show_circle,
+        ..
+    } = record.kind
+    else {
         return;
     };
+    circle_toggle(ui, record.id, show_circle, actions);
     let mut chosen = show_diameter;
     ui.horizontal(|ui| {
         ui.label(t::display_label());
@@ -229,6 +237,25 @@ fn display_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Actio
         actions.push(Action::Dimension(DimensionAction::SetDisplay {
             dimension: record.id,
             show_diameter: chosen,
+        }));
+    }
+}
+
+/// **Draw the circle**, for a radius or diameter ce dimension.
+fn circle_toggle(ui: &mut Ui, id: DimensionId, shown: bool, actions: &mut Vec<Action>) {
+    let mut chosen = shown;
+    let r = ui
+        .checkbox(&mut chosen, t::display_circle())
+        .on_hover_text(t::display_circle_hover());
+    crate::diag::ui_rect(REGION_CIRCLE, r.rect);
+    if chosen != shown {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("dimension-circle id={} shown={}", id.0, u8::from(chosen))
+        });
+        actions.push(Action::Dimension(DimensionAction::SetCircleShown {
+            dimension: id,
+            shown: chosen,
         }));
     }
 }

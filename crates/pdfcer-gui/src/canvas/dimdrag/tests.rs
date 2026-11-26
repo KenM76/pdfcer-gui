@@ -527,6 +527,7 @@ fn a_circular_label_drag_lands_where_it_is_dropped() {
     let kind = DimensionKind::Circular {
         fit,
         show_diameter: false,
+        show_circle: true,
         leader_angle: 0.0,
         text_distance: None,
         centre_mark: None,

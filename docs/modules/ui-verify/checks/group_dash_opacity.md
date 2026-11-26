@@ -10,7 +10,7 @@ folded Appearance section, ticks the line-style row's *Set by group* box,
 opens the chooser and picks Dashed; then ticks the opacity row's box, clicks
 the percentage, selects it, types `50` and presses Enter. Every press is a
 region the panel publishes (`dimension-groups.dash.set`, `.dash.combo`,
-`.dash.option.dashed`, `.opacity.set`, `.opacity`). The two rows sit below
+`.dash.option.hidden`, `.opacity.set`, `.opacity`). The two rows sit below
 the dock's fold once Appearance opens, so `dimdrive::press_in_pane` wheels
 inside `dock.right.frame` until each lies wholly within it before pressing;
 the panel's own `panel:dimension-groups` rect is its scrolled content and

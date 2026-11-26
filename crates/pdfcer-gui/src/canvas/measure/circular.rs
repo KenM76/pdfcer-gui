@@ -192,10 +192,13 @@ fn origin_tag(origin: PickOrigin) -> &'static str {
             SnapKind::Node => "node",
             SnapKind::Endpoint => "endpoint",
             SnapKind::Center => "center",
+            SnapKind::Quadrant => "quadrant",
+            SnapKind::Tangent => "tangent",
             SnapKind::Midpoint => "midpoint",
             SnapKind::Intersection => "intersection",
             SnapKind::SegmentCenterline => "on-segment",
             SnapKind::DerivedCenterline => "derived-centerline",
+            SnapKind::RimNearest => "rim",
             SnapKind::Axis => "axis",
         },
     }

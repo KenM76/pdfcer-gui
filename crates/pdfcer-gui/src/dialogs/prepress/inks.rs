@@ -5,7 +5,9 @@
 //! itself, as another ink (`alias_ink`), or as process (`spot_to_process`).
 //! Alias targets are every other listed ink plus the four process inks.
 //!
-//! Traces `ink-manager-listed epoch= inks= drawn= spots=` on every re-list,
+//! Says above the list when the engine reports it may be missing inks.
+//!
+//! Traces `ink-manager-listed epoch= inks= drawn= spots= complete=` on every re-list,
 //! ink names `|`-joined with spaces written `_`. `drawn` is the inks some
 //! page draws with: a converted spot stays in `inks`, because
 //! `spot_to_process` leaves the space's own array in place, and leaves
@@ -46,6 +48,8 @@ pub(super) struct InkForm {
     /// The edit epoch [`Self::inks`] was read at.
     listed_at: Option<u64>,
     inks: Vec<InkUse>,
+    /// False when the engine says [`Self::inks`] may be missing inks.
+    complete: bool,
     /// Spot ink name → its choice; absent means [`Choice::Keep`].
     choice: BTreeMap<String, Choice>,
 }
@@ -57,7 +61,9 @@ impl InkForm {
             return;
         }
         self.listed_at = Some(doc.edit_epoch);
-        self.inks = doc.session.inks();
+        let listed = doc.session.inks();
+        self.inks = listed.inks;
+        self.complete = listed.complete;
         let names: Vec<&str> = self.inks.iter().map(|i| i.name.as_str()).collect();
         self.choice.retain(|k, _| names.contains(&k.as_str()));
         let spots = self.inks.iter().filter(|i| i.kind == InkKind::Spot).count();
@@ -72,14 +78,17 @@ impl InkForm {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "ink-manager-listed epoch={} inks={all} drawn={drawn} spots={spots}",
-                doc.edit_epoch
+                "ink-manager-listed epoch={} inks={all} drawn={drawn} spots={spots} complete={}",
+                doc.edit_epoch, self.complete
             )
         });
     }
 
     /// The ink table.
     pub(super) fn options(&mut self, ui: &mut egui::Ui) {
+        if !self.complete {
+            ui.label(t::incomplete());
+        }
         if self.inks.is_empty() {
             ui.label(t::none());
             return;

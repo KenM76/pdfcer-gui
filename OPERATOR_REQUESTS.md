@@ -8355,6 +8355,8 @@ Said on 2026-11-24, about File ▸ Print ▸ preview with colour separations and
 
 Said on 2026-11-25. The ce dimension tools attach to a centre line (O453), a centre mark (O454) and the circle the radius/diameter tool draws, as their measured geometry. The circle's line style (colour, weight, line type such as centre, phantom, dashed, and its gap and dash lengths) is set on its own, apart from the ce dimension's. The CAD drawing package he uses is the reference for which line-style options centre lines, centre marks and these circles carry: centre-mark size, extended lines, the centre-line font, gap and overshoot past the outline.
 
+Progress (still OPEN): the engine half shipped, and the first cut is wired. A ce dimension's dash row offers the named drafting line types (continuous, hidden, phantom, chain, center, stitch) with a line-type scale. A radius or diameter ce dimension's circle has its own dash, weight and colour rows in Properties, and *Draw the circle* hides it, driven off-screen by `a_dimensions_circle_can_be_hidden`. A centre line's and a centre mark's own stroke, and a mark's gap, extension and line font, are set on one ce dimension. Not yet: the same rows on a group's style, setting a centre mark after the measurement is placed, dragging a centre line's ends, attaching another ce dimension's points to a centre line, mark or circle, and snapping to a circle's rim, quadrants and tangent.
+
 ## O462 — **BUILT, awaiting Ken** — scrolling one document's tab moves the page position on the other tabs
 
 *"When I switch between pdf tabs, my page position changes on the other tabs with my page position movements on the active tab."*

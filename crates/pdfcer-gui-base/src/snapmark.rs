@@ -154,6 +154,29 @@ pub fn snap_marker_shapes(at: Pos2, kind: SnapKind, color: Color32, size: f32) -
                 ),
             ]
         }
+        SnapKind::Quadrant => {
+            // ◇ diamond outline, the CAD quadrant marker.
+            let diamond = vec![
+                Pos2::new(at.x, at.y - s),
+                Pos2::new(at.x + s, at.y),
+                Pos2::new(at.x, at.y + s),
+                Pos2::new(at.x - s, at.y),
+            ];
+            vec![Shape::convex_polygon(diamond, Color32::TRANSPARENT, stroke)]
+        }
+        SnapKind::Tangent => {
+            // A circle with a line along its top, the CAD tangent marker.
+            vec![
+                Shape::circle_stroke(at, s * 0.7, stroke),
+                Shape::line_segment(
+                    [
+                        Pos2::new(at.x - s, at.y - s * 0.7),
+                        Pos2::new(at.x + s, at.y - s * 0.7),
+                    ],
+                    stroke,
+                ),
+            ]
+        }
         SnapKind::Midpoint => {
             // ▲ up-pointing triangle.
             let tri = vec![
@@ -203,6 +226,23 @@ pub fn snap_marker_shapes(at: Pos2, kind: SnapKind, color: Color32, size: f32) -
                     [Pos2::new(at.x - s, at.y), Pos2::new(at.x, at.y - s)],
                     stroke,
                 ),
+            ]
+        }
+        SnapKind::RimNearest => {
+            // ⧗ hourglass, the CAD nearest marker.
+            let top = vec![
+                Pos2::new(at.x - s, at.y - s),
+                Pos2::new(at.x + s, at.y - s),
+                at,
+            ];
+            let bottom = vec![
+                at,
+                Pos2::new(at.x + s, at.y + s),
+                Pos2::new(at.x - s, at.y + s),
+            ];
+            vec![
+                Shape::convex_polygon(top, Color32::TRANSPARENT, stroke),
+                Shape::convex_polygon(bottom, Color32::TRANSPARENT, stroke),
             ]
         }
         SnapKind::Axis => {
@@ -286,6 +326,7 @@ mod tests {
             source_object: None,
             source_annotation: None,
             source: pdfcer_core::vector::SnapSource::Page,
+            ce_dimension: None,
         };
         let list = [c(SnapKind::Node), c(SnapKind::Midpoint)];
         assert_eq!(

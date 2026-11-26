@@ -22,6 +22,12 @@ pub const fn none() -> &'static str {
     "No colour space in this document names an ink."
 }
 
+/// Shown under the list when the engine could not read every ink.
+#[must_use]
+pub const fn incomplete() -> &'static str {
+    "This list may be missing inks: a colour space names more inks than can be read, or sits too deep inside an object."
+}
+
 /// Column headings.
 #[must_use]
 pub const fn col_ink() -> &'static str {

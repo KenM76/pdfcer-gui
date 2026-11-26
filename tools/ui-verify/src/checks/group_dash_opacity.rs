@@ -1,5 +1,5 @@
 //! `a_groups_line_style_and_opacity_reach_its_members` — the dimension-groups
-//! panel sets the default group's line style to dashed and its opacity to
+//! panel sets the default group's line style to Hidden and its opacity to
 //! 50 %, and every member that follows the group must resolve to that dash
 //! and that opacity, taken from the group tier.
 //!
@@ -26,7 +26,7 @@ const DASH_SET: &str = "dimension-groups.dash.set";
 /// Mirrors `style::REGION_DASH` + `.combo`, as `linestyle::chooser_in` publishes it.
 const DASH_COMBO: &str = "dimension-groups.dash.combo";
 /// Mirrors `style::REGION_DASH` + `.option.` + `LineStyle::Dashed.token()`.
-const DASHED: &str = "dimension-groups.dash.option.dashed";
+const DASHED: &str = "dimension-groups.dash.option.hidden";
 /// Mirrors `style::REGION_OPACITY_SET`.
 const OPACITY_SET: &str = "dimension-groups.opacity.set";
 /// Mirrors `style::REGION_OPACITY`.
@@ -113,7 +113,14 @@ fn steps(
         Err(why) => return Ok(Some(why)),
     };
     report.note(format!("after dashed: `{}`", raws(&dashed)));
-    if let Some(why) = all_carry(&dashed, &[("dash", "group"), ("solid", "false")]) {
+    if let Some(why) = all_carry(
+        &dashed,
+        &[
+            ("dash", "group"),
+            ("solid", "false"),
+            ("line_type", "hidden"),
+        ],
+    ) {
         return Ok(Some(why));
     }
 

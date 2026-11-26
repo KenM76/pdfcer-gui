@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **24 of 647** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `wanted` — a real gap — **31 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -83,6 +83,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Preflight: image above ppi check and downsample fixup** | **wanted — O458.** Reached through the Preflight panel once a profile carries the rule; it has no surface of its own. |
 | **Fix what PDF/UA validation finds** | **wanted — O458.** The `pdfua` profile's fixup in the Preflight panel. |
+| **PDF/UA verdict: conforms / fails / unconfirmed** — `PdfuaReport::verdict`, `PdfuaVerdict` | **wanted — O458.** The Preflight panel's PDF/UA run states one word above its findings, `unconfirmed` never shown as a pass. |
+| **Preflight report as JSON** — `preflight::report_json` | **wanted — O458.** *Save report…* in the Preflight panel offers JSON beside text. |
+| **The document's own output intent is readable** — the module `pdfcer_core::prepress::output_intent`, `DocumentOutputIntent` | **wanted — O458.** <!--namesake:output_intent--> The hit is `ConversionReport::output_intent`, what a PDF/X conversion did to the intent, not the document's own. Document properties and the PDF/X conversion window can name the file's own condition and profile; `convert-pdfx` does not default to it at the pin. |
 | **Import pages keeping their separation sets** | **wanted.** <!--namesake:SeparationInfo--> The shell's page insert already goes through `EditSession::insert_pages_with_options`, so the remap happens. Owed: whether the outcome it discloses reaches the status line, plus a driven check. |
 
 ### Vector objects (Inkscape-style editing)
@@ -96,6 +99,10 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Add, change or remove a centre mark on a placed ce dimension** — `EditSession::set_centre_mark`, `centre_mark_host` (G330) | **wanted — O461.** A Properties row on a radius, diameter or centre mark ce dimension: *Centre mark* on/off, extension lines, angle, asked first through `centre_mark_host` so *Remove* greys where `can_clear` is false. |
+| **Move a centre line's two ends** — `move_dimension_vertex` on a centre line (G335) | **wanted — O461.** <!--namesake:move_dimension_vertex--> The call is the perimeter vertex drag; no grip reaches it on a centre line. The vertex drag already reaches `move_dimension_vertex` for a perimeter; a centre line's two end grips need the same handles, and Insert/Remove vertex withheld on it. |
+| **A ce dimension's point follows a centre line, centre mark or circle rim** — `set_dimension_anchor`, `add_dimension_anchored`, the module `pdfcer_core::dimension::anchor` (G332) | **wanted — O461, the request's first sentence.** Placing a linear ce dimension on a snapped centre line, mark or rim carries the snap's `CeDimensionTarget::anchor` into `add_dimension_anchored`; an anchored point shows its target in Properties with *Detach*. |
+| **Snap to the rim of a ce dimension's circle** — `SnapKind::RimNearest`/`Quadrant`/`Tangent` (G328) | **wanted — O461.** <!--namesake:RimNearest--> The hits are the status-line wording and glyph arms. The three kinds are worded on the status line and drawn as snap glyphs at the pin; not yet driven on a circle, and the tangent's previous pick (`SnapConfig::with_from`) is not passed. |
 
 ### Annotations & markup
 
@@ -144,7 +151,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 647** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `blocked` — waiting on something named — **2 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -162,7 +169,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 647** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -173,7 +180,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 647** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `declined` — deliberately no surface — **21 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -220,7 +227,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **600 of 647** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **603 of 657** <!-- counted by tools/walk-engine-backlog.py, 2026-11-25; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -429,6 +436,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Named drafting line types for ce dimensions** — the module `pdfcer_core::dimension::line_type`: `LineType`, `LineTypeRef`, `line_type_scale_in_range` (G331) | **shipped — O461.** `dimlinetype::line_type_editor` offers the six named types and a custom dash on a member's Properties and on a group's style; *Line-type scale* is a Properties row. Driven: `a_groups_line_style_and_opacity_reach_its_members` (Hidden). |
+| **A circular ce dimension's circle is its own part** — `set_circular_circle_shown`, the module `pdfcer_core::dimension::part_stroke` (G329) | **shipped — O461.** *Draw the circle* in a radius or diameter ce dimension's Properties (`DimensionAction::SetCircleShown`), and the circle's own dash, width and colour rows (`dimpartrows`). |
+| **A centre line and a centre mark have their own stroke, gap, extension and line font** — the module `pdfcer_core::dimension::centre_style`: `CentreStyle`, `DashFit` (G333, G334) | **shipped — O461, on a member.** `dimpartrows` draws the centre line's and centre mark's dash, width, colour, gap, extension and line font on a member's Properties. Owed: the same rows on a group's style (`GroupStyle::centre`). |
 | **Centre line between two lines** — `dimension::author_centre_line` in the module `pdfcer_core::dimension::centre`: `CentreLineAuthoring`, `CentreLineRefusal`, `DimensionKind::CentreLine`, `EditError::CentreGeometryDegenerate`, `EditError::CentreGeometryHasNoLabel` (G322) | **shipped** — Measure ▸ Centre line (`canvas::measure::lines`), two clicks on lines committing at once; driven by `a_centre_line_is_drawn_between_two_lines`. <!--namesake:CentreLine--> |
 | **Centre mark on a circle or arc (standalone or with a radius/diameter)** — `DimensionKind::CentreMark`, `CentreMarkSpec`, the `centre_mark` field on `DimensionKind::Circular`, `CentreMarkSize` and the style field `centre_mark_size` on `GroupStyle`, `StyleOverrides`, `StyleDefaults`, `StyleProvenance` and `DimensionStyle` (G323) | **shipped** — the radius/diameter tool's *Add measurement* and *Add centre mark* switches (`canvas::measure::circular::set_outputs`, read by `CircularPick::author`): both author a `Circular` carrying a `CentreMarkSpec`, the mark alone a `CentreMark` committed on the finishing gesture with no placing click. Driven by `a_circle_gets_a_centre_mark_with_or_without_its_measurement`. The mark size is edited in the group style panel and a ce dimension's overrides (`dimensionoverrides::centre_mark_size_editor`). <!--namesake:CentreMark--><!--namesake:GroupStyle--><!--namesake:StyleOverrides--><!--namesake:StyleDefaults--><!--namesake:StyleProvenance--><!--namesake:DimensionStyle--><!--namesake:CentreMarkSize--><!--namesake:centre_mark_size--> |
 | **Type a length in a ce-dimension group's scale** — `dimension::user_units_from_measurement_on` in the module `pdfcer_core::dimension::measurement_parse`, `LengthParseError::UnusableScale` (G325) | **shipped.** Properties ▸ geometry draws *Size at the scale of* the authoring group under W and H when that group has a scale: each row reads `format_measurement_on` and a typed length goes back through `user_units_from_measurement_on`; Apply commits it with the point fields. A refusal, `UnusableScale` included, shows the engine's own sentence under the row (`panels::properties::geometry::scaled`). Driven by `a_scaled_width_sets_the_drawn_size`. |
@@ -1044,6 +1054,18 @@ The request O280 is built on, answered and consumed.
 - **G270** — CONSUMED at v0.130.0: `ShadowLight::AimedSun(SunLight)`, *A sun you aim* under *Shadows cast by* (O392).
 - **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).
 - **G272** — CONSUMED at v0.130.0: `FrameLampShadows::for_model_after` with the previous choice and `FrameLights::use_lamp_shadows`; the cap `MAX_LAMP_SHADOWS` said when reached (O393).
+
+## Engine arrivals at v0.175.0 — not verdict rows
+
+O461's engine half (G327–G335) and three O458 rows.
+
+- **Modules**, each accounted for by the row naming it above: `pdfcer_core::dimension::anchor`, `pdfcer_core::dimension::centre_style`, `pdfcer_core::dimension::line_type`, `pdfcer_core::dimension::part_stroke`, `pdfcer_core::edit::dimension_anchor`, `pdfcer_core::edit::dimension_centre_mark`, `pdfcer_core::edit::dimension_circle`, `pdfcer_core::prepress::output_intent`, `pdfcer_core::preflight::report_json`. `pdfcer_core::edit::snapshot` (`EditSession::snapshot`) is **wanted** for a cheap pre-edit copy; nothing here needs one yet.
+- **Anchoring's outcomes and refusals** — `InsertOutcome::ce_dimension_anchors_detached`, `MergeOutcome::ce_dimension_anchors_detached`, `AssembleReport::ce_dimension_anchors_detached`, `CommandKind::SetDimensionAnchor`, `EditError::AnchorAcrossPages`, `EditError::AnchorConditionNeedsLinear`, `EditError::AnchorCycle`, `EditError::AnchorPointOutOfRange`, `EditError::AnchorRoleNotOnTarget`: **wanted** with the anchoring row; a detached count belongs on the insert's status line.
+- **Snap targets on a ce dimension** — `CeDimensionTarget` (`id`, `drawn`, `anchor`, `new`, `with_anchor`) and `SnapConfig::with_from`: **wanted** with the rim-snap and anchoring rows.
+- **Centre marks and circles** — `CommandKind::SetCentreMark`, `CommandKind::SetCircularCircleShown`, `EditError::CentreMarkRequired`, `EditError::NotACentreMarkHost`, `EditError::LineTypeScaleOutOfRange`, `DimensionStyle::line_stroke`: the refusals reach the status line verbatim through `vector_edit`; the rest are **wanted** with the centre-mark row.
+- **Inks** — `prepress::inks::ink_name_bytes` and `EditError::InkAliasRefused`: the ink rename window's refusal arrives verbatim; the raw-name reader is **wanted** for a name that is not text.
+- **PDF/UA verdict** — `PdfuaVerdict` (`PdfuaVerdict::Conforms`, `PdfuaVerdict::Fails`, `PdfuaVerdict::Unconfirmed`, `PdfuaVerdict::as_str`), `PdfuaReport::verdict`: **wanted** with its row.
+- **Renderer** — `pdfcer_render::gouraud::bands` and `pdfcer_render::shading::spot_ramp`: internal to drawing; nothing here to call.
 
 ## Engine arrivals at v0.173.0 — not verdict rows
 

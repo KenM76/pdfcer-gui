@@ -313,10 +313,13 @@ pub const fn measure_point_origin(origin: crate::measure::pick::PickOrigin) -> &
             SnapKind::Node => "Node",
             SnapKind::Endpoint => "Endpoint",
             SnapKind::Center => "Centre",
+            SnapKind::Quadrant => "Quadrant",
+            SnapKind::Tangent => "Tangent",
             SnapKind::Midpoint => "Midpoint",
             SnapKind::Intersection => "Intersection",
             SnapKind::SegmentCenterline => "On a line",
             SnapKind::DerivedCenterline => "Centreline",
+            SnapKind::RimNearest => "On a circle",
             SnapKind::Axis => "Axis",
         },
     }

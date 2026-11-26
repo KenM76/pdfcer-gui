@@ -58,6 +58,18 @@ pub const fn display_diameter() -> &'static str {
     "Diameter"
 }
 
+/// The radius or diameter ce dimension's circle on/off checkbox.
+#[must_use]
+pub const fn display_circle() -> &'static str {
+    "Draw the circle"
+}
+
+/// Hover text on [`display_circle`].
+#[must_use]
+pub const fn display_circle_hover() -> &'static str {
+    "Off, the measurement, leader and any centre mark stay; only the circle is left out."
+}
+
 /// What switching between them does, and does not, change.
 #[must_use]
 pub const fn display_hint() -> &'static str {
@@ -206,6 +218,60 @@ pub const fn prop_opacity() -> &'static str {
 #[must_use]
 pub const fn prop_centre_mark_size() -> &'static str {
     "Centre mark size"
+}
+
+/// The line-type scale row: how large every named line type is drawn.
+#[must_use]
+pub const fn prop_line_type_scale() -> &'static str {
+    "Line-type scale"
+}
+
+/// The heading over the radius or diameter circle's own stroke rows.
+#[must_use]
+pub const fn part_circle() -> &'static str {
+    "Circle"
+}
+
+/// The heading over a centre line's own stroke rows.
+#[must_use]
+pub const fn part_centre_line() -> &'static str {
+    "Centre line"
+}
+
+/// The heading over a centre mark's own stroke and extension rows.
+#[must_use]
+pub const fn part_centre_mark() -> &'static str {
+    "Centre mark"
+}
+
+/// Under a part's heading, while every row follows the dimension's lines.
+#[must_use]
+pub const fn part_follows() -> &'static str {
+    "Unset rows follow the dimension's own lines."
+}
+
+/// The centre mark's gap row.
+#[must_use]
+pub const fn prop_centre_mark_gap() -> &'static str {
+    "Gap"
+}
+
+/// The centre mark's extension row.
+#[must_use]
+pub const fn prop_centre_mark_extension() -> &'static str {
+    "Extension past the circle"
+}
+
+/// The centre mark's line-font row.
+#[must_use]
+pub const fn prop_centre_mark_line_font() -> &'static str {
+    "Extensions in the centre-line style"
+}
+
+/// The line-font row's checkbox.
+#[must_use]
+pub const fn centre_mark_line_font_on() -> &'static str {
+    "Dashed extensions"
 }
 
 /// A centre mark sized against the text height.
@@ -402,6 +468,28 @@ pub fn label_set(measured: &str) -> String {
 #[must_use]
 pub fn label_restored(printed: &str) -> String {
     format!("Back to the measurement: {printed}.")
+}
+
+/// A named drafting line type's name in the ce-dimension line-style chooser,
+/// in SolidWorks' words; `None` for a type this shell does not offer.
+#[must_use]
+pub const fn line_type_name(line_type: pdfcer_core::dimension::LineType) -> Option<&'static str> {
+    use pdfcer_core::dimension::LineType;
+    Some(match line_type {
+        LineType::Continuous => "Solid",
+        LineType::Hidden => "Hidden",
+        LineType::Phantom => "Phantom",
+        LineType::Chain => "Chain",
+        LineType::Center => "Center",
+        LineType::Stitch => "Stitch",
+        _ => return None,
+    })
+}
+
+/// The closed line-style chooser for runs that are not a named type.
+#[must_use]
+pub const fn line_type_custom() -> &'static str {
+    "Custom pattern"
 }
 
 #[cfg(test)]

@@ -1,12 +1,13 @@
-//! # `dimensionoverrides` — fourteen properties, fourteen
-//! checkboxes, and the tier each value came from
+//! # `dimensionoverrides` — one checkbox per cascade property, and the tier
+//! each value came from; the circle and centre parts' rows are
+//! `dimpartrows`'
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/dimensionoverrides.md`.
 
 use egui::Ui;
 use pdfcer_core::dimension::{
-    ArrowForm, CentreMarkSize, DecimalMarker, DimDash, DimStandard, FractionMode, Group,
-    StyleOverrides, StyleProvenance, StyleSource, Unit, resolve_style,
+    ArrowForm, CentreMarkSize, DecimalMarker, DimStandard, DimensionKind, FractionMode, Group,
+    LineTypeRef, StyleOverrides, StyleProvenance, StyleSource, Unit, resolve_style,
 };
 
 use crate::text::panels::dimension as t;
@@ -28,7 +29,7 @@ const POINT_SPEED: f64 = 0.05;
 /// cannot be un-representable at the other.
 const TEXT_HEIGHT_RANGE: std::ops::RangeInclusive<f64> = 1.0..=48.0;
 /// See [`TEXT_HEIGHT_RANGE`].
-const LINE_WIDTH_RANGE: std::ops::RangeInclusive<f64> = 0.05..=6.0;
+pub(crate) const LINE_WIDTH_RANGE: std::ops::RangeInclusive<f64> = 0.05..=6.0;
 /// See [`TEXT_HEIGHT_RANGE`].
 const ARROW_LENGTH_RANGE: std::ops::RangeInclusive<f64> = 1.0..=30.0;
 /// The decimal-places range, matching the engine's own `/D = 10^places`.
@@ -40,8 +41,14 @@ const MARK_POINTS_RANGE: std::ops::RangeInclusive<f64> = 1.0..=72.0;
 /// The fraction denominators a drawing actually uses.
 const DENOMINATORS: [u32; 6] = [2, 4, 8, 16, 32, 64];
 
-/// Draw all fourteen rows against `overrides`, mutating it in place.
-pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool {
+/// Draw every row that applies to a `kind` ce dimension against `overrides`,
+/// mutating it in place.
+pub fn show(
+    ui: &mut Ui,
+    group: &Group,
+    kind: &DimensionKind,
+    overrides: &mut StyleOverrides,
+) -> bool {
     crate::diag::ui_rect(REGION, ui.max_rect());
     let provenance = pdfcer_core::dimension::style_provenance(group, overrides);
     let resolved = resolve_style(group, overrides);
@@ -183,7 +190,13 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         crate::colourpick::edit_color(ui, "dimension-override-colour", value, REGION_COLOUR);
     });
 
-    stroke_rows(ui, &provenance, overrides, resolved.dash, resolved.opacity);
+    stroke_rows(
+        ui,
+        &provenance,
+        overrides,
+        resolved.line_type,
+        resolved.opacity,
+    );
     let text_height = resolved.text_height;
     row(
         ui,
@@ -234,6 +247,7 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         ui.weak(t::tolerance_places_follows());
     }
 
+    crate::dimpartrows::show(ui, &provenance, &resolved, kind, overrides);
     valid
 }
 
@@ -245,7 +259,7 @@ fn stroke_rows(
     ui: &mut Ui,
     provenance: &StyleProvenance,
     overrides: &mut StyleOverrides,
-    dash: DimDash,
+    dash: LineTypeRef,
     opacity: f64,
 ) {
     row(
@@ -256,7 +270,7 @@ fn stroke_rows(
         || dash,
     )
     .edit(ui, |ui, value| {
-        dash_editor(ui, "dimension-override-dash", None, value)
+        crate::dimlinetype::line_type_editor(ui, "dimension-override-dash", None, value)
     });
     row(
         ui,
@@ -268,24 +282,6 @@ fn stroke_rows(
     .edit(ui, |ui, value| {
         opacity_editor(ui, value);
     });
-}
-
-/// A ce dimension's dash chooser, offering `linestyle::LineStyle::ALL`; a
-/// pattern from elsewhere reads as the chooser's foreign entry. `region`, when
-/// given, is published as by `linestyle::chooser_in`.
-pub fn dash_editor(ui: &mut Ui, id_salt: &str, region: Option<&str>, value: &mut DimDash) {
-    let reading = if value.is_solid() {
-        crate::linestyle::DashReading::Solid
-    } else {
-        crate::linestyle::LineStyle::of_pattern(value.pattern()).map_or(
-            crate::linestyle::DashReading::Foreign,
-            crate::linestyle::DashReading::Offered,
-        )
-    };
-    let picked = crate::linestyle::chooser_in(ui, id_salt, region, reading, 120.0);
-    if let Some(next) = picked.and_then(|s| DimDash::new(s.pattern().unwrap_or(&[]))) {
-        *value = next;
-    }
 }
 
 /// A ce dimension's opacity as a whole percentage; `value` is `0.0..=1.0`.
@@ -360,7 +356,7 @@ pub fn centre_mark_size_editor(
 }
 
 /// One row's checkbox and disclosure, with the editor still to be drawn.
-struct Row<'a, T> {
+pub(crate) struct Row<'a, T> {
     /// The slot the checkbox governs, `Some` once it is ticked.
     slot: &'a mut Option<T>,
     /// The checkbox, for [`Row::published`].
@@ -369,13 +365,13 @@ struct Row<'a, T> {
 
 impl<T: Copy> Row<'_, T> {
     /// Publish the row's *Set here* checkbox as `region`.
-    fn published(self, ui: &Ui, region: &str) -> Self {
+    pub(crate) fn published(self, ui: &Ui, region: &str) -> Self {
         crate::diag::ui_rect_visible(region, self.set, ui.clip_rect());
         self
     }
 
     /// Draw the editor, if this row is overridden.
-    fn edit(self, ui: &mut Ui, editor: impl FnOnce(&mut Ui, &mut T)) {
+    pub(crate) fn edit(self, ui: &mut Ui, editor: impl FnOnce(&mut Ui, &mut T)) {
         if let Some(value) = self.slot.as_mut() {
             ui.indent("dimension-override-editor", |ui| editor(ui, value));
         }
@@ -383,7 +379,7 @@ impl<T: Copy> Row<'_, T> {
 }
 
 /// Draw one row's label, checkbox and provenance sentence.
-fn row<'a, T: Copy>(
+pub(crate) fn row<'a, T: Copy>(
     ui: &mut Ui,
     label: &str,
     source: StyleSource,
@@ -491,7 +487,11 @@ pub fn fraction_editor_in(ui: &mut Ui, value: &mut FractionMode, prefix: &str) {
 }
 
 /// A point-valued box: shows `pt`, reads a typed unit or arithmetic.
-fn point_box(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::Response {
+pub(crate) fn point_box(
+    ui: &mut Ui,
+    value: &mut f64,
+    range: std::ops::RangeInclusive<f64>,
+) -> egui::Response {
     let (widget, refusal) = crate::entry::drag_value(
         ui,
         value,
@@ -509,7 +509,7 @@ fn places_box(ui: &mut Ui, value: &mut u32) {
 /// Every property this panel draws, paired with the provenance field that
 /// discloses it.
 #[cfg(test)]
-const DRAWN: [&str; 14] = [
+const DRAWN: [&str; 27] = [
     "unit",
     "fraction",
     "decimal-marker",
@@ -524,6 +524,19 @@ const DRAWN: [&str; 14] = [
     "dash",
     "opacity",
     "centre-mark-size",
+    "circle-dash",
+    "circle-width",
+    "circle-color",
+    "centre-line-dash",
+    "centre-line-width",
+    "centre-line-color",
+    "centre-mark-dash",
+    "centre-mark-width",
+    "centre-mark-color",
+    "centre-mark-gap",
+    "centre-mark-extension",
+    "centre-mark-line-font",
+    "line-type-scale",
 ];
 
 #[cfg(test)]

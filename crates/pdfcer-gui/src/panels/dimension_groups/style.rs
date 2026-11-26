@@ -58,7 +58,7 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
     if next != group.style {
         actions.push(Action::Dimension(DimensionAction::SetGroupStyle {
             group: group.id,
-            style: next,
+            style: Box::new(next),
         }));
     }
 }
@@ -164,7 +164,7 @@ fn stroke_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
         (StyleDefaults::FACTORY.dash, Some(REGION_DASH_SET)),
         rows.reach(|p| p.dash),
         |ui, value| {
-            pdfcer_gui_base::dimensionoverrides::dash_editor(
+            pdfcer_gui_base::dimlinetype::line_type_editor(
                 ui,
                 "dimension-group-dash",
                 Some(REGION_DASH),
@@ -172,7 +172,7 @@ fn stroke_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
             );
         },
         |d| {
-            if d.is_solid() {
+            if d.line_type() == Some(pdfcer_core::dimension::LineType::Continuous) {
                 t::dash_factory_value().to_owned()
             } else {
                 String::new()

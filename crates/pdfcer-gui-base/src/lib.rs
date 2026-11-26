@@ -529,6 +529,11 @@ pub mod mkcolour;
 /// A ce dimension's text and tolerance overrides.
 pub mod dimensionoverrides;
 
+/// A ce dimension's named line-type chooser.
+pub mod dimlinetype;
+/// A ce dimension's circle and centre-part style rows.
+pub mod dimpartrows;
+
 /// Which markup annotation the markup tool draws.
 pub mod markupkind;
 

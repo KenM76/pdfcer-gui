@@ -1,5 +1,5 @@
-# `dimensionoverrides` — fourteen properties, fourteen
-checkboxes, and the tier each value came from
+# `dimensionoverrides` — one checkbox per cascade property, and the tier
+each value came from
 
 ## What this is
 
@@ -98,10 +98,10 @@ operator's first drag starts from where they were.
 ### `const DRAWN`
 
 Exists **only** for the test below, and that is worth the lines. The
-engine's `StyleProvenance::each()` returns a fixed-size `[_; 13]` precisely
+engine's `StyleProvenance::each()` returns a fixed-size array precisely
 so a consumer gets a compile error rather than a short list when a
-fourteenth property lands — but this module does not call `each()`, it reads the fields
-by name, so it would silently keep drawing fourteen rows for ever.
+property lands — but this module does not call `each()`, it reads the fields
+by name, so it would silently keep drawing the old rows for ever.
 
 This closes that: the test compares this list against `each()`'s names.
 
@@ -111,8 +111,8 @@ The gap this closes is specific and would otherwise be silent. The
 engine's `StyleProvenance::each()` is a fixed-size array so that a
 consumer iterating it fails to compile when a property is added — and
 this module reads the provenance **fields by name** rather than
-iterating, which is the right shape for a panel that draws fourteen
-different editors and the wrong shape for noticing a fourteenth.
+iterating, which is the right shape for a panel that draws a
+different editor per property and the wrong shape for noticing a new one.
 
 So the array is compared against `each()`'s names here, and adding a
 property to `pdfcer-core` without a row in this file fails this test with
@@ -166,3 +166,22 @@ default, half) or a fixed number of points. One chooser picks the form and one
 box edits the number. Changing the form keeps the arm the same length at the
 current text height, so the mark on the page does not jump. The group style
 panel uses the same editor.
+
+## The part rows live in `dimpartrows`
+
+The circle, centre-line and centre-mark strokes (`StyleOverrides::circle`,
+`StyleOverrides::centre`) and the line-type scale are drawn by
+`dimpartrows::show`, called last from `show`. A part's rows appear only on a
+kind that draws the part (`dimpartrows::Parts::of`): the circle on a
+`Circular`, the centre line on a `CentreLine`, the centre mark on a
+`CentreMark` or a `Circular` carrying one. The line-type scale shows on every
+kind, because every named line type is drawn at it.
+
+An unset part row resolves through the engine, never through this panel:
+its width and colour seeds are `DimensionStyle::circle_stroke`,
+`centre_line_stroke` and `centre_mark_stroke`, so ticking *Set here* starts
+from what the page already draws. A centre line's unset dash seeds as the
+`Center` line type and a centre mark's as `Continuous`, the types the engine
+draws them in.
+
+`DRAWN` lists the part properties too, so the completeness test covers them.
