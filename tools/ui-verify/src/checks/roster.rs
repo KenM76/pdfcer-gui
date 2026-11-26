@@ -285,6 +285,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(group_unit_converts::ChangingAGroupsUnitKeepsItsRealLengths),
         Box::new(scaled_size::AScaledWidthSetsTheDrawnSize),
         Box::new(group_dash_opacity::AGroupsLineStyleAndOpacityReachItsMembers),
+        Box::new(group_circle_dash::AGroupsCircleLineTypeReachesItsMembers),
         Box::new(scale_user_unit::ACalibrationOnAUserUnitPageReadsTheStatedLength),
         Box::new(group_fraction_reduces::AGroupsFractionsReduceToLowestTerms),
         Box::new(group_numbers_at_creation::ANewGroupsNumbersAreSetWhenItIsMade),

@@ -519,7 +519,8 @@ fn trace_members_shown(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
 }
 
 /// One `dimension-member-style` line per member of `group`: the resolved
-/// dash and opacity each will draw with, and the tier each came from.
+/// dash, opacity and circle dash each will draw with, and the tier each
+/// came from.
 fn trace_members_style(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
     if !crate::diag::enabled() {
         return;
@@ -534,14 +535,22 @@ fn trace_members_style(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "dimension-member-style group={} dim={} dash={} solid={} line_type={} opacity={} opacity_from={}",
+                "dimension-member-style group={} dim={} dash={} solid={} line_type={} opacity={} opacity_from={} circle_dash={} circle_line_type={} circle_solid={}",
                 group.0,
                 member.id.0,
                 from.dash.token(),
                 drawn.dash.is_solid(),
                 drawn.line_type.line_type().map_or("custom", |l| l.token()),
                 drawn.opacity,
-                from.opacity.token()
+                from.opacity.token(),
+                from.circle_dash.token(),
+                drawn
+                    .circle
+                    .dash
+                    .unwrap_or(drawn.line_type)
+                    .line_type()
+                    .map_or("custom", |l| l.token()),
+                drawn.circle_stroke().dash.is_solid()
             )
         });
     }

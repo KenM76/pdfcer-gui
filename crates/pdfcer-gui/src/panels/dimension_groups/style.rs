@@ -34,7 +34,7 @@ const POINT_SPEED: f64 = 0.05;
 /// The legal range for a text height, in points.
 const TEXT_HEIGHT_RANGE: std::ops::RangeInclusive<f64> = 1.0..=48.0;
 /// The legal range for a stroke width, in points. Hairline to heavy.
-const LINE_WIDTH_RANGE: std::ops::RangeInclusive<f64> = 0.05..=6.0;
+pub(super) const LINE_WIDTH_RANGE: std::ops::RangeInclusive<f64> = 0.05..=6.0;
 /// The legal range for an arrowhead length, in points.
 const ARROW_LENGTH_RANGE: std::ops::RangeInclusive<f64> = 1.0..=30.0;
 
@@ -54,6 +54,7 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
     size_rows(ui, &rows, &mut next);
     shape_rows(ui, &rows, &mut next);
     stroke_rows(ui, &rows, &mut next);
+    super::parts::show(ui, &rows, &mut next);
 
     if next != group.style {
         actions.push(Action::Dimension(DimensionAction::SetGroupStyle {
@@ -64,7 +65,7 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
 }
 
 /// What every row reads: the model, the group, and its member count.
-struct Rows<'a> {
+pub(super) struct Rows<'a> {
     model: &'a DimensionModel,
     group: &'a Group,
     total: usize,
@@ -72,7 +73,7 @@ struct Rows<'a> {
 
 impl Rows<'_> {
     /// The row's `(moving, total)` pair for the property `pick` names.
-    fn reach(&self, pick: impl Fn(&StyleProvenance) -> StyleSource) -> (usize, usize) {
+    pub(super) fn reach(&self, pick: impl Fn(&StyleProvenance) -> StyleSource) -> (usize, usize) {
         (will_move(self.model, self.group, pick), self.total)
     }
 }
@@ -217,7 +218,7 @@ fn stroke_rows(ui: &mut Ui, rows: &Rows<'_>, next: &mut GroupStyle) {
 ///
 /// `seed` is the factory value a tick starts from, and the region the
 /// checkbox publishes, if any.
-fn property_row<T: Copy + PartialEq>(
+pub(super) fn property_row<T: Copy + PartialEq>(
     ui: &mut Ui,
     label: &str,
     slot: &mut Option<T>,
@@ -268,7 +269,11 @@ fn will_move(
 }
 
 /// A point-valued box: shows `pt`, reads a typed unit or arithmetic.
-fn point_box(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::Response {
+pub(super) fn point_box(
+    ui: &mut Ui,
+    value: &mut f64,
+    range: std::ops::RangeInclusive<f64>,
+) -> egui::Response {
     let (widget, refusal) = pdfcer_gui_base::entry::drag_value(
         ui,
         value,

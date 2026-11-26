@@ -7,6 +7,7 @@
 mod identity;
 /// A new group set up like an existing one.
 pub mod like;
+mod parts;
 mod style;
 
 use egui::Ui;

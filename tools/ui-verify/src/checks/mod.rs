@@ -244,6 +244,7 @@ pub mod form_part_copy;
 pub mod form_part_delete;
 pub mod form_style;
 pub mod form_text_reshape;
+pub mod group_circle_dash;
 pub mod group_dash_opacity;
 pub mod group_drag;
 pub mod group_fraction_reduces;
