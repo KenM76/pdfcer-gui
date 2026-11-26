@@ -78,11 +78,11 @@ pub fn patched(areas: usize) -> String {
 #[must_use]
 pub fn profiles_unused(pages: usize, reasons: &crate::printspooler::ProfileReasons) -> String {
     let head = if pages == 1 {
-        "On 1 page a colour profile could not be used, so its colours printed          from the fallback colours the document names."
+        "On 1 page a colour profile could not be used, so its colours printed from the fallback colours the document names."
             .to_owned()
     } else {
         format!(
-            "On {pages} pages a colour profile could not be used, so their colours              printed from the fallback colours the document names."
+            "On {pages} pages a colour profile could not be used, so their colours printed from the fallback colours the document names."
         )
     };
     let named: Vec<String> = [
