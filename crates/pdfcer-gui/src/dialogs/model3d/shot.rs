@@ -7,9 +7,9 @@
 //! sides follow it. The scale stops at 8× or at the renderer's pixel
 //! ceiling (`pdfcer_3d::MAX_RENDER_PIXELS`), whichever comes first, and the
 //! ceiling is said when it is the one that stops it. The resolution is only
-//! the PNG's `pHYs` record; it changes no pixel. A 360° picture replaces the
-//! size and resolution with a choice of 2:1 sizes, and is a JPEG on an opaque
-//! background (see `sphere`).
+//! the PNG's `pHYs` record; it changes no pixel. A panorama replaces the size
+//! and resolution with its angles, a longer side and its layout, and is a
+//! JPEG on an opaque background (see `panorama`).
 
 use std::sync::mpsc::{Receiver, TryRecvError};
 
@@ -17,7 +17,8 @@ use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{MAX_LAMP_SHADOW_MAP_SIZE, MAX_RENDER_PIXELS, MAX_SHADOW_MAP_SIZE};
 
-use super::{Drawn, ModelView, sphere};
+use super::panorama::{self, Band, Pano};
+use super::{Drawn, ModelView};
 use crate::text::model3dshot as s;
 
 /// The width entry.
@@ -32,10 +33,20 @@ pub const REGION_SHOT_DPI: &str = "model3d.shot.dpi"; // ui-text-exempt: trace r
 pub const REGION_SHOT_BACKGROUND: &str = "model3d.shot.background"; // ui-text-exempt: trace region name, never displayed
 /// The shadow detail drop-down; its items add `.screen`, `.fine`, `.finest`.
 pub const REGION_SHOT_DETAIL: &str = "model3d.shot.detail"; // ui-text-exempt: trace region name, never displayed
-/// The 360° picture switch.
+/// The panorama switch.
 pub const REGION_SHOT_SPHERE: &str = "model3d.shot.sphere"; // ui-text-exempt: trace region name, never displayed
-/// The 360° size drop-down; its items add `.small`, `.medium`, `.large`.
+/// The panorama's longer side drop-down; its items add `.small`, `.medium`, `.large`.
 pub const REGION_SHOT_SPHERE_SIZE: &str = "model3d.shot.sphere_size"; // ui-text-exempt: trace region name, never displayed
+/// The panorama's angle across.
+pub const REGION_SHOT_PANO_ACROSS: &str = "model3d.shot.pano_across"; // ui-text-exempt: trace region name, never displayed
+/// The panorama's angle up and down.
+pub const REGION_SHOT_PANO_UP_DOWN: &str = "model3d.shot.pano_up_down"; // ui-text-exempt: trace region name, never displayed
+/// The switch taking the angle up and down from the view.
+pub const REGION_SHOT_PANO_FROM_VIEW: &str = "model3d.shot.pano_from_view"; // ui-text-exempt: trace region name, never displayed
+/// The switch tilting the band with the view.
+pub const REGION_SHOT_PANO_TILT: &str = "model3d.shot.pano_tilt"; // ui-text-exempt: trace region name, never displayed
+/// The switch laying the band out cylindrically.
+pub const REGION_SHOT_PANO_CYLINDRICAL: &str = "model3d.shot.pano_cylindrical"; // ui-text-exempt: trace region name, never displayed
 /// The switch that widens lines with the picture.
 pub const REGION_SHOT_LINES: &str = "model3d.shot.lines"; // ui-text-exempt: trace region name, never displayed
 
@@ -50,7 +61,7 @@ const DPI: std::ops::RangeInclusive<u32> = 72..=2400;
 
 /// The [`BACKDROPS`] entry a JPEG cannot hold.
 const CLEAR: usize = 2;
-/// The 360° sizes' region words, smallest first.
+/// The longer sides' region words, smallest first.
 const SPHERE_WORDS: [&str; 3] = ["small", "medium", "large"]; // ui-text-exempt: trace region names, never displayed
 
 /// What is behind the model: the trace words are `white`, `screen`, `clear`.
@@ -79,12 +90,17 @@ pub(super) struct Shot {
     drawing: Option<(Receiver<Result<Drawn, String>>, String)>,
     /// The picture's own look, else the screen's.
     pub(super) own: Option<super::shotlook::LookSet>,
-    /// *Save picture…* draws the whole sphere round the eye.
+    /// *Save picture…* draws a panorama round the eye.
     pub(super) sphere: bool,
-    /// An index into [`sphere::SIZES`].
+    /// An index into [`panorama::LONG_SIDES`].
     pub(super) sphere_size: usize,
-    /// The picture being drawn, or the last, is a 360° one.
-    drawn_sphere: bool,
+    /// The panorama's angles and layout.
+    pub(super) pano: Pano,
+    /// The band the view turns into, or why it does not; refreshed each
+    /// frame the tab is shown and when a picture starts.
+    pub(super) band: Option<Result<Band, String>>,
+    /// The band of the picture being drawn, or the last, when a panorama.
+    drawn_band: Option<Band>,
 }
 
 impl Default for Shot {
@@ -101,7 +117,9 @@ impl Default for Shot {
             own: None,
             sphere: false,
             sphere_size: 1,
-            drawn_sphere: false,
+            pano: Pano::default(),
+            band: None,
+            drawn_band: None,
         }
     }
 }
@@ -127,12 +145,26 @@ impl Shot {
     /// The picture's size, pixels.
     pub(super) fn size(&self) -> [u32; 2] {
         if self.sphere {
-            return sphere::SIZES[self.sphere_size.min(sphere::SIZES.len() - 1)];
+            let long = panorama::LONG_SIDES[self.sphere_size.min(panorama::LONG_SIDES.len() - 1)];
+            return self.band_shown().size(long);
         }
         self.size_at(self.scale.clamp(self.least(), self.most()))
     }
 
-    /// The background the picture is drawn on: a 360° picture has no clear
+    /// The band the panorama draws: the view's, else the angles as set.
+    fn band_shown(&self) -> Band {
+        match &self.band {
+            Some(Ok(band)) => *band,
+            _ => Band {
+                across: self.pano.across,
+                up_down: self.pano.up_down,
+                pitch: 0.0,
+                cylindrical: self.pano.cylindrical,
+            },
+        }
+    }
+
+    /// The background the picture is drawn on: a panorama has no clear
     /// one, and draws on white while the setting stays as chosen.
     fn backdrop_drawn(&self) -> usize {
         if self.sphere && self.backdrop == CLEAR {
@@ -142,10 +174,11 @@ impl Shot {
         }
     }
 
-    /// `drawn`'s file bytes, and whether they are a 360° picture's.
+    /// `drawn`'s file bytes, and whether they are a panorama's.
     pub(super) fn encoded(&self, drawn: &Drawn) -> Result<(Vec<u8>, bool), String> {
-        if self.drawn_sphere {
-            Ok((super::picture::sphere_jpeg(drawn)?, true))
+        if let Some(band) = self.drawn_band {
+            let tag = band.tag(drawn.width, drawn.height);
+            Ok((super::picture::panorama_jpeg(drawn, tag.as_deref())?, true))
         } else {
             Ok((super::picture::png(drawn, self.png_dpi())?, false))
         }
@@ -188,8 +221,9 @@ impl Shot {
         self.dpi as f32
     }
 
-    /// ` base=WxH scale=s w= h= dpi= background= detail= lines= sphere=`, for the
-    /// trace a driven check reads.
+    /// ` base=WxH scale=s w= h= dpi= background= detail= lines= sphere=` and,
+    /// for a panorama, ` pano=HxV from-view= tilt= mapping=`, for the trace a
+    /// driven check reads.
     fn trace(&self) -> String {
         let [bw, bh] = self.base;
         let [w, h] = self.size();
@@ -202,6 +236,27 @@ impl Shot {
             DETAILS[self.detail].0,
             u8::from(self.wide_lines),
             u8::from(self.sphere)
+        ) + &self.pano_trace()
+    }
+
+    /// The panorama's part of [`Shot::trace`]; empty when off.
+    fn pano_trace(&self) -> String {
+        if !self.sphere {
+            return String::new();
+        }
+        let p = self.pano;
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed
+            " pano={:.1}x{:.1} from-view={} tilt={} mapping={}",
+            p.across,
+            p.up_down,
+            u8::from(p.from_view),
+            if p.tilted { "view" } else { "level" }, // ui-text-exempt: trace value, never displayed
+            if p.cylindrical {
+                "cylindrical"
+            } else {
+                "equirectangular"
+            }  // ui-text-exempt: trace value, never displayed
         )
     }
 }
@@ -225,8 +280,11 @@ impl ModelView {
         }
     }
 
-    /// The 360° switch, and the sizes when it is on.
+    /// The panorama switch, and its settings when it is on.
     fn shot_sphere(&mut self, ui: &mut Ui) {
+        if self.shot.sphere {
+            self.shot.band = Some(self.panorama_camera().map(|(_, band)| band));
+        }
         let shot = &mut self.shot;
         let switch = ui
             .checkbox(&mut shot.sphere, s::SPHERE)
@@ -245,7 +303,18 @@ impl ModelView {
                     None,
                 );
             });
+            super::shotpano::controls(ui, shot);
         }
+    }
+
+    /// This view turned into the panorama the tab sets, with its band.
+    pub(super) fn panorama_camera(&self) -> Result<(pdfcer_3d::Camera, Band), String> {
+        let [w, h] = self.shot.base.map(|b| f64::from(b.max(1)));
+        let view = self.view_camera(w / h).map_err(|e| e.to_string())?;
+        self.shot
+            .pano
+            .camera(view, self.upright.up.vector(), self.upright.front.vector())
+            .map_err(|e| e.to_string())
     }
 
     /// The width and height entries, the slider, and the ceiling when met.
@@ -358,8 +427,17 @@ impl ModelView {
     /// Start drawing *Save picture…*'s picture of this view on its own
     /// thread, from a copy of the model as it is shown.
     pub(super) fn start_shot(&mut self) -> Result<(), String> {
-        let [w, h] = self.shot.size();
-        let aspect = f64::from(w) / f64::from(h);
+        let camera = if self.shot.sphere {
+            let (camera, band) = self.panorama_camera()?;
+            self.shot.band = Some(Ok(band));
+            self.shot.drawn_band = Some(band);
+            camera
+        } else {
+            self.shot.drawn_band = None;
+            let [w, h] = self.shot.size();
+            self.view_camera(f64::from(w) / f64::from(h))
+                .map_err(|e| e.to_string())?
+        };
         let look = self.in_shot_look(|view| view.look());
         let mut options = ModelRenderOptions {
             threads: 0,
@@ -367,13 +445,6 @@ impl ModelView {
         };
         let exposure = look.exposure;
         self.shot.apply(&mut options);
-        let mut camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
-        self.shot.drawn_sphere = self.shot.sphere;
-        if self.shot.sphere {
-            camera = camera
-                .levelled_panorama(self.upright.up.vector(), self.upright.front.vector())
-                .ok_or_else(|| s::SPHERE_NO_HEADING.to_owned())?;
-        }
         let model = self
             .parts
             .painted(&mut self.model.drawn, None, Clone::clone);

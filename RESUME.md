@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**Unreleased on `main`:** nothing past `v0.5.0-dev.20261126.1`. Engine main is 14 commits past the pin (v0.177.0 and v0.178.0 tagged).
+**Unreleased on `main`:** past `v0.5.0-dev.20261126.1`: the engine at v0.180.0; O465, a 600 dpi copier scan shows its pictures (G336); the print receipt says why a profile was refused; O466, the 3D viewer's *Panorama* (G338), driven by `the_3d_viewer_saves_a_partial_panorama_tilted_with_the_view`. Next: release. E070 and E071 wait on an engine tag.
 
 **`v0.5.0-dev.20261126.1`** is engine v0.176.0 (1eee0ea4), shell ac51d2b1: O461, a ce dimension placed on a centre line's midpoint or end stays attached and follows it (G332), and a centre line's ends drag (G335). Published in OneDrive slot `pdfcer-gui1`; `pdfcer-gui2` holds `.20261125.3`. Gates 87/87, 0 skipped; `cargo test --workspace` 5,767 passed. Release sweep `--affected=v0.5.0-dev.20261125.3` off-screen: 619 of 780 selected, 478 pass, 0 fail, 141 skip. `a_compacted_copy_can_cut_fonts_down` skips alone and on `.20261125.3` as the control (`compact.fonts` never declared), so it is not this release's, and is not yet diagnosed. The three centre-line checks PASS against the unzipped package, no panic. Zip `pdfcergui-20261126-0701-1eee0ea-ac51d2b1.zip` 54,777,328 bytes, APK 47,733,380 bytes, both equal on GitHub, APK also in `pdfTests` (D: and OneDrive); `prerelease=false`.
 

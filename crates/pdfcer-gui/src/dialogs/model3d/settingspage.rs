@@ -252,6 +252,11 @@ fn shot_rows() -> Vec<Row> {
         flag("wide_lines", s::wide_lines()),
         flag("sphere", s::SPHERE),
         pick("sphere_size", s::SPHERE_SIZE, (0..3).map(s::sphere_size)),
+        number("pano_across", s::PANO_ACROSS, super::panorama::ACROSS, 0),
+        number("pano_up_down", s::PANO_UP_DOWN, super::panorama::UP_DOWN, 0),
+        flag("pano_from_view", s::PANO_FROM_VIEW),
+        flag("pano_tilted", s::PANO_TILT),
+        flag("pano_cylindrical", s::PANO_CYLINDRICAL),
         flag("own_look", s::own_look()),
     ];
     for row in &mut rows {

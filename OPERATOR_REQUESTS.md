@@ -8391,7 +8391,7 @@ Cause, measured: the file is eight 600 dpi colour scans of legal sheets, each on
 
 Built on engine pin `11f64401`, past v0.178.0: G336 raised the ceiling to 2^27 pixels (Pass 780.1 is to remove a fixed ceiling altogether), and the scan renders. `a_600_dpi_copier_scan_shows_its_picture` opens a page-sized 5100 × 8400 JPEG and requires its blue block drawn blue: PASS, 64,460 of 64,460 pixels; on `.20261125.3` it FAILs at 0 of 64,460. The operator's page 1 renders through the engine CLI at the same pin. Still owed by the engine, G337: a zoom while such a page is decoding freezes the window for the whole decode (a cancel join of 2,711 ms measured), because the cancel token is not read inside an image decode.
 
-## O466 — **FILED (engine, G338)** — a panoramic picture of the 3D view, at a chosen angle across and up
+## O466 — **BUILT (engine v0.180.0, G338)** — a panoramic picture of the 3D view, at a chosen angle across and up
 
 *"for the next version let's add a panoramic screenshot setting to the 3D pdf app. Not sure what settings would be appropriate to add to it? Height and width angle to cover? Width or height could be set up to 360 degrees? Height option checkbox to just set by current view and also by current view only the horizontal rotation is done parallel to the ground regardless of vertical camera rotation? Etc?"*
 
@@ -8399,4 +8399,4 @@ Said on 2026-11-26. A feature for the next version. The 3D viewer's Picture tab 
 
 The settings, as built: an angle across and an angle up and down (360° × 180° is today's full sphere); the sweep always turns about the model's up, so the horizon is a straight line whatever the camera's tilt; the picture is centred on the horizon (*Level*) or on the view's own tilt (*Tilt with the view*); the up-and-down angle may be taken from the view itself; a size kept to the shape the angles give. The picture carries the panorama tags with its crop, so a photo viewer shows it at its true angles.
 
-Today the engine draws only the whole sphere and tags it as whole; cropping one in the shell renders and throws away most of it and caps the strip's resolution by the whole sphere's size. Filed to the engine as G338. No shell workaround.
+Today the engine draws only the whole sphere and tags it as whole; cropping one in the shell renders and throws away most of it and caps the strip's resolution by the whole sphere's size. Filed to the engine as G338, shipped at v0.180.0, and built: the Picture tab's *Panorama* has *Across*, *Up and down* with *As the view*, *Tilt with the view*, *Keep verticals straight (cylindrical)* and a *Longer side*, with the size, tilt, a pole stop and an untagged cylindrical picture said under them. Driven: `the_3d_viewer_saves_a_partial_panorama_tilted_with_the_view` (120° × 40° tilted, 2048 × 683, crop tag placed at the pitch) and `the_3d_viewer_saves_a_360_picture_for_photo_viewers`.

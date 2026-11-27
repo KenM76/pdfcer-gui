@@ -361,11 +361,15 @@ pub(super) fn png(drawn: &Drawn, dpi: f32) -> Result<Vec<u8>, String> {
     pdfcer_render::export::encode_png(&pixmap(drawn)?, Some(dpi)).map_err(|e| e.to_string())
 }
 
-/// `drawn` as the file bytes of a 360° picture: a JPEG tagged for photo viewers.
-pub(super) fn sphere_jpeg(drawn: &Drawn) -> Result<Vec<u8>, String> {
-    use pdfcer_render::export::{JpegOptions, encode_jpeg, insert_jpeg_xmp, photo_sphere_xmp};
+/// `drawn` as the file bytes of a panorama: a JPEG, carrying `tag` for photo
+/// viewers when there is one.
+pub(super) fn panorama_jpeg(drawn: &Drawn, tag: Option<&str>) -> Result<Vec<u8>, String> {
+    use pdfcer_render::export::{JpegOptions, encode_jpeg, insert_jpeg_xmp};
     let jpeg = encode_jpeg(&pixmap(drawn)?, &JpegOptions::default()).map_err(|e| e.to_string())?;
-    insert_jpeg_xmp(&jpeg, &photo_sphere_xmp(drawn.width, drawn.height)).map_err(|e| e.to_string())
+    match tag {
+        Some(tag) => insert_jpeg_xmp(&jpeg, tag).map_err(|e| e.to_string()),
+        None => Ok(jpeg),
+    }
 }
 
 fn pixmap(drawn: &Drawn) -> Result<pdfcer_render::tiny_skia::Pixmap, String> {

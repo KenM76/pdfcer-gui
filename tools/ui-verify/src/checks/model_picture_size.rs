@@ -153,7 +153,7 @@ fn drive(
 }
 
 /// Scroll the open menu to `entry`, click it, select what it holds, type `value` and press Enter.
-fn type_into(
+pub(crate) fn type_into(
     session: &Session,
     pointer: &ScriptedPointer,
     ui_rect: &str,

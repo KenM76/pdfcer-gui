@@ -348,6 +348,11 @@ impl Kept<'_> {
         put.flag("wide_lines", s.wide_lines);
         put.flag("sphere", s.sphere);
         put.value("sphere_size", s.sphere_size);
+        put.value("pano_across", format!("{:.1}", s.pano.across));
+        put.value("pano_up_down", format!("{:.1}", s.pano.up_down));
+        put.flag("pano_from_view", s.pano.from_view);
+        put.flag("pano_tilted", s.pano.tilted);
+        put.flag("pano_cylindrical", s.pano.cylindrical);
         put.value("base_w", s.base[0]);
         put.value("base_h", s.base[1]);
         put.flag("own_look", s.own.is_some());
@@ -444,6 +449,15 @@ impl ModelView {
         get.flag("wide_lines", &mut s.wide_lines);
         get.flag("sphere", &mut s.sphere);
         get.number("sphere_size", 0..=2, &mut s.sphere_size);
+        get.number("pano_across", super::panorama::ACROSS, &mut s.pano.across);
+        get.number(
+            "pano_up_down",
+            super::panorama::UP_DOWN,
+            &mut s.pano.up_down,
+        );
+        get.flag("pano_from_view", &mut s.pano.from_view);
+        get.flag("pano_tilted", &mut s.pano.tilted);
+        get.flag("pano_cylindrical", &mut s.pano.cylindrical);
         get.number("base_w", 1..=10_000, &mut s.base[0]);
         get.number("base_h", 1..=10_000, &mut s.base[1]);
         let mut own = self.shot.own.is_some();

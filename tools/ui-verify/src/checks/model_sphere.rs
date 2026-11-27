@@ -75,7 +75,7 @@ impl Check for TheViewerSavesA360Picture {
 }
 
 /// Click `region` on the open options menu; `false` when it is not drawn.
-fn press(
+pub(crate) fn press(
     session: &Session,
     pointer: &ScriptedPointer,
     ui_rect: &str,
@@ -149,7 +149,7 @@ fn drive(
 
 /// Why `line`'s camera is not a levelled 360° one, if it is not.
 fn camera_failure(line: &str) -> Option<String> {
-    if !line.contains("lens=fisheye-equirectangular fov=360.000") {
+    if !line.contains("lens=panorama-equirectangular h=360.000 v=180.000 pitch=0.000") {
         return Some(format!(
             "the picture was not drawn through the 360° lens: {line}"
         ));
@@ -176,7 +176,7 @@ fn camera_failure(line: &str) -> Option<String> {
 }
 
 /// The width and height in the JPEG's first frame header.
-fn jpeg_size(bytes: &[u8]) -> Option<[usize; 2]> {
+pub(crate) fn jpeg_size(bytes: &[u8]) -> Option<[usize; 2]> {
     let mut at = 2;
     loop {
         let marker = *bytes.get(at + 1)?;
@@ -235,11 +235,10 @@ mod tests {
 
     #[test]
     fn a_pitched_or_other_lens_camera_is_refused() {
-        let good =
-            "x w=2048 h=1024 sphere=1 dir=1,0,0 up=0,0,1 lens=fisheye-equirectangular fov=360.000";
+        let good = "x w=2048 h=1024 sphere=1 dir=1,0,0 up=0,0,1 lens=panorama-equirectangular h=360.000 v=180.000 pitch=0.000";
         assert_eq!(camera_failure(good), None);
         assert!(camera_failure(&good.replace("dir=1,0,0", "dir=0.8,0,-0.6")).is_some());
-        assert!(camera_failure(&good.replace("fov=360.000", "fov=180.000")).is_some());
+        assert!(camera_failure(&good.replace("v=180.000", "v=90.000")).is_some());
         assert!(camera_failure(&good.replace("w=2048", "w=4096")).is_some());
     }
 }

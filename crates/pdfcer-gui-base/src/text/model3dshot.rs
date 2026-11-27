@@ -9,30 +9,79 @@ pub fn tabs() -> [&'static str; 6] {
     ["View", "Look", "Moving", "Picture", "Measure", "Controls"]
 }
 
-/// The 360° picture switch.
-pub const SPHERE: &str = "360° picture (photo sphere)";
+/// The panorama switch.
+pub const SPHERE: &str = "Panorama (photo sphere)";
 /// Its hover.
-pub const SPHERE_TOOLTIP: &str = "Save the whole view round the eye as a JPEG that photo viewers open as a picture to look around in. It is drawn level, from where this view stands: walk into the model for a view from inside.";
-/// The 360° size drop-down's label.
-pub const SPHERE_SIZE: &str = "360° size";
-/// The 360° size drop-down's hover.
-pub const SPHERE_SIZE_TOOLTIP: &str = "The picture's pixels. Its width is always twice its height, the whole way round the eye by half way over.";
-/// Why a 360° picture cannot have a clear background.
+pub const SPHERE_TOOLTIP: &str = "Save the view round the eye as a JPEG that photo viewers open as a picture to look around in: 360° across by 180° up and down is the whole sphere. It turns about the model's up, from where this view stands: walk into the model for a view from inside.";
+/// The panorama's longer side drop-down's label.
+pub const SPHERE_SIZE: &str = "Longer side";
+/// Its hover.
+pub const SPHERE_SIZE_TOOLTIP: &str =
+    "The picture's longer side. The other follows the angles, so the pixels are square.";
+/// Why a panorama cannot have a clear background.
 pub const SPHERE_NOT_CLEAR: &str =
-    "A 360° picture is a JPEG, which has no clear background: it is drawn on white.";
+    "A panorama is a JPEG, which has no clear background: it is drawn on white.";
 
-/// Why a 360° picture could not be drawn: the view gives it no heading.
-pub const SPHERE_NO_HEADING: &str =
-    "This view has no direction to draw a 360° picture from. Choose a named view and try again.";
-
-/// The 360° sizes, smallest first, as `dialogs::model3d::sphere` holds them.
+/// The longer sides, smallest first, as `dialogs::model3d::panorama` holds them.
 #[must_use]
 pub fn sphere_size(which: usize) -> &'static str {
     match which {
-        0 => "2048 × 1024 pixels",
-        1 => "4096 × 2048 pixels",
-        _ => "8192 × 4096 pixels",
+        0 => "2048 pixels",
+        1 => "4096 pixels",
+        _ => "8192 pixels",
     }
+}
+
+/// The angle across's label.
+pub const PANO_ACROSS: &str = "Across";
+/// Its hover.
+pub const PANO_ACROSS_TOOLTIP: &str = "How far round the picture reaches, centred on where the view looks: 360° is the whole way round.";
+/// The angle up and down's label.
+pub const PANO_UP_DOWN: &str = "Up and down";
+/// Its hover.
+pub const PANO_UP_DOWN_TOOLTIP: &str =
+    "How far up and down the picture reaches: 180° is from straight down to straight up.";
+/// The switch taking the angle up and down from the view.
+pub const PANO_FROM_VIEW: &str = "As the view";
+/// Its hover.
+pub const PANO_FROM_VIEW_TOOLTIP: &str = "Reach up and down as far as this view does on screen.";
+/// The switch tilting the band with the view.
+pub const PANO_TILT: &str = "Tilt with the view";
+/// Its hover.
+pub const PANO_TILT_TOOLTIP: &str = "Off: the horizon is the picture's middle row. On: the middle is where the view looks. Either way the picture turns level with the ground, so the horizon stays a straight line.";
+/// The switch laying the band out cylindrically.
+pub const PANO_CYLINDRICAL: &str = "Keep verticals straight (cylindrical)";
+/// Its hover.
+pub const PANO_CYLINDRICAL_TOOLTIP: &str = "Space the rows so upright edges stay straight and nothing near the horizon is squashed: suits a wide, short strip. It cannot reach straight up or down.";
+/// Said when a cylindrical panorama is saved without a photo-sphere tag.
+pub const PANO_UNTAGGED: &str = "A cylindrical picture is saved without the photo-sphere tag: photo viewers have no cylindrical type, so they show it as a flat picture.";
+/// Said when the band was moved to stop at the top or bottom of the sphere.
+#[must_use]
+pub fn pano_at_pole(up: bool) -> &'static str {
+    if up {
+        "Tilted this far the picture would run past straight up, so it is moved down to stop there."
+    } else {
+        "Tilted this far the picture would run past straight down, so it is moved up to stop there."
+    }
+}
+/// Where a tilted band's middle row looks.
+#[must_use]
+pub fn pano_centre(pitch: f64) -> String {
+    match pitch {
+        p if p > 0.05 => format!("Its middle row looks {p:.0}° above the horizon."),
+        p if p < -0.05 => format!("Its middle row looks {:.0}° below the horizon.", -p),
+        _ => "Its middle row is the horizon.".to_owned(),
+    }
+}
+/// The panorama's size and angles.
+#[must_use]
+pub fn pano_size(w: u32, h: u32, across: f64, up_down: f64) -> String {
+    format!("{w} × {h} pixels, {across:.0}° across by {up_down:.0}° up and down.")
+}
+/// Why the panorama cannot be drawn from this view.
+#[must_use]
+pub fn pano_refused(why: &str) -> String {
+    format!("This view cannot be drawn as a panorama: {why}.")
 }
 
 /// The options menu's button writing every setting as the operator's own.
