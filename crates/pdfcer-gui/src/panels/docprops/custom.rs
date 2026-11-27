@@ -6,13 +6,12 @@
 //! Every change is one `Action::SetInfoEntry`, so one undo step; the engine
 //! keeps the XMP copy in step and the action reports any copy it skipped.
 //!
-//! The keys pdfcer keeps itself (`ReservedInfoKey`: Producer and the two
-//! dates, plus Trapped) are listed read-only. The list is mirrored in
-//! [`RESERVED`] because the engine's own predicate is private; the engine's
-//! refusal stays the authority and is worded if the two ever disagree.
+//! The keys pdfcer keeps itself are listed read-only: the row asks
+//! `ReservedInfoKey::from_key`, the same predicate `set_info_entry` refuses
+//! with, so the two cannot disagree.
 
 use egui::Ui;
-use pdfcer_core::edit::{InfoField, InfoValue};
+use pdfcer_core::edit::{InfoField, InfoValue, ReservedInfoKey};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -30,9 +29,6 @@ pub const REGION_ADD: &str = "properties.custom.add"; // ui-text-exempt: trace r
 pub const REGION_ROW_PREFIX: &str = "properties.custom.row."; // ui-text-exempt: trace region name, never displayed
 /// An entry's Remove button; the key follows the prefix.
 pub const REGION_REMOVE_PREFIX: &str = "properties.custom.remove."; // ui-text-exempt: trace region name, never displayed
-
-/// Keys the engine refuses to write (`pdfcer_core::edit::ReservedInfoKey`).
-const RESERVED: &[&[u8]] = &[b"Producer", b"CreationDate", b"ModDate", b"Trapped"];
 
 /// One listed entry.
 struct Entry {
@@ -87,7 +83,8 @@ impl CustomDrafts {
                     InfoValue::Text(text) => (Some(text.text.clone()), text.exact),
                     _ => (None, true),
                 };
-                let read_only = !exact || stored.is_none() || RESERVED.contains(&e.key.as_slice());
+                let read_only =
+                    !exact || stored.is_none() || ReservedInfoKey::from_key(&e.key).is_some();
                 Entry {
                     draft: stored.clone().unwrap_or_default(),
                     key: e.key,
