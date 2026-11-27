@@ -25,6 +25,7 @@ pub mod centre_line_anchor;
 pub mod centre_line_ends;
 pub mod centre_mark;
 pub mod centre_mark_after;
+pub mod circle_anchor;
 pub mod circle_shown;
 /// A 600 dpi copier scan of a legal page shows its picture.
 pub mod copier_scan;
@@ -63,6 +64,7 @@ pub mod split_lines;
 pub mod spots_flattened;
 /// A document tab dragged off the strip moves or tears off, keeping its page.
 pub mod tab_drag;
+pub mod tangent_snap;
 pub mod text_render_mode;
 pub mod text_spacing;
 pub mod undrawn_fields;

@@ -34,7 +34,8 @@ pub(in crate::canvas) fn snapped(
     if model.is_none() && page.geometry.is_empty() {
         return (raw, None);
     }
-    let config = SnapConfig::new(map.snap_tolerance());
+    // The previous pick, so a circle offers the tangent point from it.
+    let config = SnapConfig::new(map.snap_tolerance()).with_from(st.anchor());
     let candidates = snap_candidates_skipping(raw, &config, model, &page.geometry, &page.skip);
     match snap::active_snap_candidate(&candidates, st.snap_cycle) {
         Some(c) => (c.point, Some(c)),

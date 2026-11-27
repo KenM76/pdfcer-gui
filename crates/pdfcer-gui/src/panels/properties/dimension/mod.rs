@@ -28,6 +28,7 @@ pub const REGION_CIRCLE: &str = "properties.dimension.circle"; // ui-text-exempt
 /// The centre-mark switch and its extension-lines switch.
 pub const REGION_CENTRE_MARK: &str = "properties.dimension.centre-mark"; // ui-text-exempt: trace region name, never displayed
 pub const REGION_CENTRE_MARK_EXTENSION: &str = "properties.dimension.centre-mark.extension"; // ui-text-exempt: trace region name, never displayed
+pub const REGION_CENTRE_MARK_ANGLE: &str = "properties.dimension.centre-mark.angle"; // ui-text-exempt: trace region name, never displayed
 
 /// The Perimeter / Area radio pair of a closed perimeter ce dimension.
 pub const REGION_AREA: &str = "properties.dimension.area"; // ui-text-exempt: trace region name, never displayed
@@ -212,8 +213,13 @@ fn label_row(
     ui.small(t::label_hint());
 }
 
-/// The radius / diameter choice, for a circular ce dimension only.
+/// The radius / diameter choice, for a circular ce dimension only; a
+/// standalone centre mark's spec rows instead.
 fn display_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Action>) {
+    if let DimensionKind::CentreMark { mark, .. } = record.kind {
+        centre_mark_toggles(ui, record.id, Some(mark), true, actions);
+        return;
+    }
     let DimensionKind::Circular {
         show_diameter,
         show_circle,
@@ -224,7 +230,7 @@ fn display_toggle(ui: &mut Ui, record: &DimensionRecord, actions: &mut Vec<Actio
         return;
     };
     circle_toggle(ui, record.id, show_circle, actions);
-    centre_mark_toggles(ui, record.id, centre_mark, actions);
+    centre_mark_toggles(ui, record.id, centre_mark, false, actions);
     let mut chosen = show_diameter;
     ui.horizontal(|ui| {
         ui.label(t::display_label());
@@ -268,37 +274,43 @@ fn circle_toggle(ui: &mut Ui, id: DimensionId, shown: bool, actions: &mut Vec<Ac
     }
 }
 
-/// **Centre mark** and, under it, **Extension lines**, for a radius or
-/// diameter ce dimension. A new mark keeps the engine's default spec; turning
-/// extension lines on or off keeps the mark's angle.
+/// **Centre mark** and, under it, **Extension lines** and **Angle**, for a
+/// radius or diameter ce dimension (`required: false`, with the on/off
+/// switch) or a standalone centre mark (`required: true`, which the engine
+/// refuses to clear). A new mark keeps the engine's default spec.
 fn centre_mark_toggles(
     ui: &mut Ui,
     id: DimensionId,
     mark: Option<pdfcer_core::dimension::CentreMarkSpec>,
+    required: bool,
     actions: &mut Vec<Action>,
 ) {
     let mut on = mark.is_some();
-    let r = ui
-        .checkbox(&mut on, t::centre_mark_on())
-        .on_hover_text(t::centre_mark_on_hover());
-    crate::diag::ui_rect(REGION_CENTRE_MARK, r.rect);
+    if !required {
+        let r = ui
+            .checkbox(&mut on, t::centre_mark_on())
+            .on_hover_text(t::centre_mark_on_hover());
+        crate::diag::ui_rect(REGION_CENTRE_MARK, r.rect);
+    }
     let mut chosen = on.then(|| mark.unwrap_or_default());
     if let Some(spec) = chosen.as_mut().filter(|_| mark.is_some()) {
-        ui.indent(REGION_CENTRE_MARK, |ui| {
-            let r = ui
-                .checkbox(&mut spec.extension_lines, t::centre_mark_extension_lines())
-                .on_hover_text(t::centre_mark_extension_lines_hover());
-            crate::diag::ui_rect(REGION_CENTRE_MARK_EXTENSION, r.rect);
-        });
+        ui.indent(REGION_CENTRE_MARK, |ui| mark_spec_rows(ui, id, spec));
     }
-    if chosen != mark {
+    let changed = match (chosen, mark) {
+        (Some(a), Some(b)) => {
+            a.extension_lines != b.extension_lines || (a.angle - b.angle).abs() > 1e-9
+        }
+        (a, b) => a.is_some() != b.is_some(),
+    };
+    if changed {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "dimension-centre-mark id={} on={} extension={}",
+                "dimension-centre-mark id={} on={} extension={} angle={:.1}",
                 id.0,
                 u8::from(chosen.is_some()),
-                u8::from(chosen.is_some_and(|m| m.extension_lines))
+                u8::from(chosen.is_some_and(|m| m.extension_lines)),
+                chosen.map_or(0.0, |m| m.angle)
             )
         });
         actions.push(Action::Dimension(DimensionAction::SetCentreMark {
@@ -306,6 +318,39 @@ fn centre_mark_toggles(
             mark: chosen,
         }));
     }
+}
+
+/// The extension-lines switch and the angle entry of a mark that exists.
+/// The angle is a draft while it is dragged or typed and lands in `spec`
+/// when the drag ends or the entry loses focus, so one gesture is one commit.
+fn mark_spec_rows(ui: &mut Ui, id: DimensionId, spec: &mut pdfcer_core::dimension::CentreMarkSpec) {
+    let r = ui
+        .checkbox(&mut spec.extension_lines, t::centre_mark_extension_lines())
+        .on_hover_text(t::centre_mark_extension_lines_hover());
+    crate::diag::ui_rect(REGION_CENTRE_MARK_EXTENSION, r.rect);
+    let key = ui.make_persistent_id(("centre-mark-angle", id.0));
+    let mut draft: f64 = ui.data(|d| d.get_temp(key)).unwrap_or(spec.angle);
+    ui.horizontal(|ui| {
+        ui.label(t::centre_mark_angle());
+        let r = ui
+            .add(
+                egui::DragValue::new(&mut draft)
+                    .range(-360.0..=360.0)
+                    .speed(1.0)
+                    .max_decimals(1)
+                    .suffix("°"), // ui-text-exempt: the degree sign
+            )
+            .on_hover_text(t::centre_mark_angle_hover());
+        crate::diag::ui_rect(REGION_CENTRE_MARK_ANGLE, r.rect);
+        if r.drag_stopped() || r.lost_focus() {
+            spec.angle = draft;
+            ui.data_mut(|d| d.remove::<f64>(key));
+        } else if r.dragged() || r.has_focus() {
+            ui.data_mut(|d| d.insert_temp(key, draft));
+        } else {
+            ui.data_mut(|d| d.remove::<f64>(key));
+        }
+    });
 }
 
 /// **Perimeter or enclosed area**, for a closed perimeter ce dimension of at

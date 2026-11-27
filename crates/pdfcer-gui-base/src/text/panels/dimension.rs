@@ -154,6 +154,43 @@ pub const fn centre_mark_extension_lines_hover() -> &'static str {
     "Lines from the cross out past the rim."
 }
 
+/// The angle of a centre mark's first arm.
+#[must_use]
+pub const fn centre_mark_angle() -> &'static str {
+    "Angle"
+}
+
+/// Hover text on [`centre_mark_angle`].
+#[must_use]
+pub const fn centre_mark_angle_hover() -> &'static str {
+    "Turns the cross, and its extension lines with it, about the circle's centre. \
+     0° puts the first arm along the page's width."
+}
+
+/// The label before the arc-condition choice of a point on a circle's rim.
+#[must_use]
+pub const fn arc_condition_label() -> &'static str {
+    "Measure to"
+}
+
+/// One arc condition, as the choice names it.
+#[must_use]
+pub const fn arc_condition(condition: ArcCondition) -> &'static str {
+    match condition {
+        ArcCondition::Centre => "Centre",
+        ArcCondition::Min => "Near edge",
+        _ => "Far edge",
+    }
+}
+
+/// Hover text on the arc-condition choice.
+#[must_use]
+pub const fn arc_condition_hover() -> &'static str {
+    "Where on the circle this point measures to: its centre, the edge nearest \
+     the other point (minimum) or the edge farthest from it (maximum). It \
+     keeps following the circle."
+}
+
 /// The disclosure when adding or removing a centre mark moved the label.
 #[must_use]
 pub const fn centre_mark_label_moved() -> &'static str {

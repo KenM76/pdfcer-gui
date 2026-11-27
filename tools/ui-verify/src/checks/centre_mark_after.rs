@@ -1,13 +1,17 @@
 //! `a_placed_dimension_takes_and_drops_a_centre_mark` — a placed radius or
 //! diameter ce dimension's *Centre mark* switch in the Properties panel adds a
-//! mark, its *Extension lines* switch appears under it and is kept, and the
-//! mark can be removed again; each press commits. See
+//! mark, its *Extension lines* switch appears under it and is kept, a drag
+//! of its *Angle* commits once, and the mark can be removed again; each press
+//! commits. See
 //! `docs/modules/ui-verify/checks/centre_mark_after.md`.
 
-use super::dimdrive::{click_on, press, reveal};
+use super::dimdrive::{click_on, press, reveal, ui_rect_event};
 use super::hole_dim::{HOLE, PLACE, measure};
+use crate::checks::driving::declared_in;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::Result;
+use crate::geom::{LRect, Pt};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
@@ -16,6 +20,9 @@ const INVOKE: &str = "mode.review,measure.radius_diameter";
 const PROPERTIES_TAB: &str = "dock.tab.file.properties"; // ui-text-exempt: trace region name
 const SWITCH: &str = "properties.dimension.centre-mark"; // ui-text-exempt: trace region name
 const EXTENSION: &str = "properties.dimension.centre-mark.extension"; // ui-text-exempt: trace region name
+const ANGLE: &str = "properties.dimension.centre-mark.angle"; // ui-text-exempt: trace region name
+/// How far the angle entry is dragged, window pixels; at 1° a pixel.
+const TURN: f32 = 30.0;
 const SELECTED: &str = "annot-select"; // ui-text-exempt: a trace event name
 const TOGGLED: &str = "dimension-centre-mark"; // ui-text-exempt: a trace event name
 const EDITED: &str = "set-centre-mark"; // ui-text-exempt: a trace event name
@@ -54,6 +61,35 @@ fn flip(
     let get = |k: &str| toggled.and_then(|l| l.get(k).map(str::to_owned));
     let committed = trace.last_after(EDITED, mark).is_some();
     Ok((get("on"), get("extension"), committed))
+}
+
+/// Drag the angle entry right by [`TURN`]: the trace lines it raised and
+/// the commits, which one gesture must make exactly one of.
+fn turn(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<(Vec<String>, usize)> {
+    let trace = session.trace()?;
+    let Some((rect, _)) = declared_in(&trace, ui_rect_event(ctx)?, ANGLE) else {
+        return Ok((Vec::new(), 0));
+    };
+    let from = WindowPoint::centre_of(rect);
+    let to = WindowPoint::centre_of(LRect {
+        min: Pt::new(from.x() + TURN, from.y()),
+        max: Pt::new(from.x() + TURN, from.y()),
+    });
+    let mark = trace.mark();
+    pointer.drag(session, from, to, 10)?;
+    session.settle(25);
+    let trace = session.trace()?;
+    let asked = trace
+        .events(TOGGLED)
+        .filter(|l| l.lineno > mark)
+        .map(|l| l.raw.clone())
+        .collect();
+    let commits = trace.events(EDITED).filter(|l| l.lineno > mark).count();
+    Ok((asked, commits))
 }
 
 fn want(got: &(Option<String>, Option<String>, bool), on: &str, ext: &str) -> bool {
@@ -117,6 +153,15 @@ fn drive(
         return Ok(Some(format!(
             "pressing Extension lines gave {ext:?}; `on=1 extension=1` and a commit were \
              wanted. Trace: {path}."
+        )));
+    }
+    let (asked, commits) = turn(ctx, session, pointer)?;
+    report.note(format!("angle drag: {asked:?}, {commits} commit(s)"));
+    let turned = asked.len() == 1 && !asked[0].contains("angle=0.0") && commits == 1;
+    if !turned {
+        return Ok(Some(format!(
+            "dragging the mark's Angle gave {asked:?} and {commits} commit(s); one request \
+                 with a non-zero angle and one `{EDITED}` commit were wanted. Trace: {path}."
         )));
     }
     let off = flip(ctx, session, pointer, SWITCH)?;

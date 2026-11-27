@@ -10,7 +10,8 @@ diameter ce dimension after it is placed, and its extension lines turned on.
 3. In Properties, press *Centre mark*. If the tool placed a mark already, this
    press removes it, so it is pressed once more.
 4. Press *Extension lines*.
-5. Press *Centre mark* again to remove the mark.
+5. Drag *Angle* 30 px to the right.
+6. Press *Centre mark* again to remove the mark.
 
 **Passes when:**
 
@@ -19,6 +20,9 @@ diameter ce dimension after it is placed, and its extension lines turned on.
   `set-centre-mark` commit.
 - `properties.dimension.centre-mark.extension` is drawn after the mark is
   added.
+- The angle drag raises exactly one `dimension-centre-mark` request, with a
+  non-zero `angle=`, and exactly one commit: a drag is one undo entry, not one
+  per frame.
 
 **Why the second condition.** The extension switch is drawn only while the
 stored kind carries a mark, so it shows the stored state rather than the press.

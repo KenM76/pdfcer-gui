@@ -5,7 +5,7 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/centre_line_anchor.md`.
 
 use super::centre_line::{ENGINE_EVENT, INVOKE, LOWER, TWO_LINES, UPPER};
-use super::dimdrive::{click_on, press_on_tab, run_on, ui_rect_event};
+use super::dimdrive::{Fixture, click_on, press_on_tab, run_on, ui_rect_event};
 use crate::checks::driving::declared_in;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
@@ -57,21 +57,23 @@ impl Check for ADimensionFollowsTheCentreLine {
     }
 }
 
-/// Click `at`, and once more if the first click only promoted a derived snap.
-fn pick(
+/// Click `at` on page 1 of `fixture`, and once more if the first click only
+/// promoted a derived snap.
+pub(super) fn pick(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
+    fixture: &Fixture,
     at: (f64, f64),
 ) -> Result<()> {
     let mark = session.trace()?.mark();
-    click_on(ctx, session, pointer, &TWO_LINES, 0, at)?;
+    click_on(ctx, session, pointer, fixture, 0, at)?;
     let promoted = session
         .trace()?
         .last_after(PICK_EVENT, mark)
         .is_some_and(|l| l.raw.contains(PROMOTED));
     if promoted {
-        click_on(ctx, session, pointer, &TWO_LINES, 0, at)?;
+        click_on(ctx, session, pointer, fixture, 0, at)?;
     }
     Ok(())
 }
@@ -92,9 +94,9 @@ fn drive(
     }
     press_on_tab(ctx, session, pointer, LINEAR, TAB)?;
     let mark = session.trace()?.mark();
-    pick(ctx, session, pointer, MIDPOINT)?;
-    pick(ctx, session, pointer, LOWER_END)?;
-    pick(ctx, session, pointer, PLACE)?;
+    pick(ctx, session, pointer, &TWO_LINES, MIDPOINT)?;
+    pick(ctx, session, pointer, &TWO_LINES, LOWER_END)?;
+    pick(ctx, session, pointer, &TWO_LINES, PLACE)?;
     let trace = session.trace()?;
     let Some(added) = trace.last_after(ADDED, mark) else {
         return Ok(Some(format!(
