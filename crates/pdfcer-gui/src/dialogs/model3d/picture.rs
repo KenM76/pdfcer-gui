@@ -218,6 +218,15 @@ pub(super) fn aim_of(camera: &pdfcer_3d::Camera) -> String {
         pdfcer_3d::Projection::Fisheye { fov, mapping } => {
             format!(" lens=fisheye-{mapping:?} fov={fov:.3}").to_lowercase() // ui-text-exempt: diagnostic trace
         }
+        pdfcer_3d::Projection::Panorama {
+            horizontal,
+            vertical,
+            pitch,
+            mapping,
+        } => {
+            format!(" lens=panorama-{mapping:?} h={horizontal:.3} v={vertical:.3} pitch={pitch:.3}") // ui-text-exempt: diagnostic trace
+                .to_lowercase()
+        }
         pdfcer_3d::Projection::Orthographic { .. } => String::new(),
     };
     format!(
@@ -246,6 +255,9 @@ fn pivot_shown(camera: &pdfcer_3d::Camera, p: [f64; 3]) -> String {
         }
         pdfcer_3d::Projection::Fisheye { fov, .. } => {
             2.0 * dot(v, f) * (fov.min(179.0) / 2.0).to_radians().tan()
+        }
+        pdfcer_3d::Projection::Panorama { vertical, .. } => {
+            2.0 * dot(v, f) * (vertical.min(179.0) / 2.0).to_radians().tan()
         }
         pdfcer_3d::Projection::Orthographic { height } => height,
     }

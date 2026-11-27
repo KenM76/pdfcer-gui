@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 11f644011bff9e2a18f68355d196e2b31d11099f
+# baseline: 5baf99c420cc7069b0f603f2d252f588012f6b8c
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 13554
+# items: 13585
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -216,6 +216,7 @@ exempt pdfcer-render variant pdfcer_render::icc::IccUnmodelled::NoChain -- a rea
 exempt pdfcer-render variant pdfcer_render::icc::IccUnmodelled::ProbeRefused -- a reason for one refused embedded colour profile; this shell reads the four per-reason `Diagnostics` counts the engine folds from it (`dialogs::print::route::profile_reasons`), never the enum itself.
 exempt pdfcer-render variant pdfcer_render::icc::IccUnmodelled::SourceUnparsed -- a reason for one refused embedded colour profile; this shell reads the four per-reason `Diagnostics` counts the engine folds from it (`dialogs::print::route::profile_reasons`), never the enum itself.
 exempt pdfcer-render variant pdfcer_render::image::ImageError::AllocationFailed -- an image refused because the allocator declined its buffer; the engine counts it in `Diagnostics::images_unsupported`, which the status line already reports as an image not drawn.
+exempt pdfcer-render variant pdfcer_render::image::ImageError::Cancelled -- used only inside the interpreter's image route; a cancelled render reaches this shell as `RenderError::Cancelled`, which the render worker already treats as no result.
 exempt pdfcer-render variant pdfcer_render::mask::MaskRefusal::AllocationFailed -- an image refused because the allocator declined its buffer; the engine counts it in `Diagnostics::images_unsupported`, which the status line already reports as an image not drawn.
 exempt pdfcer-render variant pdfcer_render::mesh::Shade::Spot -- a mesh vertex colour inside the rasterizer: the shading-mesh interpreter builds and interpolates Shade values and composites them; this shell holds no mesh, constructs no Shade, and sees the result only as rendered pixels.
 
@@ -1620,6 +1621,10 @@ pdfcer-core enum pdfcer_core::vector::text_locate::TextRunRef
 pdfcer-core enum pdfcer_core::widget_draw::SynthesizedKind
 pdfcer-core enum pdfcer_core::widget_draw::signature::SignatureAppearanceError
 pdfcer-core enum pdfcer_core::widget_draw::signature::SignatureLabels
+pdfcer-core enum pdfcer_core::xcut::expect::Change
+pdfcer-core enum pdfcer_core::xcut::expect::Disclosure
+pdfcer-core enum pdfcer_core::xcut::expect::Expect
+pdfcer-core enum pdfcer_core::xcut::kind::KindGroup
 pdfcer-core enum pdfcer_core::xfa::XfaFormKind
 pdfcer-core enum pdfcer_core::xfa::fillable::XfaFieldNoteKind
 pdfcer-core enum pdfcer_core::xfa::fonts::FontProgramKind
@@ -2593,6 +2598,7 @@ pdfcer-core field pdfcer_core::edit::PasswordPurgeOutcome::read_only_purged
 pdfcer-core field pdfcer_core::edit::PasteOutcome::annotations_pasted
 pdfcer-core field pdfcer_core::edit::PasteOutcome::bbox
 pdfcer-core field pdfcer_core::edit::PasteOutcome::disclosures
+pdfcer-core field pdfcer_core::edit::PasteOutcome::dropped_keys
 pdfcer-core field pdfcer_core::edit::PasteOutcome::objects_pasted
 pdfcer-core field pdfcer_core::edit::PasteOutcome::replies_unthreaded
 pdfcer-core field pdfcer_core::edit::PasteOutcome::resources_added
@@ -5962,6 +5968,8 @@ pdfcer-core fn pdfcer_core::vector::snap_page::hidden_objects
 pdfcer-core fn pdfcer_core::vector::text_locate::locate_text_run
 pdfcer-core fn pdfcer_core::vector::text_locate::locate_text_runs
 pdfcer-core fn pdfcer_core::wrapper::detect
+pdfcer-core fn pdfcer_core::xcut::kind::classify_annot
+pdfcer-core fn pdfcer_core::xcut::policy::expect
 pdfcer-core fn pdfcer_core::xfa::fonts::winansi_chars
 pdfcer-core fn pdfcer_core::xfa::form_kind
 pdfcer-core fn pdfcer_core::xfa::layout::layout_template
@@ -7900,6 +7908,9 @@ pdfcer-core method pdfcer_core::widget_draw::signature::SignatureAppearanceBuild
 pdfcer-core method pdfcer_core::widget_draw::signature::SignatureAppearanceBuilder::reason
 pdfcer-core method pdfcer_core::widget_draw::signature::SignatureImage::new
 pdfcer-core method pdfcer_core::wrapper::WrapperInfo::message
+pdfcer-core method pdfcer_core::xcut::expect::Expect::is_driven
+pdfcer-core method pdfcer_core::xcut::kind::KindGroup::id
+pdfcer-core method pdfcer_core::xcut::kind::ObjectKind::from_id
 pdfcer-core method pdfcer_core::xfa::XfaFormKind::is_dynamic
 pdfcer-core method pdfcer_core::xfa::fonts::XfaFace::new
 pdfcer-core method pdfcer_core::xfa::fonts::XfaFace::width
@@ -11332,6 +11343,26 @@ pdfcer-core variant pdfcer_core::widget_draw::SynthesizedKind::Text
 pdfcer-core variant pdfcer_core::widget_draw::signature::SignatureAppearanceError::DoesNotFit
 pdfcer-core variant pdfcer_core::widget_draw::signature::SignatureLabels::Described
 pdfcer-core variant pdfcer_core::widget_draw::signature::SignatureLabels::Plain
+pdfcer-core variant pdfcer_core::xcut::expect::Change::Dropped
+pdfcer-core variant pdfcer_core::xcut::expect::Change::Rebaked
+pdfcer-core variant pdfcer_core::xcut::expect::Change::Rebound
+pdfcer-core variant pdfcer_core::xcut::expect::Change::Regenerated
+pdfcer-core variant pdfcer_core::xcut::expect::Change::Renumbered
+pdfcer-core variant pdfcer_core::xcut::expect::Change::Translated
+pdfcer-core variant pdfcer_core::xcut::expect::Change::Unbound
+pdfcer-core variant pdfcer_core::xcut::expect::Disclosure::PasteDroppedKeys
+pdfcer-core variant pdfcer_core::xcut::expect::Disclosure::PasteRepliesUnthreaded
+pdfcer-core variant pdfcer_core::xcut::expect::Expect::Consume
+pdfcer-core variant pdfcer_core::xcut::expect::Expect::NotApplicable
+pdfcer-core variant pdfcer_core::xcut::expect::Expect::Pending
+pdfcer-core variant pdfcer_core::xcut::expect::Expect::Preserve
+pdfcer-core variant pdfcer_core::xcut::expect::Expect::Refused
+pdfcer-core variant pdfcer_core::xcut::expect::Expect::Remove
+pdfcer-core variant pdfcer_core::xcut::expect::Expect::Represent
+pdfcer-core variant pdfcer_core::xcut::kind::KindGroup::Annotation
+pdfcer-core variant pdfcer_core::xcut::kind::KindGroup::Content
+pdfcer-core variant pdfcer_core::xcut::kind::KindGroup::Document
+pdfcer-core variant pdfcer_core::xcut::kind::KindGroup::Form
 pdfcer-core variant pdfcer_core::xfa::XfaFormKind::Dynamic
 pdfcer-core variant pdfcer_core::xfa::XfaFormKind::NotXfa
 pdfcer-core variant pdfcer_core::xfa::XfaFormKind::Static
@@ -13075,6 +13106,7 @@ pdfcer-render fn pdfcer_render::export::encode_png
 pdfcer-render fn pdfcer_render::export::flatten_over
 pdfcer-render fn pdfcer_render::export::jxl::encode_jxl
 pdfcer-render fn pdfcer_render::export::xmp::insert_jpeg_xmp
+pdfcer-render fn pdfcer_render::export::xmp::partial_photo_sphere_xmp
 pdfcer-render fn pdfcer_render::export::xmp::photo_sphere_xmp
 pdfcer-render fn pdfcer_render::export_sites::op_box
 pdfcer-render fn pdfcer_render::font::bundled::face_name

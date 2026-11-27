@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **29 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-26; do not retype -->
+## `wanted` — a real gap — **31 of 660** <!-- counted by tools/walk-engine-backlog.py, 2026-11-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -146,10 +146,18 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **3D measure: minimum, maximum and centre distance between two picked entities (vertex, edge, face)** — the module `pdfcer_3d::surface_measure::distance` (`entity_distance`, `EntityDistance`, `MeasureEntity`, `Selection`, `Span`) | **consumed — O443, the same measure.** A second pick reads the smallest distance with dX, dY, dZ, the largest, and centre to centre when both have one (`Selected::pick`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). |
 | **3D light meter volume and point reads computed on the graphics card** — the modules `pdfcer_3d::illuminance::gpu_meter` (`LightMeter::gpu_new`, `GpuLightMeter`, `GpuLightMeter::build`, `GpuLightMeter::finish`) and `pdfcer_3d::illuminance::map::gpu::read` (`LightMeter::gpu_scene`, `GpuLightRead`, its `points`, `normals`, `finish`) | **wanted: the readings on the card, and Colour by light level.** The volume half is consumed by Measure light (`gpu_meter::light_meter`, the card queue's meter slot; driven by `the_light_meter_builds_its_bounce_on_the_card`). Colour by light level measures its map on the card through `gpu_map` (shipped row). Wanted: `gpu_scene` / `GpuLightRead`, many readings per draw split into direction runs under the watchdog. The card gets a clone of the build (note_gpu_meter_build_ownership). <!--namesake:gpu_new--> The consumed half, cited. <!--namesake:gpu_meter--> The shell's own module. <!--namesake:gpu_scene--> `model3d::gpu`'s frame-scene method. |
 
+
+### Cross-cutting coverage
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Cross-cutting coverage gate (every object kind × every operation)** — the module `pdfcer_core::xcut` (`ObjectKind`, `KindGroup`, `classify_annot`, `Op`, `OpGroup`, `Expect`, `Change`, `Disclosure`, `policy::expect`, `carry::clone_then_patch`) | **wanted — E069.** <!--namesake:ObjectKind--> (the shell's own `objectsummary::ObjectKind` is a different type, the Objects panel's summary kind.) The engine's classification of every object kind against every operation, deliberately exhaustive so a new kind breaks the build. The ask is one exhaustive `match ObjectKind` per shell operation (select, clipboard, delete, move, align, z-order, group, layer, properties, undo label, context menu), held as a matrix keyed by `ObjectKind::id()` and generated from code. Not yet built; E069's three named gaps (paste ignores the source layer, an OS-clipboard copy between two windows drops annotations, fields copied one by one) are the first rows it would fill. |
+| **Partial panorama of a 3D view** — only a band round the eye, tagged for photo viewers: `pdfcer_render::export::partial_photo_sphere_xmp`, with `pdfcer_3d::Camera::panorama` and `Projection::Panorama` | **wanted — O466 (G338).** The Picture tab's 360° choice becomes *Panorama*: an angle across and an angle up and down, level or tilted with the view, equirectangular or cylindrical. The JPEG is tagged with the band's place on the sphere from the pitch the returned camera holds. |
+
 ---
 
 
-## `blocked` — waiting on something named — **2 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-26; do not retype -->
+## `blocked` — waiting on something named — **2 of 660** <!-- counted by tools/walk-engine-backlog.py, 2026-11-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -167,7 +175,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-26; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 660** <!-- counted by tools/walk-engine-backlog.py, 2026-11-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -178,7 +186,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-26; do not retype -->
+## `declined` — deliberately no surface — **21 of 660** <!-- counted by tools/walk-engine-backlog.py, 2026-11-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -225,7 +233,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **606 of 658** <!-- counted by tools/walk-engine-backlog.py, 2026-11-26; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **606 of 660** <!-- counted by tools/walk-engine-backlog.py, 2026-11-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

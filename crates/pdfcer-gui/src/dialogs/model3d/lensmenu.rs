@@ -120,7 +120,8 @@ impl ModelView {
                 Some(l::drawn_fisheye(l::curve_names()[at], fov))
             }
             Projection::Perspective { .. } => Some(l::auto_flat(self.lens.auto_at)),
-            Projection::Orthographic { .. } => None,
+            // A panorama is a saved picture's lens, never the view's.
+            Projection::Orthographic { .. } | Projection::Panorama { .. } => None,
         }
     }
 }

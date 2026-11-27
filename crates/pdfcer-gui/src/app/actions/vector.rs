@@ -591,6 +591,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             // Replies whose `/IRT` link the clip stripped; the engine's own
             // disclosure line carries the sentence to the operator.
             let mut unthreaded = 0_u64;
+            let mut dropped = 0_u64; // keys the paste could not carry; the engine says which
             let Ok(layer) = super::drawlayer::for_add(doc, "paste-objects") else {
                 return;
             };
@@ -604,6 +605,8 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                         pasted = outcome.objects_pasted;
                         annots = outcome.annotations_pasted;
                         unthreaded = outcome.replies_unthreaded;
+                        let pdfcer_core::edit::PasteOutcome { dropped_keys, .. } = &outcome;
+                        dropped = dropped_keys.values().sum();
                         let mut notes = outcome.disclosures;
                         notes.extend(layer.map(|l| l.receipt));
                         notes
